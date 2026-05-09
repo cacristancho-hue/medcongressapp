@@ -95,6 +95,7 @@ export type VerificationStatus =
   | "partially_verified"
   | "not_verified"
   | "ambiguous"
+  | "retracted"
 
 export type OutputType =
   | "summary_by_topic"

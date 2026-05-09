@@ -1,8 +1,17 @@
+// Multi-source bibliographic reference verification.
+// Sources: CrossRef (DOI authority + Retraction Watch via update-to),
+//          PubMed E-utils (biomedical gold standard, returns PMID),
+//          OpenAlex (broad coverage fallback).
+// Order: prefer the most authoritative match available; aggregate the rest.
+
 export type VerificationStatus =
   | "verified"
   | "partially_verified"
   | "not_verified"
   | "ambiguous"
+  | "retracted"
+
+export type VerificationSource = "crossref" | "pubmed" | "openalex" | "none"
 
 export interface ReferenceInput {
   id: string
@@ -22,18 +31,300 @@ export interface VerifiedReference {
   matchedYear: string | null
   matchedJournal: string | null
   matchedDoi: string | null
-  source: "openalex"
-  notes: string | null
+  matchedPmid: string | null
+  source: VerificationSource
+  sourcesChecked: VerificationSource[]
+  retracted: boolean
+  notes: string
 }
+
+interface ExternalCandidate {
+  source: VerificationSource
+  title: string | null
+  authors: string | null
+  year: string | null
+  journal: string | null
+  doi: string | null
+  pmid: string | null
+  retracted: boolean
+  retractionNotice: string | null
+}
+
+const POLITE_USER_AGENT =
+  "MedCongressAI/1.0 (https://github.com/cacristancho-hue/medcongressapp; mailto:cacristanchoo@gmail.com)"
+
+const FETCH_TIMEOUT_MS = 8000
+
+function fetchWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+  return fetch(url, {
+    ...init,
+    signal: controller.signal,
+    headers: {
+      Accept: "application/json",
+      "User-Agent": POLITE_USER_AGENT,
+      ...(init.headers ?? {}),
+    },
+  }).finally(() => clearTimeout(timer))
+}
+
+function cleanText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function tokenize(value: string): Set<string> {
+  return new Set(cleanText(value).split(" ").filter(Boolean))
+}
+
+function similarity(a: string | null, b: string | null): number {
+  if (!a || !b) return 0
+  const left = tokenize(a)
+  const right = tokenize(b)
+  if (left.size === 0 || right.size === 0) return 0
+  let shared = 0
+  for (const token of left) if (right.has(token)) shared++
+  return shared / Math.max(left.size, right.size)
+}
+
+function extractYear(value: string | null): string | null {
+  if (!value) return null
+  return value.match(/(19|20)\d{2}/)?.[0] ?? null
+}
+
+function normalizeDoi(value: string | null | undefined): string | null {
+  if (!value) return null
+  return value
+    .replace(/^https?:\/\/(dx\.)?doi\.org\//i, "")
+    .trim()
+    .toLowerCase()
+}
+
+function joinAuthors(parts: Array<string | null | undefined>): string | null {
+  const cleaned = parts.filter((x): x is string => Boolean(x && x.trim()))
+  if (cleaned.length === 0) return null
+  return cleaned.slice(0, 4).join(", ")
+}
+
+// ============================================================
+// CrossRef
+// Docs: https://api.crossref.org/swagger-ui/index.html
+// Retractions surface via "update-to" with update_type === "retraction".
+// ============================================================
+
+interface CrossRefMessage {
+  DOI?: string
+  title?: string[]
+  author?: Array<{ given?: string; family?: string }>
+  issued?: { "date-parts"?: number[][] }
+  "container-title"?: string[]
+  "update-to"?: Array<{ DOI?: string; type?: string; updated?: { "date-parts"?: number[][] } }>
+  relation?: Record<string, Array<{ id?: string; "id-type"?: string }>>
+}
+
+interface CrossRefSingleResponse {
+  message?: CrossRefMessage
+}
+
+interface CrossRefSearchResponse {
+  message?: { items?: CrossRefMessage[] }
+}
+
+function crossrefMessageToCandidate(msg: CrossRefMessage): ExternalCandidate {
+  const title = msg.title?.[0] ?? null
+  const year = msg.issued?.["date-parts"]?.[0]?.[0]?.toString() ?? null
+  const journal = msg["container-title"]?.[0] ?? null
+  const authors = joinAuthors(
+    (msg.author ?? []).map((a) => [a.given, a.family].filter(Boolean).join(" "))
+  )
+  const doi = normalizeDoi(msg.DOI)
+
+  const retractionUpdate = msg["update-to"]?.find(
+    (u) => (u.type ?? "").toLowerCase() === "retraction"
+  )
+  const retracted = Boolean(retractionUpdate)
+  const retractionNotice = retracted
+    ? `CrossRef update-to retraction (DOI ${retractionUpdate?.DOI ?? "unknown"})`
+    : null
+
+  // PMID via relation block (rare but possible).
+  const relationPmid = msg.relation
+    ? Object.values(msg.relation)
+        .flat()
+        .find((r) => (r["id-type"] ?? "").toLowerCase() === "pmid")?.id ?? null
+    : null
+
+  return {
+    source: "crossref",
+    title,
+    authors,
+    year,
+    journal,
+    doi,
+    pmid: relationPmid,
+    retracted,
+    retractionNotice,
+  }
+}
+
+async function queryCrossRefByDoi(doi: string): Promise<ExternalCandidate | null> {
+  try {
+    const response = await fetchWithTimeout(
+      `https://api.crossref.org/works/${encodeURIComponent(doi)}`
+    )
+    if (!response.ok) return null
+    const data = (await response.json()) as CrossRefSingleResponse
+    if (!data.message) return null
+    return crossrefMessageToCandidate(data.message)
+  } catch {
+    return null
+  }
+}
+
+async function queryCrossRefByTitle(
+  title: string,
+  year: string | null
+): Promise<ExternalCandidate[]> {
+  try {
+    const params = new URLSearchParams({
+      "query.bibliographic": title,
+      rows: "5",
+    })
+    if (year) {
+      params.set("filter", `from-pub-date:${year},until-pub-date:${year}`)
+    }
+    const response = await fetchWithTimeout(
+      `https://api.crossref.org/works?${params.toString()}`
+    )
+    if (!response.ok) return []
+    const data = (await response.json()) as CrossRefSearchResponse
+    return (data.message?.items ?? []).map(crossrefMessageToCandidate)
+  } catch {
+    return []
+  }
+}
+
+// ============================================================
+// PubMed E-utils
+// Docs: https://www.ncbi.nlm.nih.gov/books/NBK25501/
+// Two-step: esearch (PMID) → esummary (metadata).
+// ============================================================
+
+interface PubMedSearchResponse {
+  esearchresult?: { idlist?: string[] }
+}
+
+interface PubMedSummaryAuthor {
+  name?: string
+  authtype?: string
+}
+
+interface PubMedSummaryItem {
+  uid?: string
+  title?: string
+  authors?: PubMedSummaryAuthor[]
+  source?: string
+  pubdate?: string
+  elocationid?: string
+  articleids?: Array<{ idtype?: string; value?: string }>
+  pubtype?: string[]
+}
+
+interface PubMedSummaryResponse {
+  result?: Record<string, PubMedSummaryItem | string[]>
+}
+
+function pubmedItemToCandidate(item: PubMedSummaryItem): ExternalCandidate {
+  const pmid = item.uid ?? null
+  const title = item.title?.replace(/\.$/, "") ?? null
+  const year = extractYear(item.pubdate ?? null)
+  const journal = item.source ?? null
+  const authors = joinAuthors((item.authors ?? []).map((a) => a.name))
+  const doi =
+    normalizeDoi(
+      item.articleids?.find((id) => (id.idtype ?? "").toLowerCase() === "doi")?.value
+    ) ?? null
+
+  const retracted = (item.pubtype ?? []).some((t) =>
+    /retract/i.test(t)
+  )
+
+  return {
+    source: "pubmed",
+    title,
+    authors,
+    year,
+    journal,
+    doi,
+    pmid,
+    retracted,
+    retractionNotice: retracted ? "PubMed pubtype includes retraction" : null,
+  }
+}
+
+async function queryPubMedByTitle(
+  title: string,
+  year: string | null
+): Promise<ExternalCandidate | null> {
+  try {
+    const term = year ? `${title} AND ${year}[dp]` : title
+    const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&retmax=5&term=${encodeURIComponent(term)}`
+    const searchRes = await fetchWithTimeout(searchUrl)
+    if (!searchRes.ok) return null
+    const searchData = (await searchRes.json()) as PubMedSearchResponse
+    const ids = searchData.esearchresult?.idlist ?? []
+    if (ids.length === 0) return null
+
+    const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${ids.join(",")}`
+    const summaryRes = await fetchWithTimeout(summaryUrl)
+    if (!summaryRes.ok) return null
+    const summaryData = (await summaryRes.json()) as PubMedSummaryResponse
+
+    let bestCandidate: ExternalCandidate | null = null
+    let bestScore = 0
+    for (const id of ids) {
+      const raw = summaryData.result?.[id]
+      if (!raw || Array.isArray(raw)) continue
+      const candidate = pubmedItemToCandidate(raw)
+      const score = similarity(title, candidate.title)
+      if (score > bestScore) {
+        bestScore = score
+        bestCandidate = candidate
+      }
+    }
+    return bestCandidate
+  } catch {
+    return null
+  }
+}
+
+async function queryPubMedByPmid(pmid: string): Promise<ExternalCandidate | null> {
+  try {
+    const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${encodeURIComponent(pmid)}`
+    const res = await fetchWithTimeout(summaryUrl)
+    if (!res.ok) return null
+    const data = (await res.json()) as PubMedSummaryResponse
+    const raw = data.result?.[pmid]
+    if (!raw || Array.isArray(raw)) return null
+    return pubmedItemToCandidate(raw)
+  } catch {
+    return null
+  }
+}
+
+// ============================================================
+// OpenAlex
+// Docs: https://docs.openalex.org/
+// ============================================================
 
 interface OpenAlexAuthorship {
-  author?: {
-    display_name?: string | null
-  } | null
-}
-
-interface OpenAlexSource {
-  display_name?: string | null
+  author?: { display_name?: string | null } | null
 }
 
 interface OpenAlexWork {
@@ -41,11 +332,11 @@ interface OpenAlexWork {
   title?: string | null
   publication_year?: number | null
   authorships?: OpenAlexAuthorship[] | null
-  primary_location?: {
-    source?: OpenAlexSource | null
-  } | null
-  host_venue?: OpenAlexSource | null
+  primary_location?: { source?: { display_name?: string | null } | null } | null
+  host_venue?: { display_name?: string | null } | null
   doi?: string | null
+  ids?: { pmid?: string | null }
+  is_retracted?: boolean | null
 }
 
 interface OpenAlexResponse {
@@ -53,83 +344,132 @@ interface OpenAlexResponse {
   results?: OpenAlexWork[]
 }
 
-function cleanText(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-}
+function openAlexWorkToCandidate(work: OpenAlexWork): ExternalCandidate {
+  const journal =
+    work.primary_location?.source?.display_name ?? work.host_venue?.display_name ?? null
+  const authors = joinAuthors(
+    (work.authorships ?? []).map((a) => a.author?.display_name ?? null)
+  )
+  const pmidRaw = work.ids?.pmid ?? null
+  const pmid = pmidRaw ? pmidRaw.replace(/^https?:\/\/.*\/(\d+)$/, "$1") : null
 
-function tokenize(value: string) {
-  return new Set(cleanText(value).split(" ").filter(Boolean))
-}
-
-function similarity(a: string, b: string) {
-  const left = tokenize(a)
-  const right = tokenize(b)
-  if (left.size === 0 || right.size === 0) return 0
-
-  let shared = 0
-  for (const token of left) {
-    if (right.has(token)) shared++
+  return {
+    source: "openalex",
+    title: work.title ?? null,
+    authors,
+    year: work.publication_year?.toString() ?? null,
+    journal,
+    doi: normalizeDoi(work.doi),
+    pmid,
+    retracted: Boolean(work.is_retracted),
+    retractionNotice: work.is_retracted ? "OpenAlex is_retracted=true" : null,
   }
-
-  return shared / Math.max(left.size, right.size)
 }
 
-function extractYear(value: string | null) {
-  if (!value) return null
-  const match = value.match(/(19|20)\d{2}/)
-  return match?.[0] ?? null
+async function queryOpenAlex(
+  title: string | null,
+  doi: string | null
+): Promise<ExternalCandidate[]> {
+  try {
+    const url = doi
+      ? `https://api.openalex.org/works/https://doi.org/${encodeURIComponent(doi)}`
+      : title
+        ? `https://api.openalex.org/works?search=${encodeURIComponent(title)}&per-page=5`
+        : null
+    if (!url) return []
+    const response = await fetchWithTimeout(url)
+    if (!response.ok) return []
+    const data = (await response.json()) as OpenAlexResponse
+    const works: OpenAlexWork[] = Array.isArray(data?.results)
+      ? data.results
+      : data?.id
+        ? [data as OpenAlexWork]
+        : []
+    return works.map(openAlexWorkToCandidate)
+  } catch {
+    return []
+  }
 }
 
-function formatAuthors(authors: Array<string | null | undefined> | null | undefined) {
-  const clean = authors?.filter(Boolean) as string[] | undefined
-  if (!clean?.length) return null
-  return clean.slice(0, 4).join(", ")
-}
+// ============================================================
+// Scoring & status mapping
+// ============================================================
 
-function mapOpenAlexStatus(input: {
-  exactDoi: boolean
+function scoreCandidate(input: ReferenceInput, candidate: ExternalCandidate): {
+  score: number
   titleScore: number
   authorScore: number
   yearScore: number
-  candidateCount: number
   journalScore: number
+  doiMatch: boolean
+  pmidMatch: boolean
+} {
+  const detectedYear = extractYear(input.detected_year)
+  const detectedDoi = normalizeDoi(input.detected_doi)
+
+  const titleScore = similarity(input.detected_title, candidate.title)
+  const authorScore = similarity(input.detected_authors, candidate.authors)
+  const journalScore = similarity(input.detected_journal, candidate.journal)
+  const yearScore =
+    detectedYear && candidate.year ? (detectedYear === candidate.year ? 1 : 0) : 0
+  const doiMatch = Boolean(detectedDoi && candidate.doi && detectedDoi === candidate.doi)
+  // PMID is exact-match only — heuristic against the raw text.
+  const pmidMatch = Boolean(
+    candidate.pmid && input.raw_text && input.raw_text.includes(candidate.pmid)
+  )
+
+  const composite =
+    titleScore * 0.45 +
+    authorScore * 0.25 +
+    yearScore * 0.15 +
+    journalScore * 0.15 +
+    (doiMatch ? 0.4 : 0) +
+    (pmidMatch ? 0.2 : 0)
+
+  return {
+    score: Math.min(1, composite),
+    titleScore,
+    authorScore,
+    yearScore,
+    journalScore,
+    doiMatch,
+    pmidMatch,
+  }
+}
+
+function mapStatus(input: {
+  doiMatch: boolean
+  pmidMatch: boolean
+  titleScore: number
+  authorScore: number
+  yearScore: number
+  journalScore: number
+  candidateCount: number
+  retracted: boolean
 }): VerificationStatus {
+  if (input.retracted) return "retracted"
+
   const composite =
     input.titleScore * 0.45 +
     input.authorScore * 0.25 +
     input.yearScore * 0.15 +
     input.journalScore * 0.15
 
-  if (input.exactDoi || composite >= 0.82) return "verified"
+  if (input.doiMatch || input.pmidMatch || composite >= 0.82) return "verified"
   if (composite >= 0.55) return "partially_verified"
   if (input.candidateCount > 1 && composite >= 0.35) return "ambiguous"
   return "not_verified"
 }
 
-function normalizeDoi(value: string | null | undefined) {
-  if (!value) return null
-  return cleanText(value.replace(/^https?:\/\/(dx\.)?doi\.org\//i, ""))
-}
+// ============================================================
+// Public API
+// ============================================================
 
-function normalizeOpenAlexDoi(value: string | null | undefined) {
-  if (!value) return null
-  return normalizeDoi(value)
-}
-
-export async function verifyReferenceWithOpenAlex(
-  ref: ReferenceInput
-): Promise<VerifiedReference> {
-  const detectedTitle = ref.detected_title?.trim() || null
-  const detectedYear = extractYear(ref.detected_year)
-  const detectedAuthors = ref.detected_authors?.trim() || null
-  const detectedJournal = ref.detected_journal?.trim() || null
-  const detectedDoi = ref.detected_doi?.trim() || null
+export async function verifyReference(input: ReferenceInput): Promise<VerifiedReference> {
+  const detectedTitle = input.detected_title?.trim() || null
+  const detectedDoi = normalizeDoi(input.detected_doi)
+  const detectedYear = extractYear(input.detected_year)
+  const sourcesChecked: VerificationSource[] = []
 
   if (!detectedTitle && !detectedDoi) {
     return {
@@ -140,23 +480,40 @@ export async function verifyReferenceWithOpenAlex(
       matchedYear: null,
       matchedJournal: null,
       matchedDoi: null,
-      source: "openalex",
-      notes: "No se detectó título ni DOI para verificar.",
+      matchedPmid: null,
+      source: "none",
+      sourcesChecked,
+      retracted: false,
+      notes: "Sin título ni DOI detectado; imposible verificar.",
     }
   }
 
-  const queryUrl = detectedDoi
-    ? `https://api.openalex.org/works/https://doi.org/${encodeURIComponent(detectedDoi)}`
-    : `https://api.openalex.org/works?search=${encodeURIComponent(detectedTitle ?? "")}&per-page=5`
+  const candidates: ExternalCandidate[] = []
 
-  const response = await fetch(queryUrl, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "MedCongressAI/1.0",
-    },
-  })
+  // 1. CrossRef — most authoritative, also surfaces retractions via update-to.
+  if (detectedDoi) {
+    sourcesChecked.push("crossref")
+    const cr = await queryCrossRefByDoi(detectedDoi)
+    if (cr) candidates.push(cr)
+  } else if (detectedTitle) {
+    sourcesChecked.push("crossref")
+    const crList = await queryCrossRefByTitle(detectedTitle, detectedYear)
+    candidates.push(...crList)
+  }
 
-  if (!response.ok) {
+  // 2. PubMed — biomedical gold standard. Also flags retractions via pubtype.
+  if (detectedTitle) {
+    sourcesChecked.push("pubmed")
+    const pm = await queryPubMedByTitle(detectedTitle, detectedYear)
+    if (pm) candidates.push(pm)
+  }
+
+  // 3. OpenAlex — broad coverage fallback.
+  sourcesChecked.push("openalex")
+  const oa = await queryOpenAlex(detectedTitle, detectedDoi)
+  candidates.push(...oa)
+
+  if (candidates.length === 0) {
     return {
       status: "not_verified",
       confidenceScore: 0,
@@ -165,98 +522,84 @@ export async function verifyReferenceWithOpenAlex(
       matchedYear: null,
       matchedJournal: null,
       matchedDoi: null,
-      source: "openalex",
-      notes: `OpenAlex respondió ${response.status}`,
+      matchedPmid: null,
+      source: "none",
+      sourcesChecked,
+      retracted: false,
+      notes: "Ninguna fuente devolvió coincidencias.",
     }
   }
 
-  const data = (await response.json()) as OpenAlexResponse
-  const candidates: OpenAlexWork[] = Array.isArray(data?.results)
-    ? data.results
-    : data?.id
-      ? [data as OpenAlexWork]
-      : []
-
-  if (!candidates.length) {
-    return {
-      status: "not_verified",
-      confidenceScore: 0,
-      matchedTitle: null,
-      matchedAuthors: null,
-      matchedYear: null,
-      matchedJournal: null,
-      matchedDoi: null,
-      source: "openalex",
-      notes: "No se encontraron coincidencias en OpenAlex.",
+  let best: { candidate: ExternalCandidate; score: ReturnType<typeof scoreCandidate> } | null = null
+  for (const candidate of candidates) {
+    const score = scoreCandidate(input, candidate)
+    if (!best || score.score > best.score.score) {
+      best = { candidate, score }
     }
   }
 
-  let best: {
-    work: OpenAlexWork
-    titleScore: number
-    authorScore: number
-    yearScore: number
-    journalScore: number
-    score: number
-  } | null = null
+  // Aggregate retraction signals across all sources, even if best didn't flag it.
+  const retractionFromAny = candidates.some((c) => c.retracted)
+  const retractionNotices = candidates
+    .filter((c) => c.retracted && c.retractionNotice)
+    .map((c) => `${c.source}: ${c.retractionNotice}`)
+    .join(" | ")
 
-  for (const work of candidates) {
-    const workTitle = work.title ?? ""
-    const workYear = work.publication_year?.toString() ?? null
-    const workAuthors = work.authorships?.map((a) => a.author?.display_name ?? null) ?? []
-    const workJournal = work.primary_location?.source?.display_name ?? work.host_venue?.display_name ?? null
-    const workDoi = normalizeOpenAlexDoi(work.doi)
+  const retracted = best?.candidate.retracted || retractionFromAny
 
-    const titleScore = detectedTitle ? similarity(detectedTitle, workTitle) : 0
-    const authorScore = detectedAuthors ? similarity(detectedAuthors, formatAuthors(workAuthors) ?? "") : 0
-    const yearScore = detectedYear && workYear ? (detectedYear === workYear ? 1 : 0) : 0
-    const journalScore = detectedJournal && workJournal ? similarity(detectedJournal, workJournal) : 0
-    const doiMatch = Boolean(detectedDoi && workDoi && normalizeDoi(detectedDoi) === workDoi)
-    const score =
-      titleScore * 0.45 +
-      authorScore * 0.25 +
-      yearScore * 0.15 +
-      journalScore * 0.15 +
-      (doiMatch ? 0.4 : 0)
-
-    if (!best || score > best.score) {
-      best = { work, titleScore, authorScore, yearScore, journalScore, score }
-    }
-  }
-
-  const work = best?.work
-  const exactDoi = Boolean(detectedDoi && normalizeDoi(detectedDoi) && normalizeDoi(detectedDoi) === normalizeOpenAlexDoi(work?.doi))
-  const status = mapOpenAlexStatus({
-    exactDoi,
-    titleScore: best?.titleScore ?? 0,
-    authorScore: best?.authorScore ?? 0,
-    yearScore: best?.yearScore ?? 0,
+  const status = mapStatus({
+    doiMatch: best?.score.doiMatch ?? false,
+    pmidMatch: best?.score.pmidMatch ?? false,
+    titleScore: best?.score.titleScore ?? 0,
+    authorScore: best?.score.authorScore ?? 0,
+    yearScore: best?.score.yearScore ?? 0,
+    journalScore: best?.score.journalScore ?? 0,
     candidateCount: candidates.length,
-    journalScore: best?.journalScore ?? 0,
+    retracted,
   })
 
-  const workAuthors = work?.authorships?.map((a) => a.author?.display_name ?? null) ?? []
+  // PMID enrichment: if best lacks PMID, try to fetch it from PubMed by DOI.
+  let matchedPmid = best?.candidate.pmid ?? null
+  if (!matchedPmid && best?.candidate.doi) {
+    const pmByDoi = await queryPubMedByTitle(best.candidate.title ?? "", best.candidate.year)
+    if (pmByDoi?.doi === best.candidate.doi && pmByDoi.pmid) {
+      matchedPmid = pmByDoi.pmid
+    }
+  }
 
   const notes =
-    exactDoi
-      ? "Coincidencia exacta por DOI."
+    status === "retracted"
+      ? `Retractado. ${retractionNotices || "Detectado por una de las fuentes consultadas."}`
       : status === "verified"
-        ? "Coincidencia sólida por título y metadatos."
+        ? best?.score.doiMatch
+          ? `Coincidencia exacta por DOI (${best.candidate.source}).`
+          : best?.score.pmidMatch
+            ? `Coincidencia exacta por PMID (${best.candidate.source}).`
+            : `Coincidencia sólida por título y metadatos (${best?.candidate.source}).`
         : status === "partially_verified"
           ? "Coincidencia parcial; revisar metadatos manualmente."
           : status === "ambiguous"
-            ? "Varias coincidencias posibles."
+            ? `Múltiples candidatos plausibles (${candidates.length}).`
             : "No se pudo validar con suficiente confianza."
 
   return {
     status,
-    confidenceScore: Math.max(0, Math.min(1, best?.score ?? 0)),
-    matchedTitle: work?.title ?? null,
-    matchedAuthors: formatAuthors(workAuthors),
-    matchedYear: work?.publication_year?.toString() ?? null,
-    matchedJournal: work?.primary_location?.source?.display_name ?? work?.host_venue?.display_name ?? null,
-    matchedDoi: normalizeOpenAlexDoi(work?.doi),
-    source: "openalex",
+    confidenceScore: best?.score.score ?? 0,
+    matchedTitle: best?.candidate.title ?? null,
+    matchedAuthors: best?.candidate.authors ?? null,
+    matchedYear: best?.candidate.year ?? null,
+    matchedJournal: best?.candidate.journal ?? null,
+    matchedDoi: best?.candidate.doi ?? null,
+    matchedPmid,
+    source: best?.candidate.source ?? "none",
+    sourcesChecked,
+    retracted,
     notes,
   }
 }
+
+// Backward-compatible alias for existing callers.
+export const verifyReferenceWithOpenAlex = verifyReference
+
+// PMID by-id helper (used when caller already has a PMID string).
+export { queryPubMedByPmid }
