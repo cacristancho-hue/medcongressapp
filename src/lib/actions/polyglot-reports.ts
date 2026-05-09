@@ -4,14 +4,22 @@ import { createClient } from "@/lib/supabase/server"
 import { OpenAI } from "openai"
 import { revalidatePath } from "next/cache"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 export async function generateAcademicReport(
   congressId: string,
   language: "es" | "en"
 ): Promise<{ success?: boolean; error?: string }> {
+  if (process.env.MEDCONGRESS_AI_ENABLED !== "true") {
+    return { error: "La IA esta desactivada. Activa MEDCONGRESS_AI_ENABLED=true para generar reportes." }
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return { error: "OPENAI_API_KEY no configurada" }
+  }
+
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 

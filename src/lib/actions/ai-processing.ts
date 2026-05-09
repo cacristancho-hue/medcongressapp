@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase/server"
 import OpenAI from "openai"
 import { revalidatePath } from "next/cache"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+function isAiEnabled() {
+  return process.env.MEDCONGRESS_AI_ENABLED === "true"
+}
 
 const SYSTEM_PROMPT = `
 Eres un asistente médico experto de alto nivel, capaz de analizar información de CUALQUIER especialidad médica (Cardiología, Oncología, Pediatría, Cirugía, etc.).
@@ -49,6 +49,18 @@ interface AIReference {
 }
 
 export async function processImageWithAI(imageId: string) {
+  if (!isAiEnabled()) {
+    return { skipped: true, reason: "AI processing is disabled" }
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return { error: "OPENAI_API_KEY no configurada" }
+  }
+
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+
   const supabase = await createClient()
 
   // 1. Obtener datos de la imagen
@@ -117,6 +129,7 @@ export async function processImageWithAI(imageId: string) {
       const refEntries = result.references.map((r: AIReference) => ({
         congress_id: image.congress_id,
         image_id: imageId,
+        user_id: image.user_id,
         raw_reference_text: `${r.detected_title ?? ""} ${r.detected_authors ?? ""} ${r.detected_journal ?? ""}`.trim(),
         detected_title: r.detected_title,
         detected_authors: r.detected_authors,

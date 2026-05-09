@@ -38,7 +38,7 @@ export default async function CongresoDetailPage({ params }: Props) {
       .select("*", { count: "exact", head: true })
       .eq("congress_id", id),
     supabase
-      .from("references")
+      .from("reference_candidates")
       .select("*", { count: "exact", head: true })
       .eq("congress_id", id),
     supabase
@@ -145,7 +145,39 @@ export default async function CongresoDetailPage({ params }: Props) {
           congressId={id}
           userId={user.id}
           currentCount={currentCount}
+          aiEnabled={process.env.MEDCONGRESS_AI_ENABLED === "true"}
         />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Resumen del congreso</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between gap-3">
+            <p className="text-sm text-slate-500">Prepara una vista consolidada por temas y hallazgos.</p>
+            <Link
+              href={`/dashboard/congresos/${id}/resumen`}
+              className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 hover:bg-slate-50"
+            >
+              Ver
+            </Link>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Exportar</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between gap-3">
+            <p className="text-sm text-slate-500">Genera entregables cuando el flujo este disponible.</p>
+            <Link
+              href={`/dashboard/congresos/${id}/exportar`}
+              className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 hover:bg-slate-50"
+            >
+              Abrir
+            </Link>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Reports Section */}

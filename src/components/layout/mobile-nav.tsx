@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, ClipboardList, BookOpen, PlusCircle } from "lucide-react"
+import { LayoutDashboard, ClipboardList, BookOpen, PlusCircle, Settings } from "lucide-react"
 import { clsx } from "clsx"
 
 const TABS = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/dashboard/congresos", label: "Congresos", icon: ClipboardList },
   { href: "/dashboard/biblioteca", label: "Biblioteca", icon: BookOpen },
+  { href: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
 ]
 
 export default function MobileNav() {
@@ -38,7 +39,7 @@ export default function MobileNav() {
       
       {/* Botón de Acción Rápida (Cámara simulada vía link a crear o subir) */}
       <Link
-        href="/dashboard/congresos"
+        href="/dashboard/congresos/nuevo"
         className="bg-blue-600 p-3 rounded-full text-white shadow-lg shadow-blue-200 -mt-8 border-4 border-white active:scale-95 transition-transform"
       >
         <PlusCircle className="w-6 h-6" />

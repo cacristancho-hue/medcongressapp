@@ -106,6 +106,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
       async () => {
         const result = await processImageWithAI(currentPhoto.id)
         if (result.error) throw new Error(result.error)
+        if (result.skipped) throw new Error("La IA esta desactivada en este entorno.")
         return result
       },
       {

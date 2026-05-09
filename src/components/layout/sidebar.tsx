@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { clsx } from "clsx"
-import { LayoutDashboard, ClipboardList, LogOut, BookOpen } from "lucide-react"
+import { LayoutDashboard, ClipboardList, LogOut, BookOpen, Settings } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { Logo } from "@/components/ui/logo"
 import type { User } from "@supabase/supabase-js"
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/dashboard/congresos", label: "Mis congresos", icon: ClipboardList },
   { href: "/dashboard/biblioteca", label: "Biblioteca", icon: BookOpen },
+  { href: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
 ]
 
 interface SidebarProps {

@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MEDCONGRESSAPP
 
-## Getting Started
+Mobile-first medical congress companion for physicians. The MVP shell lets a user create congresses, upload slide photos, keep a private gallery, and prepare the product surface for OCR/AI summaries and export workflows.
 
-First, run the development server:
+This is not e-commerce, a social network, or a generic SaaS dashboard.
+
+## Stack
+
+- Next.js 16.2.4 App Router
+- React 19.2.4
+- TypeScript
+- Tailwind CSS 4
+- Supabase Auth, Postgres, Storage and SSR
+- OpenAI SDK gated by feature flag
+- Sonner notifications
+
+## Local Setup
+
+```bash
+npm install
+cp .env.local.example .env.local
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+## Environment Variables
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+OPENAI_API_KEY=
+MEDCONGRESS_AI_ENABLED=false
+```
+
+`MEDCONGRESS_AI_ENABLED` is disabled by default. Set it to `true` only when you explicitly want server-side OCR/AI calls to OpenAI. `OPENAI_API_KEY` must stay server-side and must not be exposed with a `NEXT_PUBLIC_` prefix.
+
+## Scripts
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run typecheck
+npm run build
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Supabase SQL Order
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run the SQL files in this order from `supabase/`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. `schema.sql`
+2. `schema_fase2.sql`
+3. `schema_fase3.sql`
+4. `schema_fase4.sql`
+5. `schema_fase5.sql`
+6. `schema_fase6_images.sql`
+7. `schema_fase7_reference_candidates.sql`
 
-## Learn More
+`public.references` remains legacy/deprecated for now. New candidate references should use `public.reference_candidates`.
 
-To learn more about Next.js, take a look at the following resources:
+## Checks
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Before handoff or deployment, run:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Do not rename `src/proxy.ts`; it is the verified Next.js 16 auth proxy.

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Upload, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { clsx } from "clsx"
+import { toast } from "sonner"
 import { registerImage } from "@/lib/actions/photos"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { buildCongressPhotoPaths, prepareCongressPhotoVariants } from "@/lib/image-processing"
@@ -26,9 +27,15 @@ interface Props {
   congressId: string
   userId: string
   currentCount: number
+  aiEnabled?: boolean
 }
 
-export default function PhotoUploadZone({ congressId, userId, currentCount }: Props) {
+function isHeicFile(file: File) {
+  const name = file.name.toLowerCase()
+  return file.type === "image/heic" || file.type === "image/heif" || name.endsWith(".heic") || name.endsWith(".heif")
+}
+
+export default function PhotoUploadZone({ congressId, userId, currentCount, aiEnabled = false }: Props) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)
@@ -54,6 +61,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount }: Pr
       } catch (error) {
         const message = error instanceof Error ? error.message : "No se pudo procesar la imagen"
         updateItem(item.id, { status: "error", error: message })
+        toast.error(message)
         return
       }
 
@@ -66,6 +74,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount }: Pr
 
       if (optimizedErr) {
         updateItem(item.id, { status: "error", error: optimizedErr.message })
+        toast.error("No se pudo subir la foto optimizada")
         return
       }
 
@@ -79,6 +88,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount }: Pr
       if (thumbErr) {
         await supabase.storage.from("congress-photos").remove([paths.optimized])
         updateItem(item.id, { status: "error", error: thumbErr.message })
+        toast.error("No se pudo subir la miniatura")
         return
       }
 
@@ -114,16 +124,22 @@ export default function PhotoUploadZone({ congressId, userId, currentCount }: Pr
       if (regErr) {
         await supabase.storage.from("congress-photos").remove([paths.optimized, paths.thumbnail])
         updateItem(item.id, { status: "error", error: regErr })
+        toast.error(regErr)
         return
       }
 
       // Iniciar procesamiento de IA de forma asíncrona
-      updateItem(item.id, { status: "processing" })
-      processImageWithAI(item.id).catch(console.error)
+      if (aiEnabled) {
+        updateItem(item.id, { status: "processing" })
+        processImageWithAI(item.id).catch((error) => {
+          console.error(error)
+          toast.error("La foto se subio, pero fallo el procesamiento de IA")
+        })
+      }
 
       updateItem(item.id, { status: "done" })
     },
-    [userId, congressId, updateItem]
+    [userId, congressId, updateItem, aiEnabled]
   )
 
   const runQueue = useCallback(
@@ -144,8 +160,18 @@ export default function PhotoUploadZone({ congressId, userId, currentCount }: Pr
       const valid: UploadItem[] = []
       for (const file of Array.from(fileList)) {
         if (valid.length >= remaining) break
-        if (!file.type.startsWith("image/")) continue
-        if (file.size > MAX_FILE_SIZE) continue
+        if (isHeicFile(file)) {
+          toast.error("HEIC/HEIF no es compatible en el navegador. Convierte la imagen a JPG, PNG o WEBP.")
+          continue
+        }
+        if (!file.type.startsWith("image/")) {
+          toast.error(`${file.name} no es una imagen compatible.`)
+          continue
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          toast.error(`${file.name} supera el limite de 20 MB.`)
+          continue
+        }
         valid.push({ id: crypto.randomUUID(), file, status: "queued" })
       }
       if (!valid.length) return

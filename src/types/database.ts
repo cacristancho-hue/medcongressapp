@@ -126,6 +126,7 @@ export interface ReferenceCandidate {
   id: string
   congress_id: string
   image_id: string
+  user_id: string
   raw_reference_text: string
   detected_title: string | null
   detected_authors: string | null
