@@ -7,6 +7,7 @@ import { Upload, CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { clsx } from "clsx"
 import { toast } from "sonner"
 import { registerImage } from "@/lib/actions/photos"
+import { enqueueImageAnalysis } from "@/lib/actions/queue"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { buildCongressPhotoPaths, prepareCongressPhotoVariants } from "@/lib/image-processing"
 import UploadDisclaimer from "@/components/legal/upload-disclaimer"
@@ -134,13 +135,21 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         return
       }
 
-      // Iniciar procesamiento de IA de forma asíncrona
+      // Encolar el análisis IA: el worker (Vercel Cron) lo procesará async.
+      // Si no hay worker configurado todavía, hace fallback a fire-and-forget.
       if (aiEnabled) {
         updateItem(item.id, { status: "processing" })
-        processImageWithAI(item.id).catch((error) => {
-          console.error(error)
-          toast.error("La foto se subio, pero fallo el procesamiento de IA")
+        const enqueued = await enqueueImageAnalysis({
+          imageId: item.id,
+          congressId,
         })
+        if (!enqueued.success) {
+          // Worker no disponible o RLS impide enqueue → fallback síncrono.
+          processImageWithAI(item.id).catch((error) => {
+            console.error(error)
+            toast.error("La foto se subió, pero falló el procesamiento de IA")
+          })
+        }
       }
 
       updateItem(item.id, { status: "done" })

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import PhotoUploadZone from "@/components/congresses/photo-upload-zone"
 import PhotoGrid from "@/components/congresses/photo-grid"
 import CongressReport from "@/components/congresses/congress-report"
+import JobsStatus from "@/components/congresses/jobs-status"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -147,6 +148,11 @@ export default async function CongresoDetailPage({ params }: Props) {
           currentCount={currentCount}
           aiEnabled={process.env.MEDCONGRESS_AI_ENABLED === "true"}
         />
+      </div>
+
+      {/* Jobs status (live) */}
+      <div className="mb-8">
+        <JobsStatus congressId={id} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">

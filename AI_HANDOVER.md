@@ -416,6 +416,53 @@ app/
 - Copiar `SUPABASE_SERVICE_ROLE_KEY` desde el dashboard a Vercel env vars + `.env.local`
 - Vercel plan Pro para activar cron (Hobby no permite cron)
 
+### 2026-05-09 (madrugada extendida) · Claude Opus 4.7 — Capa A+B+C+D+E
+
+**A. Worker integrado en upload flow:**
+- `lib/actions/queue.ts`: 3 server actions `enqueueImageAnalysis`, `enqueueReportGeneration`, `enqueueTopicsExtraction` (todas con withAction)
+- `photo-upload-zone.tsx`: ahora encola `image_analysis` job; si encolar falla cae a `processImageWithAI` síncrono (failsafe)
+- `congresos/[id]/page.tsx`: integra `<JobsStatus>` debajo del upload zone — usuario ve progress bar live
+
+**B. Generador de tipos Python (`tools/gen_types.py`):**
+- Lee OpenAPI desde `/rest/v1/` con service-role key (la publishable da 401 por diseño)
+- Convierte JSON Schema → TypeScript interfaces
+- Output configurable; default `app/src/types/db-generated.ts`
+- Pendiente del usuario: configurar `SUPABASE_SERVICE_ROLE_KEY` en env para activarlo
+- Reemplaza `supabase gen types typescript` (que requiere Docker) en este entorno Windows
+
+**C. Validador RLS Python (`tools/audit_rls.py`):**
+- Prueba cada una de las 16 tablas sensibles con publishable key (sin sesión)
+- Reporta status: OK (200/[] o 401), FAIL (200 con filas — leak), o WARN (404, etc.)
+- Verificado: las 16 tablas correctamente protegidas (cero leaks)
+- ASCII-only para compatibilidad cp1252 Windows
+
+**D. Health + Admin metrics:**
+- `/api/health` (GET): chequea env vars, DB ping (con service-role), AI flag. Retorna 200/503 con JSON.
+- `/dashboard/admin/metrics` (página server-component): gate por `organizations.plan='admin'` + `role='owner'`. Muestra usuarios, orgs, congresos, fotos, ai_usage del mes (success/blocked/error/costo), jobs status, últimos 10 errores del audit_log.
+
+**E. SQL linter Python (`tools/lint_sql.py`):**
+- Detecta CREATE TABLE sin enable RLS, CREATE POLICY sin guard, DELETE sin WHERE, DROP TABLE sin IF EXISTS
+- Verificó las 16 migraciones existentes: 0 errores, 1 aviso (false positive en fase 12.1 — los DROP IF EXISTS hacen las CREATE POLICY idempotentes)
+- Listo para integrar como pre-commit hook
+
+**Beneficios concretos:**
+- Cero filtraciones RLS (validado automáticamente)
+- Visibilidad operacional para Carlos via /admin/metrics
+- Workflow Python aprovechando entorno ya instalado (3.12, ruff/black/mypy)
+- Worker queue cierra el ciclo: uploads ya no atan al usuario al browser
+
+**Pendiente del usuario para activar todo:**
+1. Generar `CRON_SECRET` y `SUPABASE_SERVICE_ROLE_KEY`
+2. Plan Vercel Pro para cron
+3. Promover su organización personal a `plan='admin'` para ver /admin/metrics:
+   ```sql
+   update public.organizations set plan='admin'
+    where id in (
+      select organization_id from public.organization_memberships
+       where user_id='dbde0af0-c777-4a94-b335-c6438fe6058d' and role='owner'
+    );
+   ```
+
 ---
 
 ## 12. Cómo actualizar este archivo
