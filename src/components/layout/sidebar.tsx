@@ -77,6 +77,14 @@ export default function Sidebar({ user, profile }: SidebarProps) {
           <LogOut className="w-3 h-3" />
           Cerrar sesión
         </button>
+        <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-slate-400">
+          <Link href="/dashboard/legal/terminos" className="hover:text-slate-700 transition-colors">
+            Términos
+          </Link>
+          <Link href="/dashboard/legal/privacidad" className="hover:text-slate-700 transition-colors">
+            Privacidad
+          </Link>
+        </div>
       </div>
     </aside>
   )

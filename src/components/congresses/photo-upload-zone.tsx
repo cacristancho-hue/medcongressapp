@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { registerImage } from "@/lib/actions/photos"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { buildCongressPhotoPaths, prepareCongressPhotoVariants } from "@/lib/image-processing"
+import UploadDisclaimer from "@/components/legal/upload-disclaimer"
 
 const MAX_PHOTOS = 100
 const MAX_FILE_SIZE = 20 * 1024 * 1024
@@ -42,6 +43,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
   const [isDragging, setIsDragging] = useState(false)
   const [items, setItems] = useState<UploadItem[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  const [hasAcceptedDisclaimer, setHasAcceptedDisclaimer] = useState(false)
 
   const remaining = MAX_PHOTOS - currentCount
 
@@ -210,6 +212,10 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         Límite alcanzado: 100 / 100 fotos. Elimina algunas para subir más.
       </div>
     )
+  }
+
+  if (!hasAcceptedDisclaimer) {
+    return <UploadDisclaimer onAccept={() => setHasAcceptedDisclaimer(true)} />
   }
 
   return (
