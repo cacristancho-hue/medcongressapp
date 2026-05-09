@@ -463,6 +463,40 @@ app/
     );
    ```
 
+### 2026-05-09 (cierre arquitectura) · Claude Opus 4.7 — Capa F+G+H
+
+**F. Full-text search (fase 16):**
+- Columna `search_tsv tsvector` GENERATED ALWAYS AS STORED en `ocr_results`
+- Diccionario español, fallback simple
+- GIN index `idx_ocr_results_search_tsv`
+- RPC `search_ocr(p_term, p_limit)` con `websearch_to_tsquery` + `ts_rank`
+- `lib/actions/search.ts` reescrito: ahora usa RPC FTS, hidrata metadata en una segunda query
+- Performance: O(log n) con índice vs O(n) del ilike anterior
+
+**G. Idempotency keys (fase 17):**
+- Tabla `idempotency_keys` con status processing/succeeded/failed + result/error_message persistidos
+- RLS por user, índice por (user_id, action, created_at)
+- `lib/with-action.ts` extendido: si el input incluye `idempotencyKey`, deduplica:
+  - existing succeeded → retorna resultado guardado sin re-ejecutar
+  - existing processing → retorna error 409-style (concurrencia)
+  - existing failed → retorna error guardado
+  - sin existing → reserva como processing, ejecuta, persiste resultado final
+- Función `idempotency_purge_old()` para limpieza periódica
+
+**H. Playwright E2E:**
+- `@playwright/test` instalado
+- `playwright.config.ts` con projects Chromium, retain-on-failure traces
+- 7 smoke tests en `e2e/public.spec.ts`: landing, login, registro, dashboard redirect, terminos, privacidad, /api/health
+- Scripts npm: `test:e2e`, `test:e2e:install`
+- Workflow CI separado `.github/workflows/e2e.yml` (manual + PR a main) — no lentifica el CI principal
+
+**Verificación**: lint clean, typecheck clean, vitest 6/6, build local 13 rutas OK.
+
+**Pendiente del usuario para correr E2E localmente:**
+- `cd app && npm run test:e2e:install` (descarga Chromium ~150MB)
+- En otra terminal: `npm run dev` o `npm run build && npm run start`
+- `npm run test:e2e`
+
 ---
 
 ## 12. Cómo actualizar este archivo

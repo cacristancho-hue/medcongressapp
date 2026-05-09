@@ -10,70 +10,80 @@ export interface SearchResult {
   cleaned_text: string
   storage_path_thumbnail: string
   specialty: string | null
+  rank: number
 }
 
-interface SupabaseSearchRow {
+interface RpcRow {
   image_id: string
   cleaned_text: string
-  congress_images: {
-    original_filename: string
-    storage_path_thumbnail: string
-    congress_id: string
-    user_id: string
-    congresses: {
-      name: string
-      specialty: string | null
-    }
-  }
+  rank: number
+}
+
+interface ImageDetail {
+  id: string
+  original_filename: string
+  storage_path_thumbnail: string | null
+  congress_id: string
+  congresses: { name: string; specialty: string | null } | null
 }
 
 /**
- * Realiza una búsqueda global en todos los resultados de OCR del usuario.
+ * Global OCR search backed by Postgres FTS (tsvector + GIN).
+ * Replaces the previous ilike approach: orders of magnitude faster on >1k rows.
  */
-export async function searchGlobalOCR(term: string): Promise<{ data?: SearchResult[]; error?: string }> {
-  if (!term || term.length < 3) return { data: [] }
+export async function searchGlobalOCR(
+  term: string
+): Promise<{ data?: SearchResult[]; error?: string }> {
+  if (!term || term.trim().length < 3) return { data: [] }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) return { error: "No autorizado" }
 
-  const { data, error } = await supabase
-    .from("ocr_results")
-    .select(`
-      image_id,
-      cleaned_text,
-      congress_images!inner (
-        original_filename,
-        storage_path_thumbnail,
-        congress_id,
-        user_id,
-        congresses (
-          name,
-          specialty
-        )
-      )
-    `)
-    .ilike("cleaned_text", `%${term}%`)
-    .eq("congress_images.user_id", user.id)
-    .limit(20)
+  // 1) Run the indexed FTS query (RLS enforces user_id filter).
+  const { data: hits, error: rpcError } = await supabase.rpc("search_ocr", {
+    p_term: term.trim(),
+    p_limit: 20,
+  })
 
-  if (error) {
-    console.error("Error en búsqueda global:", error)
+  if (rpcError) {
+    console.error("Error en search_ocr:", rpcError)
     return { error: "Error al realizar la búsqueda" }
   }
 
-  const rawData = data as unknown as SupabaseSearchRow[]
+  const rows = (hits ?? []) as RpcRow[]
+  if (rows.length === 0) return { data: [] }
 
-  const results: SearchResult[] = rawData.map((row) => ({
-    image_id: row.image_id,
-    original_filename: row.congress_images.original_filename,
-    congress_id: row.congress_images.congress_id,
-    congress_name: row.congress_images.congresses.name,
-    cleaned_text: row.cleaned_text,
-    storage_path_thumbnail: row.congress_images.storage_path_thumbnail,
-    specialty: row.congress_images.congresses.specialty
-  }))
+  // 2) Hydrate with image + congress metadata in one round-trip.
+  const imageIds = rows.map((r) => r.image_id)
+  const { data: images } = await supabase
+    .from("congress_images")
+    .select(
+      "id, original_filename, storage_path_thumbnail, congress_id, congresses(name, specialty)"
+    )
+    .in("id", imageIds)
+
+  const byId = new Map<string, ImageDetail>()
+  for (const img of (images ?? []) as unknown as ImageDetail[]) {
+    byId.set(img.id, img)
+  }
+
+  const results: SearchResult[] = rows
+    .map((r) => {
+      const img = byId.get(r.image_id)
+      if (!img) return null
+      return {
+        image_id: r.image_id,
+        cleaned_text: r.cleaned_text,
+        rank: r.rank,
+        original_filename: img.original_filename,
+        congress_id: img.congress_id,
+        congress_name: img.congresses?.name ?? "",
+        storage_path_thumbnail: img.storage_path_thumbnail ?? "",
+        specialty: img.congresses?.specialty ?? null,
+      }
+    })
+    .filter((r): r is SearchResult => r !== null)
 
   return { data: results }
 }
