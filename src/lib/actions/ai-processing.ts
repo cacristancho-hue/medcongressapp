@@ -1,47 +1,13 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import OpenAI from "openai"
 import { revalidatePath } from "next/cache"
 import { checkAiQuota, recordAiUsage } from "@/lib/ai-usage"
+import { analyzeImage } from "@/lib/ai/router"
 
 function isAiEnabled() {
   return process.env.MEDCONGRESS_AI_ENABLED === "true"
 }
-
-const MODEL = "gpt-4o"
-
-const SYSTEM_PROMPT = `
-Eres un asistente médico experto de alto nivel, capaz de analizar información de CUALQUIER especialidad médica (Cardiología, Oncología, Pediatría, Cirugía, etc.).
-Tu tarea es realizar un análisis estructurado y un OCR visual de diapositivas, posters o material gráfico de congresos médicos.
-
-REGLAS CRÍTICAS:
-1. IDENTIFICACIÓN: Determina la especialidad médica predominante en la imagen.
-2. OCR: Extrae TODO el texto legible de forma literal en 'raw_text'. Prioriza títulos, datos numéricos y conclusiones.
-3. RESUMEN MÉDICO: Genera un 'medical_summary' conciso y profesional. Debe incluir:
-   - Objetivo del estudio o tema expuesto.
-   - Datos clave: resultados, estadísticas (p-values, IC, promedios), dosis o criterios diagnósticos mencionados.
-   - Conclusión clínica principal.
-4. TOPICS: Identifica hasta 5 temas clave usando terminología médica técnica.
-5. REFERENCIAS: Detecta citas bibliográficas, nombres de estudios (ej. "EMPA-REG", "KEYNOTE-001") o menciones a journals.
-
-OUTPUT FORMAT (JSON estricto):
-{
-  "specialty": "Especialidad detectada",
-  "raw_text": "texto literal...",
-  "medical_summary": "Resumen profesional...",
-  "topics": ["Tema 1", "Tema 2"],
-  "references": [
-    {
-      "detected_title": "Título del estudio o nombre del ensayo",
-      "detected_authors": "Autores mencionados",
-      "detected_year": "Año",
-      "detected_journal": "Journal o Fuente",
-      "detected_doi": "DOI si es visible"
-    }
-  ]
-}
-`
 
 interface AIReference {
   detected_title?: string
@@ -56,15 +22,10 @@ export async function processImageWithAI(imageId: string) {
     return { skipped: true, reason: "AI processing is disabled" }
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return { error: "OPENAI_API_KEY no configurada" }
-  }
-
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: "No autorizado" }
 
-  // Ownership check (closes audit gap on the canonical pipeline).
   const { data: image, error: imgError } = await supabase
     .from("congress_images")
     .select("id, user_id, congress_id, storage_path, storage_path_optimized")
@@ -76,13 +37,12 @@ export async function processImageWithAI(imageId: string) {
     return { error: "Imagen no encontrada o no autorizada" }
   }
 
-  // Cost guard: monthly quota & cost cap.
   const quota = await checkAiQuota(user.id, "image_analysis")
   if (!quota.allowed) {
     await recordAiUsage({
       userId: user.id,
       actionType: "image_analysis",
-      model: MODEL,
+      model: "router-blocked",
       congressId: image.congress_id,
       imageId,
       status: "blocked",
@@ -96,8 +56,6 @@ export async function processImageWithAI(imageId: string) {
     .update({ ai_status: "ai_pending", ocr_status: "ocr_pending" })
     .eq("id", imageId)
 
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-
   try {
     const { data: signedUrlData, error: urlError } = await supabase.storage
       .from("congress-photos")
@@ -107,25 +65,9 @@ export async function processImageWithAI(imageId: string) {
       throw new Error("No se pudo generar el acceso temporal para la IA")
     }
 
-    const response = await openai.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Analiza esta imagen de congreso médico:" },
-            {
-              type: "image_url",
-              image_url: { url: signedUrlData.signedUrl, detail: "high" },
-            },
-          ],
-        },
-      ],
-      response_format: { type: "json_object" },
+    const { data: result, usage } = await analyzeImage({
+      imageUrl: signedUrlData.signedUrl,
     })
-
-    const result = JSON.parse(response.choices[0].message.content || "{}")
 
     const { error: ocrErr } = await supabase.from("ocr_results").insert({
       image_id: imageId,
@@ -147,7 +89,6 @@ export async function processImageWithAI(imageId: string) {
         detected_doi: r.detected_doi,
         verification_status: "not_verified",
       }))
-
       await supabase.from("reference_candidates").insert(refEntries)
     }
 
@@ -163,16 +104,16 @@ export async function processImageWithAI(imageId: string) {
     await recordAiUsage({
       userId: user.id,
       actionType: "image_analysis",
-      model: MODEL,
-      inputTokens: response.usage?.prompt_tokens,
-      outputTokens: response.usage?.completion_tokens,
+      model: usage.model,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
       congressId: image.congress_id,
       imageId,
       status: "success",
     })
 
     revalidatePath(`/dashboard/congresos/${image.congress_id}`)
-    return { success: true, data: result }
+    return { success: true, data: result, provider: usage.provider }
   } catch (error: unknown) {
     console.error("AI Processing Error:", error)
     const errorMessage =
@@ -186,7 +127,7 @@ export async function processImageWithAI(imageId: string) {
     await recordAiUsage({
       userId: user.id,
       actionType: "image_analysis",
-      model: MODEL,
+      model: "router-error",
       congressId: image.congress_id,
       imageId,
       status: "error",
