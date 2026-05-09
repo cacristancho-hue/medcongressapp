@@ -58,7 +58,66 @@ export async function deleteImage(
   return {}
 }
 
+// Batch delete: single round-trip for many photos.
+// Validates ownership of every id, removes Storage objects in one call,
+// removes DB rows in one query, revalidates the congress page.
+export async function deleteImages(
+  imageIds: string[],
+  congressId: string
+): Promise<{ error?: string; deleted?: number }> {
+  if (imageIds.length === 0) return { deleted: 0 }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autorizado" }
+
+  // Pull only rows the user owns under this congress; this is the ownership gate.
+  const { data: rows, error: fetchErr } = await supabase
+    .from("congress_images")
+    .select("id, storage_path, storage_path_optimized, storage_path_thumbnail")
+    .in("id", imageIds)
+    .eq("user_id", user.id)
+    .eq("congress_id", congressId)
+
+  if (fetchErr) return { error: "No se pudieron leer las fotos a eliminar." }
+
+  const ownedIds = (rows ?? []).map((r) => r.id)
+  if (ownedIds.length === 0) return { error: "Ninguna foto pertenece a esta cuenta." }
+
+  // Collect every storage path (original + optimized + thumb) for the bulk remove.
+  const storagePaths = Array.from(
+    new Set(
+      (rows ?? []).flatMap((r) => [
+        r.storage_path,
+        r.storage_path_optimized,
+        r.storage_path_thumbnail,
+      ])
+        .filter((p): p is string => Boolean(p))
+    )
+  )
+
+  const { error: dbErr } = await supabase
+    .from("congress_images")
+    .delete()
+    .in("id", ownedIds)
+
+  if (dbErr) return { error: "Error al eliminar las fotos. Intenta de nuevo." }
+
+  if (storagePaths.length > 0) {
+    const { error: storageErr } = await supabase.storage
+      .from("congress-photos")
+      .remove(storagePaths)
+    if (storageErr) {
+      console.error("Storage batch delete failed:", storagePaths.length, "paths,", storageErr)
+    }
+  }
+
+  revalidatePath(`/dashboard/congresos/${congressId}`)
+  return { deleted: ownedIds.length }
+}
+
 export async function registerImage(payload: {
+  id: string
   congress_id: string
   user_id: string
   storage_path: string
@@ -120,6 +179,7 @@ export async function registerImage(payload: {
   }
 
   const { error } = await supabase.from("congress_images").insert({
+    id: payload.id,
     congress_id: payload.congress_id,
     user_id: payload.user_id,
     storage_path: payload.storage_path,

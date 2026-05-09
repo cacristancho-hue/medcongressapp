@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { checkAiQuota, recordAiUsage } from "@/lib/ai-usage"
-import { analyzeImage } from "@/lib/ai/router"
+import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
 
 function isAiEnabled() {
   return process.env.MEDCONGRESS_AI_ENABLED === "true"
@@ -76,6 +76,44 @@ export async function processImageWithAI(imageId: string) {
     })
     if (ocrErr) throw ocrErr
 
+    // Persist topics: upsert into 'topics' (one row per unique name in this congress)
+    // and link each to this image via 'image_topics'.
+    if (result.topics?.length > 0) {
+      for (const topic of result.topics) {
+        if (!topic.name?.trim()) continue
+        const { data: existing } = await supabase
+          .from("topics")
+          .select("id")
+          .eq("congress_id", image.congress_id)
+          .eq("name", topic.name)
+          .maybeSingle()
+
+        let topicId = existing?.id
+        if (!topicId) {
+          const { data: created } = await supabase
+            .from("topics")
+            .insert({
+              congress_id: image.congress_id,
+              name: topic.name,
+              category: topic.category ?? null,
+              description: topic.description ?? null,
+            })
+            .select("id")
+            .single()
+          topicId = created?.id
+        }
+
+        if (topicId) {
+          await supabase
+            .from("image_topics")
+            .upsert(
+              { image_id: imageId, topic_id: topicId },
+              { onConflict: "image_id,topic_id" }
+            )
+        }
+      }
+    }
+
     if (result.references?.length > 0) {
       const refEntries = result.references.map((r: AIReference) => ({
         congress_id: image.congress_id,
@@ -134,6 +172,142 @@ export async function processImageWithAI(imageId: string) {
       errorMessage,
     })
 
+    return { error: errorMessage }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Re-extract topics from existing OCR corpus.
+// Cheaper than re-running per-image vision: 1 LLM call over all OCR text.
+// ---------------------------------------------------------------------------
+
+export async function extractCongressTopics(
+  congressId: string
+): Promise<{ success?: boolean; error?: string; topicsCreated?: number; linksCreated?: number }> {
+  if (!isAiEnabled()) return { error: "AI desactivada" }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autorizado" }
+
+  const { data: ownedCongress } = await supabase
+    .from("congresses")
+    .select("id")
+    .eq("id", congressId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+  if (!ownedCongress) return { error: "No autorizado" }
+
+  // Quota check (counts as one image_analysis call — it's a single LLM batch).
+  const quota = await checkAiQuota(user.id, "image_analysis")
+  if (!quota.allowed) {
+    await recordAiUsage({
+      userId: user.id,
+      actionType: "image_analysis",
+      model: "router-blocked",
+      congressId,
+      status: "blocked",
+      errorMessage: quota.reason ?? "quota exceeded",
+    })
+    return { error: quota.reason ?? "Cuota excedida" }
+  }
+
+  // Pull every OCR record for the congress, ordered so indices are stable.
+  const { data: rows, error: fetchErr } = await supabase
+    .from("congress_images")
+    .select("id, ocr_results(cleaned_text)")
+    .eq("congress_id", congressId)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: true })
+
+  if (fetchErr) return { error: "No se pudieron cargar las fotos analizadas." }
+
+  type Row = { id: string; ocr_results: Array<{ cleaned_text: string | null }> | null }
+  const documents = ((rows ?? []) as Row[])
+    .map((r, idx) => ({
+      index: idx,
+      imageId: r.id,
+      text: r.ocr_results?.[0]?.cleaned_text ?? "",
+    }))
+    .filter((d) => d.text.trim().length > 0)
+
+  if (documents.length === 0) {
+    return { error: "No hay OCR previo para extraer tópicos." }
+  }
+
+  try {
+    const { topics, usage } = await extractTopicsFromCorpus({
+      documents: documents.map(({ index, text }) => ({ index, text })),
+    })
+
+    let topicsCreated = 0
+    let linksCreated = 0
+
+    for (const t of topics) {
+      if (!t.name?.trim()) continue
+
+      const { data: existing } = await supabase
+        .from("topics")
+        .select("id")
+        .eq("congress_id", congressId)
+        .eq("name", t.name)
+        .maybeSingle()
+
+      let topicId = existing?.id
+      if (!topicId) {
+        const { data: created } = await supabase
+          .from("topics")
+          .insert({
+            congress_id: congressId,
+            name: t.name,
+            category: t.category ?? null,
+            description: t.description ?? null,
+          })
+          .select("id")
+          .single()
+        topicId = created?.id
+        if (topicId) topicsCreated++
+      }
+
+      if (!topicId) continue
+
+      // Map indices back to image ids and upsert relations.
+      for (const idx of t.image_indices ?? []) {
+        const doc = documents[idx]
+        if (!doc) continue
+        const { error: linkErr } = await supabase
+          .from("image_topics")
+          .upsert(
+            { image_id: doc.imageId, topic_id: topicId },
+            { onConflict: "image_id,topic_id" }
+          )
+        if (!linkErr) linksCreated++
+      }
+    }
+
+    await recordAiUsage({
+      userId: user.id,
+      actionType: "image_analysis",
+      model: usage.model,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      congressId,
+      status: "success",
+    })
+
+    revalidatePath(`/dashboard/congresos/${congressId}`)
+    revalidatePath(`/dashboard/congresos/${congressId}/resumen`)
+    return { success: true, topicsCreated, linksCreated }
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Error desconocido"
+    await recordAiUsage({
+      userId: user.id,
+      actionType: "image_analysis",
+      model: "router-error",
+      congressId,
+      status: "error",
+      errorMessage,
+    })
     return { error: errorMessage }
   }
 }

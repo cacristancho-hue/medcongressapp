@@ -37,11 +37,15 @@ export interface ImageProcessingOptions {
   thumbnailQuality?: number
 }
 
+// Tuned 2026-05-09 for medical congress slides:
+// - Gemini 2.5 Flash Vision accepts up to 3072×3072; downscales beyond that.
+// - Bibliographic references in slide footers need readable text → high quality.
+// - Trade-off: ~1-2 MB per photo (was ~300-500 KB), still well under 20 MB cap.
 const DEFAULT_OPTIONS: Required<ImageProcessingOptions> = {
-  optimizedMaxWidth: 2200,
-  optimizedMaxHeight: 2200,
-  optimizedMinMajor: 1600,
-  optimizedQuality: 0.84,
+  optimizedMaxWidth: 3072,
+  optimizedMaxHeight: 3072,
+  optimizedMinMajor: 2200,
+  optimizedQuality: 0.92,
   thumbnailMaxWidth: 420,
   thumbnailMaxHeight: 420,
   thumbnailQuality: 0.7,

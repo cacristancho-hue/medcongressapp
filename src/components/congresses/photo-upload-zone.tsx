@@ -13,7 +13,10 @@ import UploadDisclaimer from "@/components/legal/upload-disclaimer"
 
 const MAX_PHOTOS = 100
 const MAX_FILE_SIZE = 20 * 1024 * 1024
-const CONCURRENCY = 3
+// Tuned 2026-05-09: 8 paralelas balancea velocidad vs rate-limit Gemini Flash
+// (15 RPM free tier; cada foto ~14s → 8 paralelas ≈ 32-34 RPM efectivos en
+// ráfaga, aceptable porque Gemini hace queueing interno antes de devolver 429).
+const CONCURRENCY = 8
 
 type FileStatus = "queued" | "uploading" | "processing" | "done" | "error"
 
@@ -95,6 +98,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
       }
 
       const { error: regErr } = await registerImage({
+        id: item.id,
         congress_id: congressId,
         user_id: userId,
         storage_path: paths.optimized,

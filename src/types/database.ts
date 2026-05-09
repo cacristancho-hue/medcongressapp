@@ -139,3 +139,75 @@ export interface ReferenceCandidate {
   confidence_score: number | null
   created_at: string
 }
+
+// --- FASE 12: MULTI-TENANT FOUNDATION ---
+
+export type OrganizationType =
+  | "individual"
+  | "society"
+  | "hospital"
+  | "university"
+  | "enterprise"
+  | "admin"
+
+export type OrganizationPlan =
+  | "free"
+  | "congress"
+  | "academic"
+  | "enterprise"
+  | "admin"
+
+export type MembershipRole = "owner" | "admin" | "member" | "viewer"
+
+export interface Organization {
+  id: string
+  name: string
+  slug: string | null
+  type: OrganizationType
+  plan: OrganizationPlan
+  country: string | null
+  specialty: string | null
+  metadata: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface OrganizationMembership {
+  organization_id: string
+  user_id: string
+  role: MembershipRole
+  created_at: string
+}
+
+// --- FASE 11: AI usage tracking ---
+
+export type AiActionType =
+  | "image_analysis"
+  | "report_generation"
+  | "reference_verification"
+
+export type AiUsageStatus = "success" | "blocked" | "error"
+
+export interface AiUsageLimits {
+  user_id: string
+  plan: OrganizationPlan
+  monthly_image_quota: number
+  monthly_report_quota: number
+  monthly_cost_cap_usd: number
+  updated_at: string
+}
+
+export interface AiUsageRecord {
+  id: string
+  user_id: string
+  action_type: AiActionType
+  model: string | null
+  input_tokens: number | null
+  output_tokens: number | null
+  estimated_cost_usd: number | null
+  congress_id: string | null
+  image_id: string | null
+  status: AiUsageStatus
+  error_message: string | null
+  created_at: string
+}

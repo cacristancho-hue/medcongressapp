@@ -1,13 +1,14 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
-import { deleteImage } from "@/lib/actions/photos"
+import { deleteImage, deleteImages } from "@/lib/actions/photos"
+import { toast } from "sonner"
 import PhotoCard from "./photo-card"
 import PhotoViewer from "./photo-viewer"
 import CongressSearch from "./congress-search"
 import { clsx } from "clsx"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Trash2, CheckSquare, Square, X } from "lucide-react"
+import { Trash2, CheckSquare, Square, X, ListChecks } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
 interface Photo {
@@ -96,13 +97,33 @@ export default function PhotoGrid({ congressId, initialImages }: Props) {
     setSelectedIds(next)
   }
 
+  const toggleSelectAll = () => {
+    const visibleIds = filteredImages.map((img) => img.id)
+    const allSelected = visibleIds.every((id) => selectedIds.has(id))
+    if (allSelected) {
+      const next = new Set(selectedIds)
+      visibleIds.forEach((id) => next.delete(id))
+      setSelectedIds(next)
+    } else {
+      const next = new Set(selectedIds)
+      visibleIds.forEach((id) => next.add(id))
+      setSelectedIds(next)
+    }
+  }
+
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return
-    if (!confirm(`¿Estás seguro de eliminar estas ${selectedIds.size} fotos?`)) return
+    if (!confirm(`¿Eliminar ${selectedIds.size} foto${selectedIds.size === 1 ? "" : "s"}? Esta acción no se puede deshacer.`)) return
 
-    const toDelete = images.filter(img => selectedIds.has(img.id))
-    await Promise.all(toDelete.map(img => deleteImage(img.id, img.storage_path, congressId)))
-    
+    const ids = Array.from(selectedIds)
+    const result = await deleteImages(ids, congressId)
+
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
+
+    toast.success(`${result.deleted ?? ids.length} foto${(result.deleted ?? ids.length) === 1 ? "" : "s"} eliminada${(result.deleted ?? ids.length) === 1 ? "" : "s"}`)
     setSelectedIds(new Set())
     setIsSelectionMode(false)
   }
@@ -128,23 +149,37 @@ export default function PhotoGrid({ congressId, initialImages }: Props) {
         <div className="flex items-center gap-2">
           {isSelectionMode ? (
             <>
-              <span className="text-xs font-bold text-blue-600 mr-2">{selectedIds.size} seleccionadas</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <span className="text-xs font-bold text-blue-600 mr-2">
+                {selectedIds.size} seleccionada{selectedIds.size === 1 ? "" : "s"}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleSelectAll}
+                className="h-8 text-xs"
+                title="Seleccionar / deseleccionar todas las visibles"
+              >
+                <ListChecks className="h-3 w-3 mr-1" />
+                {filteredImages.every((img) => selectedIds.has(img.id)) && filteredImages.length > 0
+                  ? "Deseleccionar todas"
+                  : "Seleccionar todas"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
                 className="h-8 text-xs"
               >
                 <X className="h-3 w-3 mr-1" /> Cancelar
               </Button>
-              <Button 
-                variant="destructive" 
-                size="sm" 
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={handleBatchDelete}
                 disabled={selectedIds.size === 0}
                 className="h-8 text-xs font-bold"
               >
-                <Trash2 className="h-3 w-3 mr-1" /> Eliminar Lote
+                <Trash2 className="h-3 w-3 mr-1" /> Eliminar lote
               </Button>
             </>
           ) : (
