@@ -3,10 +3,13 @@
 import { createClient } from "@/lib/supabase/server"
 import OpenAI from "openai"
 import { revalidatePath } from "next/cache"
+import { checkAiQuota, recordAiUsage } from "@/lib/ai-usage"
 
 function isAiEnabled() {
   return process.env.MEDCONGRESS_AI_ENABLED === "true"
 }
+
+const MODEL = "gpt-4o"
 
 const SYSTEM_PROMPT = `
 Eres un asistente médico experto de alto nivel, capaz de analizar información de CUALQUIER especialidad médica (Cardiología, Oncología, Pediatría, Cirugía, etc.).
@@ -57,31 +60,45 @@ export async function processImageWithAI(imageId: string) {
     return { error: "OPENAI_API_KEY no configurada" }
   }
 
-  const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
-
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "No autorizado" }
 
-  // 1. Obtener datos de la imagen
+  // Ownership check (closes audit gap on the canonical pipeline).
   const { data: image, error: imgError } = await supabase
     .from("congress_images")
-    .select("*")
+    .select("id, user_id, congress_id, storage_path, storage_path_optimized")
     .eq("id", imageId)
+    .eq("user_id", user.id)
     .single()
 
   if (imgError || !image) {
-    return { error: "Imagen no encontrada" }
+    return { error: "Imagen no encontrada o no autorizada" }
   }
 
-  // Marcar como procesando
+  // Cost guard: monthly quota & cost cap.
+  const quota = await checkAiQuota(user.id, "image_analysis")
+  if (!quota.allowed) {
+    await recordAiUsage({
+      userId: user.id,
+      actionType: "image_analysis",
+      model: MODEL,
+      congressId: image.congress_id,
+      imageId,
+      status: "blocked",
+      errorMessage: quota.reason ?? "quota exceeded",
+    })
+    return { error: quota.reason ?? "Cuota excedida" }
+  }
+
   await supabase
     .from("congress_images")
     .update({ ai_status: "ai_pending", ocr_status: "ocr_pending" })
     .eq("id", imageId)
 
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
   try {
-    // 2. Generar URL firmada (Pase temporal de 5 minutos)
     const { data: signedUrlData, error: urlError } = await supabase.storage
       .from("congress-photos")
       .createSignedUrl(image.storage_path_optimized || image.storage_path, 300)
@@ -90,9 +107,8 @@ export async function processImageWithAI(imageId: string) {
       throw new Error("No se pudo generar el acceso temporal para la IA")
     }
 
-    // 3. Llamar a OpenAI (GPT-4o) usando la URL firmada
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: MODEL,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
@@ -101,10 +117,7 @@ export async function processImageWithAI(imageId: string) {
             { type: "text", text: "Analiza esta imagen de congreso médico:" },
             {
               type: "image_url",
-              image_url: {
-                url: signedUrlData.signedUrl,
-                detail: "high"
-              },
+              image_url: { url: signedUrlData.signedUrl, detail: "high" },
             },
           ],
         },
@@ -114,17 +127,13 @@ export async function processImageWithAI(imageId: string) {
 
     const result = JSON.parse(response.choices[0].message.content || "{}")
 
-    // 4. Guardar resultados
-    // Guardar OCR
     const { error: ocrErr } = await supabase.from("ocr_results").insert({
       image_id: imageId,
       raw_text: result.raw_text,
-      cleaned_text: result.medical_summary, // Usamos el resumen como versión "limpia" inicial
+      cleaned_text: result.medical_summary,
     })
-
     if (ocrErr) throw ocrErr
 
-    // Guardar Referencias Candidatas
     if (result.references?.length > 0) {
       const refEntries = result.references.map((r: AIReference) => ({
         congress_id: image.congress_id,
@@ -138,11 +147,10 @@ export async function processImageWithAI(imageId: string) {
         detected_doi: r.detected_doi,
         verification_status: "not_verified",
       }))
-      
+
       await supabase.from("reference_candidates").insert(refEntries)
     }
 
-    // Actualizar estados finales en congress_images
     await supabase
       .from("congress_images")
       .update({
@@ -152,20 +160,38 @@ export async function processImageWithAI(imageId: string) {
       })
       .eq("id", imageId)
 
+    await recordAiUsage({
+      userId: user.id,
+      actionType: "image_analysis",
+      model: MODEL,
+      inputTokens: response.usage?.prompt_tokens,
+      outputTokens: response.usage?.completion_tokens,
+      congressId: image.congress_id,
+      imageId,
+      status: "success",
+    })
+
     revalidatePath(`/dashboard/congresos/${image.congress_id}`)
     return { success: true, data: result }
-
   } catch (error: unknown) {
     console.error("AI Processing Error:", error)
-    const errorMessage = error instanceof Error ? error.message : "Error desconocido en el procesamiento"
-    
+    const errorMessage =
+      error instanceof Error ? error.message : "Error desconocido en el procesamiento"
+
     await supabase
       .from("congress_images")
-      .update({
-        ai_status: "ai_failed",
-        ocr_status: "ocr_failed",
-      })
+      .update({ ai_status: "ai_failed", ocr_status: "ocr_failed" })
       .eq("id", imageId)
+
+    await recordAiUsage({
+      userId: user.id,
+      actionType: "image_analysis",
+      model: MODEL,
+      congressId: image.congress_id,
+      imageId,
+      status: "error",
+      errorMessage,
+    })
 
     return { error: errorMessage }
   }
