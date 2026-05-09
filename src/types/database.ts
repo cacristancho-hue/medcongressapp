@@ -1,0 +1,139 @@
+export type UserRole = "resident" | "fellow" | "specialist" | "professor"
+
+export type CongressStatus = "active" | "archived"
+
+export type ImageStatus =
+  | "uploaded"
+  | "processing"
+  | "ocr_done"
+  | "analyzed"
+  | "failed"
+  | "deleted_original"
+
+export type UploadStatus =
+  | "local_pending"
+  | "compressed"
+  | "upload_pending"
+  | "uploaded"
+  | "uploaded_to_supabase"
+  | "upload_failed"
+
+export type ExternalSyncStatus =
+  | "not_configured"
+  | "sync_pending"
+  | "synced_to_drive"
+  | "synced_to_onedrive"
+  | "sync_failed"
+
+export type OcrStatus = "pending" | "ocr_pending" | "ocr_done" | "ocr_failed"
+
+export type AiStatus = "pending" | "ai_pending" | "ai_done" | "ai_failed"
+
+// --- SCHEMA TYPES (FASES 1 & 2) ---
+
+export interface Profile {
+  id: string
+  user_id: string
+  full_name: string | null
+  role: UserRole | null
+  specialty: string | null
+  country: string | null
+  created_at: string
+}
+
+export interface Congress {
+  id: string
+  user_id: string
+  name: string
+  location: string | null
+  start_date: string | null
+  end_date: string | null
+  specialty: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface CongressImage {
+  id: string
+  congress_id: string
+  user_id: string
+  storage_path: string
+  storage_path_optimized: string | null
+  storage_path_thumbnail: string | null
+  original_filename: string
+  file_size: number | null
+  mime_type: string | null
+  status: ImageStatus
+  width_original: number | null
+  height_original: number | null
+  width_optimized: number | null
+  height_optimized: number | null
+  width_thumbnail: number | null
+  height_thumbnail: number | null
+  size_original_bytes: number | null
+  size_optimized_bytes: number | null
+  size_thumbnail_bytes: number | null
+  compression_quality: number | null
+  compression_ratio: number | null
+  mime_type_original: string | null
+  mime_type_optimized: string | null
+  mime_type_thumbnail: string | null
+  upload_status: UploadStatus | null
+  external_sync_status: ExternalSyncStatus | null
+  ocr_status: OcrStatus | null
+  ai_status: AiStatus | null
+  upload_error: string | null
+  image_order: number
+  created_at: string
+  updated_at?: string
+}
+
+// --- FUTURE PHASES (PLANNED) ---
+
+export type VerificationStatus =
+  | "verified"
+  | "partially_verified"
+  | "not_verified"
+  | "ambiguous"
+
+export type OutputType =
+  | "summary_by_topic"
+  | "academic_report"
+  | "bibliography"
+  | "class_outline"
+  | "notebooklm_pack"
+  | "slide_outline"
+
+export interface OcrResult {
+  id: string
+  image_id: string
+  raw_text: string | null
+  cleaned_text: string | null
+  confidence_score: number | null
+  created_at: string
+}
+
+export interface Topic {
+  id: string
+  congress_id: string
+  name: string
+  category: string | null
+  description: string | null
+  created_at: string
+}
+
+export interface ReferenceCandidate {
+  id: string
+  congress_id: string
+  image_id: string
+  raw_reference_text: string
+  detected_title: string | null
+  detected_authors: string | null
+  detected_year: string | null
+  detected_journal: string | null
+  detected_doi: string | null
+  detected_pmid: string | null
+  verification_status: VerificationStatus
+  confidence_score: number | null
+  created_at: string
+}
