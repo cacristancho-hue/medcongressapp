@@ -115,7 +115,7 @@ export async function runMedicalAssistant(
 
   // 3. Academic report
   if ((reportsCount ?? 0) === 0 && (ocrCount ?? 0) > 0) {
-    const r = await generateAcademicReport(congressId, language)
+    const r = await generateAcademicReport({ congressId, language })
     steps.push({
       key: "report",
       label: "Reporte académico",

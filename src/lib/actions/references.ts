@@ -1,8 +1,8 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { verifyReference, ReferenceInput } from "@/lib/reference-verification"
+import { withAction } from "@/lib/with-action"
 
 interface CandidateRow {
   id: string
@@ -26,21 +26,28 @@ function toInput(row: CandidateRow): ReferenceInput {
   }
 }
 
-export async function verifySingleReference(referenceId: string, congressId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+interface VerifySingleInput {
+  referenceId: string
+  congressId: string
+}
 
-  if (!user) return { error: "No autorizado" }
+export const verifySingleReference = withAction({
+  name: "reference.verify",
+  rateLimit: "reference_verify",
+})(async ({ user, supabase }, input: VerifySingleInput) => {
+  const { referenceId, congressId } = input
 
   const { data: ref, error: fetchError } = await supabase
     .from("reference_candidates")
-    .select("id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, detected_doi, congress_id, user_id")
+    .select(
+      "id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, detected_doi, congress_id, user_id"
+    )
     .eq("id", referenceId)
     .single()
 
-  if (fetchError || !ref) return { error: "Referencia no encontrada" }
+  if (fetchError || !ref) throw new Error("Referencia no encontrada")
   if (ref.user_id !== user.id || ref.congress_id !== congressId) {
-    return { error: "No autorizado" }
+    throw new Error("No autorizado")
   }
 
   const result = await verifyReference(toInput(ref))
@@ -61,36 +68,32 @@ export async function verifySingleReference(referenceId: string, congressId: str
     })
     .eq("id", referenceId)
 
-  if (updateError) return { error: "Error al actualizar la referencia" }
+  if (updateError) throw new Error("Error al actualizar la referencia")
 
   revalidatePath(`/dashboard/congresos/${congressId}`)
-  return { success: true, data: result }
-}
+  return { data: result }
+})
 
-export async function verifyCongressReferences(
-  congressId: string
-): Promise<{ success?: boolean; error?: string; processed?: number; retracted?: number }> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return { error: "No autorizado" }
-
+export const verifyCongressReferences = withAction({
+  name: "reference.verify",
+  rateLimit: "reference_verify",
+})(async ({ user, supabase }, congressId: string) => {
   const { data: refs, error } = await supabase
     .from("reference_candidates")
-    .select("id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, detected_doi")
+    .select(
+      "id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, detected_doi"
+    )
     .eq("congress_id", congressId)
     .eq("user_id", user.id)
     .neq("verification_status", "verified")
     .neq("verification_status", "retracted")
 
-  if (error) return { error: "Error al cargar las referencias" }
-  if (!refs?.length) return { success: true, processed: 0, retracted: 0 }
+  if (error) throw new Error("Error al cargar las referencias")
+  if (!refs?.length) return { processed: 0, retracted: 0 }
 
   let processed = 0
   let retracted = 0
 
-  // Sequential — multi-source upstream APIs (CrossRef + PubMed + OpenAlex)
-  // already do 3 round-trips per ref. Parallelism would risk 429s.
   for (const ref of refs) {
     try {
       const result = await verifyReference(toInput(ref))
@@ -114,7 +117,6 @@ export async function verifyCongressReferences(
       processed++
       if (result.retracted) retracted++
 
-      // Polite pause between refs (NIH recommends ≤3 req/s without API key).
       await new Promise((resolve) => setTimeout(resolve, 350))
     } catch (err) {
       console.error(`Error verificando referencia ${ref.id}:`, err)
@@ -122,5 +124,5 @@ export async function verifyCongressReferences(
   }
 
   revalidatePath(`/dashboard/congresos/${congressId}`)
-  return { success: true, processed, retracted }
-}
+  return { processed, retracted }
+})

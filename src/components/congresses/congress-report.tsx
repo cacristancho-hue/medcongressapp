@@ -31,8 +31,8 @@ export default function CongressReport({ congressId, reports }: Props) {
 
   async function handleGenerate() {
     startGeneration(async () => {
-      const result = await generateAcademicReport(congressId, lang)
-      if (result.error) {
+      const result = await generateAcademicReport({ congressId, language: lang })
+      if (!result.success) {
         toast.error(result.error)
       } else {
         toast.success("Esquema académico generado con éxito")

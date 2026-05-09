@@ -384,6 +384,38 @@ app/
 
 **Próximo bloque sugerido**: Worker para `ai_jobs` (Supabase Edge Function o Vercel Cron) + UI live-status + admin dashboard para Carlos.
 
+### 2026-05-09 (madrugada) · Claude Opus 4.7 — Worker + refactor + live-status
+
+**1. Server actions refactorizadas a `withAction`:**
+- `processImageWithAI`, `extractCongressTopics` (ai-processing.ts)
+- `generateAcademicReport` (polyglot-reports.ts) — firma cambió a `{congressId, language}`
+- `verifySingleReference` (firma cambió a `{referenceId, congressId}`), `verifyCongressReferences` (references.ts)
+- Cada una gana automáticamente: auth + rate limit + AI quota + audit log + manejo uniforme de errores
+- ~150 líneas de boilerplate eliminadas
+- Callers ajustados: `congress-report.tsx`, `assistant.ts`, `photo-viewer.tsx` (chequea `result.success` en lugar de `result.error`/`result.skipped`)
+
+**2. Worker para `ai_jobs` (Vercel Cron):**
+- `app/api/jobs/worker/route.ts`: POST con Bearer `CRON_SECRET`
+- Llama RPC `ai_jobs_claim_next` (FOR UPDATE SKIP LOCKED — race-safe)
+- Dispatcher por `job_type`: image_analysis, topics_extraction, report_generation, reference_verification
+- Retry con backoff: si attempt_count < max_attempts, vuelve a 'pending'; si no, 'failed'
+- `vercel.json` con cron schedule `* * * * *` (1/min, requiere Vercel Pro plan)
+- Nueva utility `lib/supabase/service.ts` para cliente service-role (solo cron + admin scripts, NUNCA en server actions)
+- 2 env vars nuevas pendientes: `CRON_SECRET` (cualquier string aleatorio largo) y `SUPABASE_SERVICE_ROLE_KEY` (Project Settings > API)
+
+**3. UI live-status (Supabase Realtime):**
+- `components/congresses/jobs-status.tsx`: client component
+- Suscribe a `postgres_changes` en `ai_jobs` filtrado por `congress_id`
+- Muestra: progress bar global + 4 stats (pendientes / en curso / OK / fallidos) + detalle de errores
+- Listo para integrar en página de detalle del congreso
+
+**Verificación**: lint clean, 6/6 tests pass, typecheck clean. Build local OOM por Turbopack (problema de RAM local, no del código); CI Ubuntu lo procesa OK.
+
+**Pendiente del usuario**:
+- Crear `CRON_SECRET` (`openssl rand -hex 32`) y agregarlo a Vercel env vars + `.env.local`
+- Copiar `SUPABASE_SERVICE_ROLE_KEY` desde el dashboard a Vercel env vars + `.env.local`
+- Vercel plan Pro para activar cron (Hobby no permite cron)
+
 ---
 
 ## 12. Cómo actualizar este archivo

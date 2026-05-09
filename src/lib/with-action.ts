@@ -7,10 +7,15 @@
 //     name: "ai.image_analysis",
 //     rateLimit: "image_analysis",
 //     quota: "image_analysis",
-//   })(async ({ user, supabase }, payload: { imageId: string }) => {
-//     ...
-//     return { success: true }
+//   })(async ({ user, supabase }, imageId: string) => {
+//     // do stuff
+//     return { someField: 42 }
 //   })
+//
+//   // Caller side:
+//   const result = await myAction("some-id")
+//   if (!result.success) toast.error(result.error)
+//   else use(result.someField)
 
 import { createClient } from "@/lib/supabase/server"
 import { auditLog, log, type AuditAction } from "@/lib/logger"
@@ -27,7 +32,6 @@ export interface ActionConfig {
   name: AuditAction
   rateLimit?: RateLimitBucket
   quota?: AiActionType
-  // If true, action is denied when AI feature flag is off.
   requiresAi?: boolean
 }
 
@@ -35,16 +39,11 @@ export type ActionResult<T> =
   | ({ success: true } & T)
   | { success: false; error: string }
 
-type ActionHandler<TInput, TOutput> = (
-  ctx: ActionContext,
-  input: TInput
-) => Promise<TOutput>
-
-export function withAction<TInput, TOutput extends Record<string, unknown>>(
-  config: ActionConfig
-) {
-  return (handler: ActionHandler<TInput, TOutput>) => {
-    return async (input: TInput): Promise<ActionResult<TOutput>> => {
+export function withAction(config: ActionConfig) {
+  return function wrap<TInput, TOutput extends Record<string, unknown>>(
+    handler: (ctx: ActionContext, input: TInput) => Promise<TOutput>
+  ): (input: TInput) => Promise<ActionResult<TOutput>> {
+    return async (input: TInput) => {
       const startedAt = Date.now()
       const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -54,12 +53,10 @@ export function withAction<TInput, TOutput extends Record<string, unknown>>(
         return { success: false, error: "No autorizado" }
       }
 
-      // AI feature flag gate.
       if (config.requiresAi && process.env.MEDCONGRESS_AI_ENABLED !== "true") {
         return { success: false, error: "La IA está desactivada en este entorno." }
       }
 
-      // Rate limit.
       if (config.rateLimit) {
         const rl = await checkRateLimit(user.id, config.rateLimit)
         if (!rl.allowed) {
@@ -73,7 +70,6 @@ export function withAction<TInput, TOutput extends Record<string, unknown>>(
         }
       }
 
-      // Monthly quota.
       if (config.quota) {
         const quota = await checkAiQuota(user.id, config.quota)
         if (!quota.allowed) {

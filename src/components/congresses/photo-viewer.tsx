@@ -105,8 +105,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
     toast.promise(
       async () => {
         const result = await processImageWithAI(currentPhoto.id)
-        if (result.error) throw new Error(result.error)
-        if (result.skipped) throw new Error("La IA esta desactivada en este entorno.")
+        if (!result.success) throw new Error(result.error)
         return result
       },
       {
@@ -141,7 +140,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
     toast.promise(
       async () => {
         const result = await verifyCongressReferences(congressId)
-        if (result.error) throw new Error(result.error)
+        if (!result.success) throw new Error(result.error)
         const refreshed = await getImageAnalysis(currentPhoto.id)
         setAnalysisData(refreshed as unknown as AnalysisData)
         return result
