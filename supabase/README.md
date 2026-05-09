@@ -9,5 +9,6 @@ Execute the migrations manually in the Supabase SQL Editor in this order:
 5. `schema_fase5.sql`
 6. `schema_fase6_images.sql`
 7. `schema_fase7_reference_candidates.sql`
+8. `schema_fase8_fixes.sql` (BUG-1 report_type CHECK + RIESGO-2 reports UPDATE policy)
 
 `public.references` remains available as a legacy/deprecated table for now. The active candidate-reference flow uses `public.reference_candidates`.
