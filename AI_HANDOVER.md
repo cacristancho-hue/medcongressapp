@@ -349,6 +349,41 @@ app/
 
 **Nombre comercial**: postpuesto explícitamente por Carlos hasta tener bases sólidas. Candidatos en stand-by: CongressLens / CongressBrief / CongressVault.
 
+### 2026-05-09 (noche) · Claude Opus 4.7 — Arquitectura A+B+C+D
+
+**Cuatro capas críticas de arquitectura completadas:**
+
+**A. Audit log + structured logging** (fase 13):
+- Tabla `audit_log` con RLS por user; 4 índices (user, action, organization, status≠success)
+- `lib/logger.ts`: `log()` JSON one-liner para stdout y `auditLog()` que persiste fila
+- 17 tipos de `AuditAction` definidos (auth.*, congress.*, image.*, ai.*, etc.)
+
+**B. Rate limiting** (fase 14):
+- Tabla `rate_limit_buckets` con función atómica `rate_limit_check()` (SECURITY DEFINER)
+- `lib/rate-limit.ts`: 6 buckets configurados (image_analysis 30/min, report_generation 5/5min, assistant_run 3/5min, reference_verify 10/min, auth_signup 5/h, auth_login 20/15min)
+- Fail-open si DB falla (no bloquea usuarios por infra issue)
+- Función purge para limpieza periódica
+
+**C. Background jobs queue** (fase 15):
+- Tabla `ai_jobs` con status enum, retry con backoff manual, priority queue
+- Función `ai_jobs_claim_next()` con `FOR UPDATE SKIP LOCKED` (race-safe)
+- `lib/jobs.ts`: `enqueueJob()` y `getCongressJobs()` (lectura)
+- Worker pendiente: Supabase Edge Function en próxima iteración
+
+**D. Server action wrapper** `lib/with-action.ts`:
+- HOC que envuelve cualquier server action con auth + rate limit + AI quota + audit log
+- Reemplaza ~30 líneas de boilerplate por config declarativa
+- Tipo `ActionResult<T>` discriminado para manejo uniforme de errores
+- Usado en próxima refactorización de `ai-processing.ts`, `polyglot-reports.ts`, `assistant.ts`
+
+**Decisión técnica**: Postgres-based rate limiting + queue (no Upstash, no Inngest). Razones:
+- Cero dependencias externas
+- Una sola fuente de verdad
+- Costo cero en tier Pro de Supabase
+- Migrar a Inngest/Trigger.dev en v2 si volumen lo justifica
+
+**Próximo bloque sugerido**: Worker para `ai_jobs` (Supabase Edge Function o Vercel Cron) + UI live-status + admin dashboard para Carlos.
+
 ---
 
 ## 12. Cómo actualizar este archivo
