@@ -1,0 +1,46 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "restore": "Restore",
+    "loading": "Loading…",
+    "error": "Error",
+    "ok": "OK",
+    "close": "Close",
+    "back": "Back"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "signup": "Create account",
+    "email": "Email",
+    "password": "Password"
+  },
+  "dashboard": {
+    "title": "MedCongress",
+    "myCongresses": "My congresses",
+    "library": "Library",
+    "trash": "Trash",
+    "settings": "Settings",
+    "newCongress": "New congress"
+  },
+  "congress": {
+    "name": "Name",
+    "specialty": "Specialty",
+    "location": "Location",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "notes": "Notes"
+  },
+  "ai": {
+    "assistantTitle": "Clinical assistant",
+    "assistantCta": "Run AI assistant",
+    "processing": "Processing with AI…",
+    "topicsExtracted": "{n, plural, =0 {No topics extracted} =1 {1 topic extracted} other {# topics extracted}}"
+  },
+  "legal": {
+    "termsTitle": "Terms of use",
+    "privacyTitle": "Privacy policy"
+  }
+}

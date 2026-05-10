@@ -1,0 +1,46 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "restore": "Restaurar",
+    "loading": "Carregando…",
+    "error": "Erro",
+    "ok": "OK",
+    "close": "Fechar",
+    "back": "Voltar"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "signup": "Criar conta",
+    "email": "E-mail",
+    "password": "Senha"
+  },
+  "dashboard": {
+    "title": "MedCongress",
+    "myCongresses": "Meus congressos",
+    "library": "Biblioteca",
+    "trash": "Lixeira",
+    "settings": "Ajustes",
+    "newCongress": "Novo congresso"
+  },
+  "congress": {
+    "name": "Nome",
+    "specialty": "Especialidade",
+    "location": "Localização",
+    "startDate": "Data de início",
+    "endDate": "Data de término",
+    "notes": "Notas"
+  },
+  "ai": {
+    "assistantTitle": "Assistente clínico",
+    "assistantCta": "Iniciar assistência de inteligência artificial",
+    "processing": "Processando com IA…",
+    "topicsExtracted": "{n, plural, =0 {Nenhum tópico extraído} =1 {1 tópico extraído} other {# tópicos extraídos}}"
+  },
+  "legal": {
+    "termsTitle": "Termos de uso",
+    "privacyTitle": "Política de privacidade"
+  }
+}

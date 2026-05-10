@@ -617,6 +617,32 @@ app/
 
 **Verificación**: lint clean (con `NODE_OPTIONS=--max-old-space-size=4096` por límite RAM local).
 
+### 2026-05-09 (cierre día) · Claude Opus 4.7 — Capa U+V+W
+
+**U. Trash/Archive UI (`/dashboard/papelera`):**
+- Server component que lista soft-deleted de congresses, congress_images, reports
+- 3 secciones independientes: Congresos / Reportes / Fotos
+- `lib/actions/trash.ts`: 2 server actions (`restoreItem`, `purgeItem`) con withAction
+- `purgeItem` hard-elimina con doble gate (user_id + deleted_at NOT NULL)
+- `components/dashboard/trash-item-actions.tsx`: 2 botones por item (restaurar / eliminar definitivo)
+- Sidebar añade "Papelera" entre Biblioteca y Ajustes
+
+**V. i18n preparado (next-intl):**
+- `next-intl` instalado pero NO activado todavía (la app sigue ES-only)
+- `src/i18n/config.ts`: SUPPORTED_LOCALES (es/en/pt), DEFAULT_LOCALE, isSupportedLocale guard
+- `src/i18n/messages/{es,en,pt}.json`: diccionarios iniciales con secciones common/auth/dashboard/congress/ai/legal
+- `src/i18n/request.ts`: getRequestConfig que carga el dict según locale
+- Cuando se quiera activar EN/PT en runtime: mountar `NextIntlClientProvider` en layout, agregar middleware locale o adoptar `[locale]` segment, refactorizar textos a `t()` calls
+
+**W. Operations runbook (`docs/operations.md`):**
+- 4 opciones para activar el worker cron: Vercel Cron Pro ($20/mes), cron-job.org (gratis), pg_cron+http (Supabase), GitHub Actions (no recomendado por SLA)
+- Tabla de métricas y dónde verlas
+- SQL para promover usuarios a plan='admin'
+- Tabla de rotación de secretos (cada 90 días)
+- Checklist de verificación mensual
+
+**Verificación**: lint clean. Todas las migraciones aplicadas en producción.
+
 ---
 
 ## 12. Cómo actualizar este archivo
