@@ -14,6 +14,8 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCongress, setFilterCongress] = useState<string>("all")
   const [filterSpecialty, setFilterSpecialty] = useState<string>("all")
+  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [filterYear, setFilterYear] = useState<string>("all")
 
   // Obtener listas únicas para los filtros
   const congresses = useMemo(() => {
@@ -26,20 +28,42 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
     return Array.from(names).sort()
   }, [initialReferences])
 
+  const years = useMemo(() => {
+    const ys = new Set(
+      initialReferences
+        .map(r => r.detected_year)
+        .filter((y): y is string => Boolean(y && /^\d{4}$/.test(y)))
+    )
+    return Array.from(ys).sort().reverse()
+  }, [initialReferences])
+
+  const counts = useMemo(() => {
+    const c = { verified: 0, partially_verified: 0, ambiguous: 0, not_verified: 0, retracted: 0 }
+    for (const r of initialReferences) {
+      const s = r.verification_status as keyof typeof c
+      if (s in c) c[s]++
+    }
+    return c
+  }, [initialReferences])
+
   const filtered = useMemo(() => {
+    const term = searchTerm.toLowerCase()
     return initialReferences.filter(ref => {
-      const matchesSearch = 
-        ref.detected_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ref.detected_authors?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ref.raw_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ref.detected_journal?.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesSearch =
+        !term ||
+        ref.detected_title?.toLowerCase().includes(term) ||
+        ref.detected_authors?.toLowerCase().includes(term) ||
+        ref.raw_text.toLowerCase().includes(term) ||
+        ref.detected_journal?.toLowerCase().includes(term)
 
       const matchesCongress = filterCongress === "all" || ref.congress_name === filterCongress
       const matchesSpecialty = filterSpecialty === "all" || ref.specialty === filterSpecialty
+      const matchesStatus = filterStatus === "all" || ref.verification_status === filterStatus
+      const matchesYear = filterYear === "all" || ref.detected_year === filterYear
 
-      return matchesSearch && matchesCongress && matchesSpecialty
+      return matchesSearch && matchesCongress && matchesSpecialty && matchesStatus && matchesYear
     })
-  }, [initialReferences, searchTerm, filterCongress, filterSpecialty])
+  }, [initialReferences, searchTerm, filterCongress, filterSpecialty, filterStatus, filterYear])
 
   return (
     <div className="space-y-6">
@@ -57,10 +81,10 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
             />
           </div>
           
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Filter className="h-3.5 w-3.5 text-slate-500" />
-              <select 
+              <select
                 className="text-xs border-slate-200 rounded-lg bg-slate-50 py-1.5 pl-2 pr-8"
                 value={filterCongress}
                 onChange={(e) => setFilterCongress(e.target.value)}
@@ -70,7 +94,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
               </select>
             </div>
 
-            <select 
+            <select
               className="text-xs border-slate-200 rounded-lg bg-slate-50 py-1.5 pl-2 pr-8"
               value={filterSpecialty}
               onChange={(e) => setFilterSpecialty(e.target.value)}
@@ -78,7 +102,47 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
               <option value="all">Todas las especialidades</option>
               {specialties.map(s => <option key={s!} value={s!}>{s}</option>)}
             </select>
+
+            <select
+              className="text-xs border-slate-200 rounded-lg bg-slate-50 py-1.5 pl-2 pr-8"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">Cualquier estado</option>
+              <option value="verified">Verificada ({counts.verified})</option>
+              <option value="partially_verified">Parcial ({counts.partially_verified})</option>
+              <option value="ambiguous">Ambigua ({counts.ambiguous})</option>
+              <option value="not_verified">No verificada ({counts.not_verified})</option>
+              <option value="retracted">Retractada ({counts.retracted})</option>
+            </select>
+
+            <select
+              className="text-xs border-slate-200 rounded-lg bg-slate-50 py-1.5 pl-2 pr-8"
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+            >
+              <option value="all">Cualquier año</option>
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
           </div>
+        </div>
+
+        <div className="flex items-baseline justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+          <span>{filtered.length} de {initialReferences.length} referencias</span>
+          {(filterCongress !== "all" || filterSpecialty !== "all" || filterStatus !== "all" || filterYear !== "all" || searchTerm) && (
+            <button
+              onClick={() => {
+                setFilterCongress("all")
+                setFilterSpecialty("all")
+                setFilterStatus("all")
+                setFilterYear("all")
+                setSearchTerm("")
+              }}
+              className="text-blue-600 hover:underline"
+            >
+              Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 
