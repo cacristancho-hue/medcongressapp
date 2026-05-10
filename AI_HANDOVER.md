@@ -643,6 +643,42 @@ app/
 
 **Verificación**: lint clean. Todas las migraciones aplicadas en producción.
 
+### 2026-05-09 (cierre día 2) · Claude Opus 4.7 — Capa X+Y+Z
+
+**X. Bulk congress export ZIP (fase 22):**
+- `jszip` instalado
+- Bucket `congress-exports` (privado, 500MB cap, RLS por user_id en path)
+- `lib/actions/export.ts` `exportCongress({congressId})` con withAction:
+  - Ownership gate + carga paralela de congress + images + ocr + refs + topics + último report
+  - Construye ZIP con layout `<safeName>/{manifest.json,report.md,images/*.jpg,ocr/*.txt,references.json,topics.json}`
+  - Sube a Storage `<userId>/<congressId>/<timestamp>.zip`
+  - Devuelve signed URL válida 1 hora
+  - Dispara webhook `report.generated` (fire-and-forget)
+- `/dashboard/congresos/[id]/exportar` ahora real (era placeholder); muestra counts + botón
+- `components/congresses/export-button.tsx`: client component con estados + link descarga
+
+**Y. Webhook receivers (fase 23):**
+- Tabla `webhook_inbound` con `signature_valid` + `processed` + `payload jsonb` + `source_ip`
+- RLS `deny all to anon` (solo service-role escribe)
+- Endpoint `/api/webhooks/incoming/[provider]`:
+  - PROVIDERS map por nombre (test stub shipped, agregar Stripe es 1 entry)
+  - Verifica HMAC-SHA256 en formato `t=<ts>,v1=<sig>` igual que outgoing
+  - Persiste rawBody parseado + signature + valid flag + source IP
+  - 200 si valid, 401 si no — siempre persiste para forensics
+
+**Z. Library filters:**
+- `reference-library.tsx` extendido sin reescritura:
+  - +2 filtros: `verification_status` (con counts inline) y `detected_year`
+  - Header "X de Y referencias"
+  - Botón "Limpiar filtros" cuando alguno activo
+  - Counts precomputados con useMemo
+
+**Verificación**: lint clean.
+
+**Pendiente del usuario:**
+- Para Stripe webhook receiver: agregar entry en `PROVIDERS` + `STRIPE_WEBHOOK_SECRET` env
+- Testing del bulk export con un congreso 30+ fotos (verificar tamaño ZIP <100MB)
+
 ---
 
 ## 12. Cómo actualizar este archivo
