@@ -679,6 +679,51 @@ app/
 - Para Stripe webhook receiver: agregar entry en `PROVIDERS` + `STRIPE_WEBHOOK_SECRET` env
 - Testing del bulk export con un congreso 30+ fotos (verificar tamaño ZIP <100MB)
 
+### 2026-05-09 (cierre día 3) · Claude Opus 4.7 — UX Sprint top mundial
+
+**Investigación previa**: WebSearch en paralelo sobre tipografía premium SaaS, healthcare UI design 2026, color palettes médicas, empty states best practices. Hallazgos:
+- Inter es estándar premium SaaS (Linear, Notion, Vercel, Shopify)
+- IBM Plex Mono ideal para datos técnicos médico/regulado
+- Soft blues + greens + cool neutrals = trust + clinical
+- Empty states deben tratarse como onboarding surface principal
+- 2026 trend: "warm paper + slate UI + calming accent" (menos clínico, más humano)
+
+**UX-1: Design tokens + tipografía premium**
+- `lib/fonts.ts`: Inter (UI/headings, 400-800) + IBM Plex Mono (data, 400-600) via next/font
+- `globals.css` reescrito con sistema de tokens CSS:
+  - Surfaces warm-paper + slate ink + 3 borders
+  - Brand medical teal #0d9488 + deep blue CTA #1e40af
+  - Semantics emerald/amber/red/sky (cada uno con -soft)
+  - Shadows xs→xl, type scale ratio 1.250 con clamp(), spacing 4px-base
+- Tailwind 4 `@theme inline` para tokens→utilities
+- Inter stylistic sets (ss01, cv11, calt) activos
+- Focus rings teal, scrollbars finos, selection brand-tinted
+- Print + reduced-motion fallbacks
+- `layout.tsx`: font variables + metadata template + SVG icons + theme color responsive
+
+**UX-2: Logo + identidad visual**
+- `components/ui/logo.tsx` redibujado:
+  - Hexágono outer (estructura molecular/scientific signal) + ECG pulse interno
+  - Gradient teal→blue
+  - Variantes iconOnly/light + 3 tamaños
+  - Wordmark "Med" + "Congress" + tagline "Clinical Companion" (rebrand-friendly)
+- `public/favicon.svg` + `public/apple-icon.svg` (modernos browsers OK)
+
+**UX-3: Dashboard inicial premium**
+- `/dashboard/page.tsx` rediseñado:
+  - **First-time welcome** cuando no hay congresos: hero gradient con ECG decorativo, badge, CTA primario blanco + secundario outline, 3 quick steps (01/02/03), quality bullets
+  - **Returning user**: greeting según hora del día, GlobalSearch, stats 4-cards (refs verificadas con accent emerald), recent congresses con hover transitions
+- Filtra `deleted_at is null`; `dynamic = "force-dynamic"`
+
+**Verificación**: lint clean.
+
+**Pendiente del usuario** (para llegar a 100% premium):
+- Audit visual mobile en cada página
+- Empty states ilustrados en biblioteca/papelera/legal
+- Loading skeletons en server-fetches lentos
+- Onboarding tour primer-uso con tooltips
+- Iconos PNG para PWA si quieres install-to-home-screen perfecto en iOS antiguos (>iOS 16 acepta SVG igual)
+
 ---
 
 ## 12. Cómo actualizar este archivo
