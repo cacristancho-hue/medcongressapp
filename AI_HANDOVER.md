@@ -532,6 +532,33 @@ app/
 - /admin/webhooks UI para crear endpoints (próxima sesión)
 - Testing en runtime con sociedad médica real
 
+### 2026-05-09 (cierre noche) · Claude Opus 4.7 — Capa L+M+N
+
+**L. Admin UI (/dashboard/admin/*):**
+- `_admin-gate.tsx`: helper `requireAdmin()` que valida org plan='admin' + role='owner'
+- `/admin/flags`: lista de feature_flags + toggle enabled + slider rollout % + save por fila
+- `/admin/webhooks`: crear endpoint (URL + descripción + selección de events), listado con toggle/delete + últimas 20 entregas
+- `lib/actions/admin.ts`: server actions `updateFeatureFlag`, `createWebhookEndpoint`, `toggleWebhookEndpoint`, `deleteWebhookEndpoint` — todas con `withAction` + `ensureAdmin` gate doble
+- Secret del webhook se muestra UNA VEZ al crear (cópia pre-warning estilo Stripe)
+
+**M. Pre-commit hook (Husky + lint-staged):**
+- `husky` + `lint-staged` instalados como devDeps
+- `.husky/pre-commit` ejecuta `npx lint-staged`
+- `.lintstagedrc.json` orquesta:
+  - `*.{ts,tsx,js,jsx}` → `eslint --fix`
+  - `*.py` → `ruff format` + `ruff check --fix`
+  - `supabase/migrations/*.sql` → `tools/lint_sql.py`
+- Scripts npm nuevos: `lint:sql`, `lint:py`, `format:py`, `prepare` (auto-init husky en `npm install`)
+- Pendiente del usuario: `cd app && npm install` para que husky active el hook (la `prepare` script ya está configurada para futuras instalaciones)
+
+**N. OpenAPI desde Zod:**
+- `zod-openapi` instalado
+- `lib/openapi.ts`: schemas centralizados (HealthResponse, ErrorResponse, WebhookPayload, VerificationStatus, ReferenceCandidate) + `buildOpenApiDocument()`
+- `/api/openapi.json` (GET): static cacheable, devuelve la spec completa con cache 1h
+- Base lista para futura API pública v1; añadir endpoints es declarar el schema y el `paths` entry
+
+**Verificación**: lint clean en todos los cambios. Vitest 6/6 pendiente de re-run en CI (la máquina local ha estado bajo presión RAM).
+
 ---
 
 ## 12. Cómo actualizar este archivo

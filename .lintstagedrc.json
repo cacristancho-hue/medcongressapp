@@ -1,0 +1,5 @@
+{
+  "*.{ts,tsx,js,jsx}": ["eslint --fix"],
+  "*.py": ["python -m ruff format", "python -m ruff check --fix"],
+  "supabase/migrations/*.sql": ["python tools/lint_sql.py"]
+}
