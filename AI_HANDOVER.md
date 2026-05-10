@@ -724,6 +724,52 @@ app/
 - Onboarding tour primer-uso con tooltips
 - Iconos PNG para PWA si quieres install-to-home-screen perfecto en iOS antiguos (>iOS 16 acepta SVG igual)
 
+### 2026-05-09 (cierre día 4) · Claude Opus 4.7 — UX Sprint final (#4+5+6+9)
+
+**UX-4: Empty states ilustrados**
+- `components/ui/empty-state.tsx`: componente reusable con prop `illustration` (8 SVGs inline: library/trash/search/congress/report/topics/references/generic), 3 sizes, action + secondaryAction
+- Aplicado a:
+  - `/dashboard/biblioteca`: empty state con illustration "library" + CTA "Crear congreso"
+  - `/dashboard/papelera`: empty state con illustration "trash"
+- Logo de biblioteca cambiado de blue a teal para consistencia con design system
+
+**UX-5: Loading skeletons (Next.js App Router)**
+- `components/ui/skeleton.tsx`: primitives `Skeleton`, `SkeletonText`, `SkeletonCard`, `SkeletonStatCard`
+- `loading.tsx` creados en 5 rutas clave:
+  - `/dashboard/loading.tsx` — header + stats + 3 cards
+  - `/dashboard/congresos/loading.tsx` — cards list
+  - `/dashboard/congresos/[id]/loading.tsx` — header + 3 stats + upload zone + grid
+  - `/dashboard/congresos/[id]/resumen/loading.tsx` — header + 4 stats + reporte + topics
+  - `/dashboard/biblioteca/loading.tsx` — header + filter bar + 6 cards grid
+- Next.js renderiza estos automáticamente entre navegaciones; UX percibida más rápida sin código adicional
+
+**UX-6: Mobile audit + drawer + responsive**
+- `components/layout/mobile-header.tsx`: nuevo top bar sticky con Logo size="sm" (solo mobile, hidden md:up)
+- `components/layout/mobile-nav.tsx` rediseñado:
+  - 4 tabs: Inicio / Congresos / Biblioteca / Papelera
+  - FAB central "Nuevo congreso" con gradient teal y -mt-8 elevation
+  - safe-area-inset-bottom respetado para iPhone notch
+  - aria-current/aria-label para accessibility
+  - Active tab usa teal-700 (era blue-600)
+- `(dashboard)/layout.tsx` actualizado:
+  - Importa MobileHeader
+  - Background usa token `var(--color-bg)` en lugar de `bg-slate-50` (consistencia)
+  - Padding responsive `px-4 sm:px-6 lg:px-8` (era `p-6 lg:p-8`)
+  - Mobile header se renderiza solo en mobile
+
+**UX-9: Print styles top mundial**
+- `globals.css` reescribió la sección `@media print`:
+  - `@page { size: A4; margin: 18mm 16mm 22mm 16mm }` para entrega clínica/journal
+  - Body 11pt, line-height 1.45 (legibilidad académica)
+  - Hide chrome (nav, aside, header banner, toaster, botones excepto `.print-show`)
+  - URLs visibles después de links (`a[href]::after`) — verificable por reader
+  - `break-after: avoid` en h1-h4 (no orphans)
+  - `break-inside: avoid` en article/table/.print-no-break
+  - Manual breaks via `.print-break-before` / `.print-break-after`
+  - Backgrounds/shadows transparentes; print-color-adjust exact
+
+**Verificación**: lint clean (warning unused import resuelto).
+
 ---
 
 ## 12. Cómo actualizar este archivo

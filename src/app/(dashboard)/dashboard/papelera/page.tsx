@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Trash2, Archive } from "lucide-react"
+import { ArrowLeft, Archive } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import TrashItemActions from "@/components/dashboard/trash-item-actions"
+import { EmptyState } from "@/components/ui/empty-state"
 
 export const dynamic = "force-dynamic"
 
@@ -84,12 +85,13 @@ export default async function PapeleraPage() {
       )}
 
       {total === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Trash2 className="h-8 w-8 text-slate-300 mx-auto mb-3" />
-            <p className="text-sm text-slate-500">No hay elementos archivados.</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          illustration="trash"
+          size="lg"
+          title="Tu papelera está vacía"
+          description="Cuando borres congresos, fotos o reportes, aparecerán aquí por 30 días antes de ser eliminados definitivamente. Mientras tanto puedes restaurarlos."
+          action={{ label: "Volver al dashboard", href: "/dashboard" }}
+        />
       )}
     </div>
   )

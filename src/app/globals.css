@@ -204,11 +204,63 @@ code, kbd, pre, samp,
   transform: translateY(1px);
 }
 
-/* Print styles for academic reports */
+/* ============================================================
+   Print styles — academic reports ready for clinical/journal use
+   ============================================================ */
 @media print {
-  body { background: white !important; }
-  .no-print { display: none !important; }
-  .print-break { break-after: page; }
+  @page {
+    size: A4;
+    margin: 18mm 16mm 22mm 16mm;
+  }
+
+  html, body {
+    background: white !important;
+    color: #0f172a !important;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  .no-print,
+  nav,
+  aside,
+  header[role="banner"],
+  [data-sonner-toaster],
+  button:not(.print-show) {
+    display: none !important;
+  }
+
+  a[href]:not([href^="#"])::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #475569;
+  }
+
+  h1, h2, h3, h4 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  article, table, .print-no-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  p, li, span, td, th {
+    color: #0f172a !important;
+  }
+
+  .print-break-before { break-before: page; page-break-before: always; }
+  .print-break-after  { break-after: page; page-break-after: always; }
+
+  *, *::before, *::after {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  table, th, td { border-color: #cbd5e1 !important; }
 }
 
 /* Reduced motion */
