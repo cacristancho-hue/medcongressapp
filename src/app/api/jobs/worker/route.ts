@@ -12,6 +12,7 @@ import { analyzeImage, generateReport, extractTopicsFromCorpus } from "@/lib/ai/
 import { verifyReference } from "@/lib/reference-verification"
 import { recordAiUsage } from "@/lib/ai-usage"
 import { log } from "@/lib/logger"
+import { processNextWebhookDelivery } from "@/lib/webhooks"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -42,6 +43,10 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient()
 
+  // Process any pending webhook delivery first (cheap, fast).
+  // The cron tick is once per minute so we can comfortably do both.
+  const webhookProcessed = await processNextWebhookDelivery()
+
   // Claim next pending job atomically (ai_jobs_claim_next uses FOR UPDATE SKIP LOCKED).
   const { data: claimed, error: claimErr } = await supabase.rpc("ai_jobs_claim_next", {
     p_worker_id: "vercel-cron",
@@ -53,7 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!claimed || (Array.isArray(claimed) && claimed.length === 0)) {
-    return NextResponse.json({ message: "no pending jobs" })
+    return NextResponse.json({ message: "no pending jobs", webhookProcessed })
   }
 
   const job: AiJobRow = Array.isArray(claimed) ? claimed[0] : claimed

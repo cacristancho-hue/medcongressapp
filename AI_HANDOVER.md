@@ -497,6 +497,41 @@ app/
 - En otra terminal: `npm run dev` o `npm run build && npm run start`
 - `npm run test:e2e`
 
+### 2026-05-09 (cierre extendido) · Claude Opus 4.7 — Capa I+J+K
+
+**I. Soft delete (fase 18):**
+- Columnas `deleted_at`, `deleted_by` en congresses, congress_images, reports, organizations
+- Partial indexes WHERE deleted_at IS NULL (los activos son el 99% del lookup)
+- Vistas `*_active` y `*_archived` para UI explícita
+- Helper `lib/soft-delete.ts`: `softDelete()` y `restoreFromArchive()` con audit log automático
+
+**J. Feature flags (fase 19):**
+- Tabla `feature_flags` (key + enabled + rollout_percentage 0-100)
+- Tabla `feature_flag_overrides` (override por user O por org, exactamente uno)
+- RPC `is_feature_enabled(p_flag_key)` con resolución por prioridad: user > org > rollout%
+- Rollout estable por user via `hashtext(user_id || flag_key) % 100`
+- 5 flags seed: ai.async_processing, ai.claude_for_topics, ui.live_jobs_status, billing.stripe, export.notebooklm
+- `lib/feature-flags.ts`: `isFeatureEnabled(key)` con cache 30s in-memory + `isAnyFeatureEnabled(...keys)` para batch
+
+**K. Webhooks (fase 20):**
+- Tabla `webhook_endpoints` (url, secret, events[], enabled) con RLS por user/org
+- Tabla `webhook_deliveries` (immutable log, status, response, attempts)
+- RPC `webhook_claim_next()` con FOR UPDATE SKIP LOCKED
+- 7 events tipados: congress.created, congress.deleted, image.uploaded, image.analyzed, report.generated, references.verified, billing.upgraded
+- `lib/webhooks.ts`:
+  - `dispatchWebhook(event, payload, scope)` — encola deliveries
+  - `signWebhookBody(body, secret)` — HMAC-SHA256 estilo Stripe `t=<ts>,v1=<sig>`
+  - `processNextWebhookDelivery()` — worker side, exponential backoff (60s · 2^n) hasta max_attempts
+- `generateWebhookSecret()` retorna `whsec_<64-hex>`
+- `/api/jobs/worker` ahora también procesa webhooks en cada tick (junto con ai_jobs)
+
+**Verificación**: lint clean, build verde antes en CI. typecheck local OOM por límite RAM de la máquina (no problema del código).
+
+**Pendiente del usuario:**
+- /admin/flags UI para gestionar flags (próxima sesión)
+- /admin/webhooks UI para crear endpoints (próxima sesión)
+- Testing en runtime con sociedad médica real
+
 ---
 
 ## 12. Cómo actualizar este archivo
