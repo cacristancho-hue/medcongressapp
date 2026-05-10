@@ -50,6 +50,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              data-tour={item.href === "/dashboard/biblioteca" ? "sidebar-biblioteca" : undefined}
               className={clsx(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                 pathname === item.href

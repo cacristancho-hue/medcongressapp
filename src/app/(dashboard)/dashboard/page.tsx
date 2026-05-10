@@ -12,6 +12,7 @@ import {
   Activity,
 } from "lucide-react"
 import GlobalSearch from "@/components/congresses/global-search"
+import DashboardTour from "@/components/onboarding/dashboard-tour"
 
 export const dynamic = "force-dynamic"
 
@@ -82,16 +83,20 @@ export default async function DashboardPage() {
         <FirstTimeWelcome />
       ) : (
         <>
-          <StatsRow
-            congresses={congressCount ?? 0}
-            photos={photoCount ?? 0}
-            reports={reportCount ?? 0}
-            verified={refsVerified ?? 0}
-          />
+          <div data-tour="dashboard-stats">
+            <StatsRow
+              congresses={congressCount ?? 0}
+              photos={photoCount ?? 0}
+              reports={reportCount ?? 0}
+              verified={refsVerified ?? 0}
+            />
+          </div>
 
-          <RecentCongresses
-            congresses={congresses ?? []}
-          />
+          <div data-tour="dashboard-recent">
+            <RecentCongresses congresses={congresses ?? []} />
+          </div>
+
+          <DashboardTour />
         </>
       )}
     </div>

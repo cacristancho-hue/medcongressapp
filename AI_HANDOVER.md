@@ -770,6 +770,45 @@ app/
 
 **Verificación**: lint clean (warning unused import resuelto).
 
+### 2026-05-09 (cierre día 5) · Claude Opus 4.7 — UX Sprint cierre (#7+8+10)
+
+**UX-7: Onboarding tour primera vez**
+- `components/onboarding/onboarding-tour.tsx`: tour generic con zero deps externas
+  - 3 elementos: overlay con clip-path cutout sobre target + ring teal animado + tooltip card
+  - Posicionamiento auto (top/bottom/left/right) con clamping a viewport
+  - Persistencia via localStorage `medcongress.onboarding.completed.v1`
+  - Listen a resize + scroll para re-medir
+  - Auto-scroll al target si está fuera de viewport
+  - Animation `fadeInUp` al aparecer
+- `components/onboarding/dashboard-tour.tsx`: 3 pasos para el dashboard returning user (stats / recientes / sidebar biblioteca)
+- Wiring: data-tour attributes en el dashboard (`dashboard-stats`, `dashboard-recent`) y sidebar (`sidebar-biblioteca`)
+- Aparece SOLO en returning user (no en welcome state) y SOLO la primera vez
+
+**UX-8: Micro-interactions consistentes**
+- `globals.css` extendido con sistema de animation tokens:
+  - 4 duration vars: instant 80ms / fast 150ms / base 220ms / slow 400ms
+  - 4 easing vars: standard / decelerate / accelerate / spring
+- 4 keyframes globales: `fadeInUp`, `slideInRight`, `pulseSoft`, `livePulse`
+- 6 utility classes:
+  - `.animate-fade-in-up` — entrada de cards
+  - `.animate-slide-in-right` — sidebars/tooltips
+  - `.animate-pulse-soft` — indicadores live
+  - `.hover-lift` — cards con elevation on hover
+  - `.press` — feedback mobile (scale 0.97 on active)
+  - `.interactive` — base universal hover/focus
+- 2 component classes:
+  - `.spinner-brand` — spinner ring teal con borde slate
+  - `.live-dot` — punto verde con pulso ripple expandiéndose
+
+**UX-10: Component catalog interno (en lugar de Storybook)**
+- Decisión: NO instalar Storybook. Pesa 100MB+ y es otro Next.js completo solo para internal docs.
+- Alternativa: `/dashboard/admin/components` — single page que renderiza todos los primitives
+- Sections: Color tokens (12 swatches), Tipografía (display/h1/h2/h3/body/mono), Logo (3 sizes + light variant), Botones (6 variants), Cards (basic + hover-lift), Skeletons (3 variants), Empty states (4 illustrations), Animaciones (spinner / live-dot / fade-in)
+- Gated por `requireAdmin()` igual que las otras admin pages
+- 0 dependencias nuevas
+
+**Verificación**: lint clean.
+
 ---
 
 ## 12. Cómo actualizar este archivo

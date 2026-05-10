@@ -205,6 +205,118 @@ code, kbd, pre, samp,
 }
 
 /* ============================================================
+   Micro-interactions — global animation tokens
+   ============================================================ */
+
+/* Default transition durations + easing */
+:root {
+  --duration-instant: 80ms;
+  --duration-fast:    150ms;
+  --duration-base:    220ms;
+  --duration-slow:    400ms;
+
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Subtle fade-in-up for content that mounts (cards, lists). */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp var(--duration-base) var(--easing-decelerate) both;
+}
+
+/* Slide in for sidebars / tooltips */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--duration-base) var(--easing-decelerate) both;
+}
+
+/* Pulse subtle (live indicator) */
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+.animate-pulse-soft {
+  animation: pulseSoft 2s var(--easing-standard) infinite;
+}
+
+/* Hover lift — subtle elevation increase on cards */
+.hover-lift {
+  transition: transform var(--duration-fast) var(--easing-standard),
+              box-shadow var(--duration-fast) var(--easing-standard);
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Press effect (mobile feedback) */
+.press {
+  transition: transform var(--duration-instant) var(--easing-standard);
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Smooth interactive base (universal hover/focus consistency) */
+.interactive {
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    color var(--duration-fast) var(--easing-standard),
+    border-color var(--duration-fast) var(--easing-standard),
+    box-shadow var(--duration-fast) var(--easing-standard),
+    transform var(--duration-fast) var(--easing-standard);
+}
+
+/* Spinner premium: ring with brand gradient */
+.spinner-brand {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-brand);
+  animation: spin var(--duration-slow) linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Live dot — for "online/processing" indicators */
+.live-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-success);
+  position: relative;
+}
+.live-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--color-success);
+  animation: livePulse 1.6s var(--easing-standard) infinite;
+}
+
+@keyframes livePulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+/* ============================================================
    Print styles — academic reports ready for clinical/journal use
    ============================================================ */
 @media print {
