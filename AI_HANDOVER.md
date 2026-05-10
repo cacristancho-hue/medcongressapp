@@ -593,6 +593,30 @@ app/
 - En Vercel env vars: las mismas Sentry secrets para que builds de prod activen sourcemaps
 - Crear el primer test de DR trimestral cuando esté listo
 
+### 2026-05-09 (cierre madrugada extendida) · Claude Opus 4.7 — Capa R+S+T
+
+**R. PWA mobile-first:**
+- `src/app/manifest.ts`: web app manifest con shortcuts a /congresos y /biblioteca
+- `public/sw.js`: service worker minimal con 3 estrategias (static cache-first, pages network-first con offline fallback, dynamic never-cache)
+- `components/layout/service-worker-register.tsx`: registra `/sw.js` solo en `NODE_ENV=production`
+- `layout.tsx`: añade `applicationName`, `appleWebApp`, `formatDetection`, `Viewport` con `themeColor` y `viewportFit: cover`
+- Iconos pendientes en `/public`: `icon-192.png`, `icon-512.png`, `icon-maskable.png` (debe crear Carlos cuando defina branding)
+
+**S. Analytics events (fase 21):**
+- Tabla `analytics_events` con `event_name`, `props jsonb`, `session_id`, `url_path`, `user_agent`, indexes por evento/user/org
+- `lib/analytics.ts`: server action `trackEvent({name, props, urlPath, sessionId})` con 11 eventos tipados
+- Resuelve organization_id automáticamente desde la primera membership owner del user
+- Nunca lanza: errors → console.warn solamente
+- `/admin/analytics`: dashboard con top eventos últimos 7 días + lista de últimos 30
+
+**T. Audit dashboard (`/admin/audit`):**
+- Server component con paginación (50 por página) + filtros por status + action
+- Filter bar usa `<form method="get">` (URL params) — sin estado cliente innecesario
+- Cada fila muestra icon por status (success/denied/error), action mono, user prefix, timestamp, metadata truncado
+- Pagination links que preservan filtros via querystring
+
+**Verificación**: lint clean (con `NODE_OPTIONS=--max-old-space-size=4096` por límite RAM local).
+
 ---
 
 ## 12. Cómo actualizar este archivo
