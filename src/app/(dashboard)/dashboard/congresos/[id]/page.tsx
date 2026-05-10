@@ -6,6 +6,7 @@ import PhotoUploadZone from "@/components/congresses/photo-upload-zone"
 import PhotoGrid from "@/components/congresses/photo-grid"
 import CongressReport from "@/components/congresses/congress-report"
 import JobsStatus from "@/components/congresses/jobs-status"
+import CongressPresence from "@/components/congresses/congress-presence"
 
 interface Props {
   params: Promise<{ id: string }>
@@ -55,6 +56,14 @@ export default async function CongresoDetailPage({ params }: Props) {
   const currentTopicCount = topicCount ?? 0
   const currentReferenceCount = referenceCount ?? 0
 
+  // Presence display name: full_name from profile, fallback to email.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("user_id", user.id)
+    .maybeSingle()
+  const displayName = profile?.full_name ?? user.email ?? "Usuario"
+
   return (
     <div className="max-w-4xl">
       {/* Back */}
@@ -69,7 +78,14 @@ export default async function CongresoDetailPage({ params }: Props) {
 
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">{congress.name}</h2>
+        <div className="flex items-center justify-between gap-3 mb-1">
+          <h2 className="text-2xl font-bold text-slate-900">{congress.name}</h2>
+          <CongressPresence
+            congressId={id}
+            currentUserId={user.id}
+            currentUserName={displayName}
+          />
+        </div>
         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
           {congress.specialty && (
             <span className="text-sm text-slate-500">{congress.specialty}</span>

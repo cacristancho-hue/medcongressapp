@@ -559,6 +559,40 @@ app/
 
 **Verificación**: lint clean en todos los cambios. Vitest 6/6 pendiente de re-run en CI (la máquina local ha estado bajo presión RAM).
 
+### 2026-05-09 (cierre madrugada) · Claude Opus 4.7 — Capa O+P+Q
+
+**O. Backups + Disaster Recovery:**
+- `tools/backup_db.py`: dump JSONL por tabla via REST + manifest.json. Sin pg_dump binary (Windows-friendly). Pagina con Range header (1000 filas).
+- `tools/restore_db.py`: dry-run por defecto, `--apply` para escribir. Upsert con `Prefer: resolution=merge-duplicates`. Orden FK-aware.
+- `.github/workflows/backup.yml`: nightly schedule 06:17 UTC + workflow_dispatch. Sube artifact con retención 30 días.
+- `docs/disaster-recovery.md`: 3 niveles de protección (PITR Supabase Pro + JSONL backup propio + storage), procedimiento de restauración paso a paso, lista de env vars críticas, plan de pruebas trimestrales.
+
+**P. Sentry source maps + release tagging:**
+- `next.config.ts` envuelto con `withSentryConfig` cuando hay `SENTRY_AUTH_TOKEN` + `NEXT_PUBLIC_SENTRY_DSN`
+- Release auto-derivado de `VERCEL_GIT_COMMIT_SHA` / `GITHUB_SHA` / "dev"
+- `sourcemaps.deleteSourcemapsAfterUpload: true` para no exponer mapas al browser
+- `silent: true`, `disableLogger: true` para builds limpios
+- `.env.local` ahora documenta SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT, SENTRY_RELEASE
+
+**Q. Realtime presence:**
+- `components/congresses/congress-presence.tsx`: client component
+- Suscribe al canal `presence:congress:<id>` con `key: currentUserId`
+- Track presence con `{user_id, display_name, joined_at}`
+- Filtra al usuario actual de la lista
+- Render: pill verde "<nombre> también está aquí" o "N colegas viendo este congreso"
+- Integrado al header de `/dashboard/congresos/[id]` (página de detalle)
+- Display name resuelto desde `profiles.full_name` con fallback a email
+
+**Verificación**: lint clean tras bump de Node memory.
+
+**Pendiente del usuario:**
+- En GitHub repo settings → Secrets:
+  - `SUPABASE_URL` (NEXT_PUBLIC_SUPABASE_URL)
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - (opcional para Sentry releases en CI: `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`)
+- En Vercel env vars: las mismas Sentry secrets para que builds de prod activen sourcemaps
+- Crear el primer test de DR trimestral cuando esté listo
+
 ---
 
 ## 12. Cómo actualizar este archivo
