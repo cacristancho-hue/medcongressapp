@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ShieldCheck, BookOpen, FileText, Globe } from "lucide-react"
 import Logo from "@/components/ui/md-logo"
-import { CrossRefIcon, PubMedIcon, OpenAlexIcon } from "@/components/ui/ai-icons"
 
 export default function LandingPage() {
   return (
