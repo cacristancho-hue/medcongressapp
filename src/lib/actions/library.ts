@@ -135,12 +135,25 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     
     const key = masterId || doi || pmid || normalizedTitle || row.id
 
-    const existing = libraryMap.get(key)
+    // --- MOTOR DE DEPURACIÓN ÉLITE ---
+    // 1. Filtrar ruido: Si no está verificado Y tiene confianza muy baja (< 0.35) Y no tiene metadatos oficiales
+    const isVeryLowConfidence = (row.confidence_score ?? 0) < 0.35
+    const hasNoOfficialData = !row.official_title && !row.detected_doi && !row.detected_pmid
+    const isUnverified = row.verification_status === "not_verified"
+    
+    if (isUnverified && isVeryLowConfidence && hasNoOfficialData) {
+      return // Ignorar este scrap de OCR
+    }
+
+    // 2. Filtrar fragmentos cortos: Si el texto original es demasiado corto y no hay título
+    if (!row.detected_title && (row.raw_reference_text?.length ?? 0) < 30 && !row.detected_doi) {
+      return // Ignorar fragmentos irrelevantes
+    }
 
     const current: LibraryReference = {
       id: row.id,
       congress_id: row.congress_id,
-      congress_name: row.congresses?.name ?? "Desconocido",
+      congress_name: row.congresses?.name || "Material General",
       image_id: row.image_id,
       raw_text: row.raw_reference_text ?? "",
       detected_title: row.detected_title,

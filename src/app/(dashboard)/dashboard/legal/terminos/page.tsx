@@ -69,13 +69,13 @@ export default function TerminosPage() {
         El usuario se compromete a mantener indemne a MDCONGRESS frente a cualquier reclamación de propiedad intelectual iniciada por conferencistas, sociedades científicas o la industria farmacéutica derivada del material capturado por el usuario.
       </p>
 
-      <h2>7. Licencia de Datos, R&D y Pharma Insights</h2>
+      <h2>7. Mejora Continua y Ecosistema de Datos Académicos</h2>
       <p>
-        El usuario retiene la propiedad de sus fotos. Sin embargo, otorga a MDCONGRESS una licencia irrevocable para:
+        El usuario retiene la propiedad de sus fotografías. MDCONGRESS respeta profundamente el trabajo intelectual de los conferencistas y autores del material capturado. Con el fin de elevar la precisión clínica del sistema y beneficiar a toda la comunidad médica usuaria, MDCONGRESS aplica procesos de:
       </p>
       <ul>
-        <li><strong>Optimización y Entrenamiento</strong>: Utilizar los metadatos desidentificados y vectores de información para el entrenamiento, mejora y desarrollo de algoritmos propietarios de IA médica de MDCONGRESS.</li>
-        <li><strong>Pharma Insights</strong>: Agregar y anonimizar tendencias clínicas para generar inteligencia de mercado comercializable para la industria de la salud. MDCONGRESS es el titular exclusivo de la propiedad intelectual de estas bases de datos agregadas.</li>
+        <li><strong>Optimización de Algoritmos</strong>: MDCONGRESS podrá utilizar metadatos técnicos desidentificados y patrones de error en la detección OCR para mejorar la sensibilidad y especificidad de sus motores de búsqueda bibliográfica. En ningún momento se utilizarán las fotografías originales para entrenar modelos de IA generativa fundacionales.</li>
+        <li><strong>Inteligencia de Mercado Agregada (Pharma Insights)</strong>: Podremos procesar estadísticas macroscópicas y anónimas (ej. "¿Cuáles son los temas más discutidos en cardiología este mes?") para generar reportes de valor para sociedades científicas e industria. Estos reportes son siempre de carácter estadístico y nunca comprometen la identidad del médico ni el contenido privado de su biblioteca.</li>
       </ul>
 
       <h2>8. Garantías y Limitación de Responsabilidad Corporativa</h2>
