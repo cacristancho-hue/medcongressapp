@@ -12,7 +12,7 @@ export async function GET() {
   const checks: Record<string, "ok" | "fail" | "skipped"> = {
     env: "ok",
     db: "skipped",
-    ai_flag: process.env.MDCONGRESS_AI_ENABLED === "true" ? "ok" : "skipped",
+    ai_flag: process.env.MEDCONGRESS_AI_ENABLED === "true" ? "ok" : "skipped",
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {

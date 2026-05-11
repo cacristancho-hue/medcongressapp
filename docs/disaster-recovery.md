@@ -69,7 +69,7 @@ Supabase Storage replica los archivos en S3 internamente. **No tenemos backup pr
 | `OPENAI_API_KEY` | platform.openai.com |
 | `GEMINI_API_KEY` | aistudio.google.com |
 | `ANTHROPIC_API_KEY` | console.anthropic.com |
-| `MDCONGRESS_AI_ENABLED` | configuración propia (`true` en prod) |
+| `MEDCONGRESS_AI_ENABLED` | configuraci├│n propia (`true` en prod) |
 | `CRON_SECRET` | generar con `openssl rand -hex 32` |
 | `NEXT_PUBLIC_SENTRY_DSN` | sentry.io |
 | `SENTRY_AUTH_TOKEN` | sentry.io (para sourcemaps en build) |

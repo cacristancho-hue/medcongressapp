@@ -7,6 +7,9 @@ import CongressReport from "@/components/congresses/congress-report"
 import JobsStatus from "@/components/congresses/jobs-status"
 import CongressPresence from "@/components/congresses/congress-presence"
 
+import { softDeleteCongress } from "@/lib/actions/congresses"
+import DeleteCongressButton from "./delete-congress-button"
+
 interface Props {
   params: Promise<{ id: string }>
 }
@@ -29,11 +32,13 @@ export default async function CongresoDetailPage({ params }: Props) {
       .select("*")
       .eq("id", id)
       .eq("user_id", user.id)
+      .is("deleted_at", null)
       .single(),
     supabase
       .from("congress_images")
       .select("*", { count: "exact", head: true })
-      .eq("congress_id", id),
+      .eq("congress_id", id)
+      .is("deleted_at", null),
     supabase
       .from("topics")
       .select("*", { count: "exact", head: true })
@@ -41,11 +46,13 @@ export default async function CongresoDetailPage({ params }: Props) {
     supabase
       .from("reference_candidates")
       .select("*", { count: "exact", head: true })
-      .eq("congress_id", id),
+      .eq("congress_id", id)
+      .is("deleted_at", null),
     supabase
       .from("reports")
       .select("*")
       .eq("congress_id", id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false }),
   ])
 
@@ -78,7 +85,10 @@ export default async function CongresoDetailPage({ params }: Props) {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between gap-3 mb-1">
-          <h2 className="text-2xl font-bold text-slate-900">{congress.name}</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-slate-900">{congress.name}</h2>
+            <DeleteCongressButton congressId={id} congressName={congress.name} />
+          </div>
           <CongressPresence
             congressId={id}
             currentUserId={user.id}
