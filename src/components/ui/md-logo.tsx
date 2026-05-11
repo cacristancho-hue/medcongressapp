@@ -1,70 +1,73 @@
 "use client"
 
-import { Microscope, Activity } from "lucide-react"
-
 export default function Logo({ className = "h-10 w-10" }: { className?: string }) {
   return (
     <div className={`group relative flex items-center justify-center ${className}`}>
-      {/* Glow Effect */}
-      <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full scale-0 group-hover:scale-125 transition-transform duration-700"></div>
+      {/* Halo de luz trasera (Glow) */}
+      <div className="absolute inset-0 bg-blue-500/30 blur-2xl rounded-full scale-0 group-hover:scale-110 transition-transform duration-1000"></div>
       
-      {/* Main Logo Container: Hexagonal Science-first design */}
+      {/* Símbolo de Diapositiva Inteligente */}
       <div className="relative z-10 w-full h-full">
-        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-2xl">
+        <svg viewBox="0 0 120 100" className="w-full h-full drop-shadow-xl" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#2563EB" />
-              <stop offset="100%" stopColor="#0891B2" />
+            <linearGradient id="slide-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#1E40AF" />
+              <stop offset="100%" stopColor="#3B82F6" />
             </linearGradient>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
-              <feOffset dx="1" dy="1" result="offsetblur" />
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="0.3" />
-              </feComponentTransfer>
-              <feMerge>
-                <feMergeNode />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
+            <filter id="glass" x="0" y="0" width="100%" height="100%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1" />
             </filter>
           </defs>
           
-          {/* Hexagon Background (The scientific molecule) */}
-          <path 
-            d="M50 5 L89 27.5 V72.5 L50 95 L11 72.5 V27.5 Z" 
-            fill="white" 
-            className="stroke-slate-100"
+          {/* Marco de Diapositiva (Rectangle 16:9 feel) */}
+          <rect 
+            x="5" y="20" width="110" height="60" rx="12" 
+            fill="url(#slide-grad)" 
+            className="stroke-white/20"
             strokeWidth="1"
           />
+          
+          {/* Brillo de Cristal en la Diapositiva */}
           <path 
-            d="M50 10 L85 30 V70 L50 90 L15 30 V30 Z" 
-            fill="url(#logo-grad)" 
-            className="opacity-95"
+            d="M15 20 Q5 20 5 30 V45 L115 25 V20 Z" 
+            fill="white" 
+            className="opacity-10"
           />
           
-          {/* Stylized 'M' + 'D' integration */}
-          <path 
-            d="M30 35 V65 M30 35 L50 50 L70 35 V65" 
-            stroke="white" 
-            strokeWidth="8" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            fill="none"
-          />
+          {/* Letras MD de Alta Fidelidad */}
+          <g transform="translate(15, 30) scale(0.9)">
+            {/* Letra M */}
+            <path 
+              d="M10 40 V5 M10 5 L35 25 L60 5 V40" 
+              stroke="white" 
+              strokeWidth="10" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              fill="none"
+            />
+            {/* Letra D */}
+            <path 
+              d="M75 5 V40 C75 40 105 40 105 22.5 C105 5 75 5 75 5" 
+              stroke="white" 
+              strokeWidth="10" 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              fill="none"
+            />
+          </g>
           
-          {/* Clinical Pulse (ECG) Overlay */}
-          <path 
-            d="M20 75 H35 L40 65 L45 85 L50 75 H80" 
-            stroke="white" 
-            strokeWidth="3" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            fill="none"
-            className="opacity-40"
-          />
+          {/* Lente de Captura / Indicador de IA (Esquina superior derecha) */}
+          <circle cx="100" cy="35" r="6" fill="white" className="opacity-20" />
+          <circle cx="100" cy="35" r="3" fill="#10B981" className="animate-pulse" />
           
-          {/* The "MD" Dot - Symbol of Precision */}
-          <circle cx="75" cy="25" r="5" fill="#10B981" />
+          {/* Símbolo de Escaneo (Línea que atraviesa la diapositiva) */}
+          <line 
+            x1="5" y1="50" x2="115" y2="50" 
+            stroke="#10B981" 
+            strokeWidth="2" 
+            className="opacity-40 animate-pulse"
+            strokeDasharray="4 2"
+          />
         </svg>
       </div>
     </div>
