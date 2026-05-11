@@ -57,13 +57,13 @@ export default function LandingPage() {
 
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-6 border border-blue-100">
             <Globe className="h-3 w-3" />
-            Tecnología Médica de Vanguardia
+            Actualización Médica de Élite
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6 leading-[0.95]">
-            La inteligencia clínica que organiza sus <span className="text-blue-600">congresos médicos.</span>
+            Estructuramos el conocimiento de sus <span className="text-blue-600">congresos médicos.</span>
           </h1>
-          <p className="text-lg md:text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
-            Transforme las fotografías de sus conferencias en reportes técnicos y evidencia bibliográfica verificada al instante. Sin ruido, solo ciencia.
+          <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+            Transforme sus capturas visuales en reportes técnicos y evidencia bibliográfica verificada al instante. Sin ruido, solo ciencia.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
