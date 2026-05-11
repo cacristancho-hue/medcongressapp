@@ -39,7 +39,19 @@ export const generateAcademicReport = withAction({
 
   const { data: references } = await supabase
     .from("reference_candidates")
-    .select("image_id, detected_title, detected_authors, detected_year, detected_journal, verification_status, detected_doi, detected_pmid")
+    .select(`
+      image_id, 
+      detected_title, 
+      detected_authors, 
+      detected_year, 
+      detected_journal, 
+      verification_status, 
+      detected_doi, 
+      detected_pmid,
+      official_title,
+      abstract,
+      citation_count
+    `)
     .eq("congress_id", congressId)
 
   if (!ocrResults || ocrResults.length === 0) {
@@ -55,14 +67,29 @@ export const generateAcademicReport = withAction({
       const imgRefs = (references || [])
         .filter((r) => r.image_id === img.id)
         .map((r) => {
-          const status = r.verification_status?.toUpperCase() || "PENDING"
-          const doi = r.detected_doi ? ` [DOI: ${r.detected_doi}]` : ""
-          const pmid = r.detected_pmid ? ` [PMID: ${r.detected_pmid}]` : ""
-          return `- [REF] ${r.detected_authors || "Autores desconocidos"} (${r.detected_year || "n.d."}). ${r.detected_title || "Sin título"}. ${r.detected_journal || ""}${doi}${pmid} [Status: ${status}]`
+          const row = r as { 
+            id: string; 
+            official_title?: string; 
+            detected_title?: string; 
+            verification_status?: string; 
+            detected_doi?: string; 
+            detected_pmid?: string;
+            citation_count?: number;
+            abstract?: string;
+          }
+          const status = row.verification_status?.toUpperCase() || "PENDING"
+          const doi = row.detected_doi ? ` [DOI: ${row.detected_doi}]` : ""
+          const pmid = row.detected_pmid ? ` [PMID: ${row.detected_pmid}]` : ""
+          const citeInfo = row.citation_count ? ` [Citas: ${row.citation_count}]` : ""
+          const academicContext = row.abstract 
+            ? `\n   - EVIDENCIA REAL (Abstract): ${row.abstract.slice(0, 500)}...`
+            : ""
+          
+          return `- [ref:${row.id.slice(0, 8)}] ${row.official_title || row.detected_title}. ${status}${doi}${pmid}${citeInfo}${academicContext}`
         })
         .join("\n")
 
-      return `=== FOTO_${idx + 1} ===\nTEXTO DETECTADO:\n${ocr}\n${imgRefs ? `\nREFERENCIAS BIBLIOGRÁFICAS EN ESTA FOTO:\n${imgRefs}` : ""}`
+      return `=== FOTO_${idx + 1} ===\nTEXTO DETECTADO EN DIAPOSITIVA:\n${ocr}\n${imgRefs ? `\nREFERENCIAS Y EVIDENCIA CIENTÍFICA ASOCIADA:\n${imgRefs}` : ""}`
     })
     .filter(Boolean)
     .join("\n\n---\n\n")
