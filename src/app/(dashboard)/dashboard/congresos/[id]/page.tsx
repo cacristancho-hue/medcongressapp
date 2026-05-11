@@ -224,9 +224,6 @@ export default async function CongresoDetailPage({ params }: Props) {
   )
 }
 
-import TopicNavigator from "@/components/congresses/topic-navigator"
-import { useState, useMemo } from "react"
-
 async function CongressDiscovery({ congressId }: { congressId: string }) {
   const supabase = await createClient()
 
