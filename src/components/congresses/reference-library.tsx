@@ -233,8 +233,8 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
               {ref.specialty || "General"}
             </span>
@@ -251,39 +251,64 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
             </Link>
           </div>
           <h4 className={clsx(
-            "text-sm font-bold leading-tight group-hover:text-teal-600 transition-colors",
+            "text-sm font-bold leading-tight group-hover:text-teal-600 transition-colors line-clamp-2",
             (!ref.official_title && !ref.detected_title) ? "text-slate-400 italic font-normal" : "text-slate-900"
           )}>
             {ref.official_title || ref.detected_title || (ref.raw_text.length > 100 ? ref.raw_text.substring(0, 100) + "..." : ref.raw_text) || "Sin título detectado"}
           </h4>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1 truncate">
             {ref.official_authors || ref.detected_authors || "Autores no detectados"} {ref.official_year || ref.detected_year ? `· ${ref.official_year || ref.detected_year}` : ""}
           </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={async () => {
-                const ok = confirm("¿Eliminar esta referencia de la biblioteca?")
-                if (!ok) return
-                const res = await softDeleteReference({ id: ref.id, congressId: ref.congress_id })
-                if (res.success) {
-                  toast.success("Referencia eliminada")
-                }
-              }}
-              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-              title="Eliminar referencia"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-            <BookOpen className="h-5 w-5 text-slate-200 group-hover:text-teal-100 transition-colors" />
-          </div>
-          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={async () => {
+              const ok = confirm("¿Eliminar esta referencia de la biblioteca?")
+              if (!ok) return
+              const res = await softDeleteReference({ id: ref.id, congressId: ref.congress_id })
+              if (res.success) {
+                toast.success("Referencia eliminada")
+              }
+            }}
+            className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+            title="Eliminar referencia"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+          <BookOpen className="h-5 w-5 text-slate-200 group-hover:text-teal-100 transition-colors" />
+        </div>
+      </div>
 
-          {(ref.official_journal || ref.detected_journal) && (
-          <p className="text-[10px] font-mono text-teal-600/80 bg-teal-50/50 p-1.5 rounded border border-teal-100/50">
+      {/* Evidencia Visual (Foto de la diapositiva) */}
+      {ref.image_url && (
+        <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-100 bg-slate-50 group/image">
+          <img 
+            src={ref.image_url} 
+            alt="Diapositiva original" 
+            className="h-full w-full object-cover transition-transform duration-500 group-hover/image:scale-110"
+          />
+          <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center">
+            <Link 
+              href={`/dashboard/congresos/${ref.congress_id}?highlight=${ref.image_id}`}
+              className="bg-white/90 backdrop-blur-sm text-slate-900 text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-white transition-all shadow-lg"
+            >
+              <ExternalLink className="h-3 w-3" />
+              VER DIAPOSITIVA COMPLETA
+            </Link>
+          </div>
+          <div className="absolute bottom-1.5 right-1.5">
+            <span className="text-[8px] font-bold text-white bg-black/50 backdrop-blur-md px-1.5 py-0.5 rounded uppercase tracking-widest">
+              Evidencia Visual
+            </span>
+          </div>
+        </div>
+      )}
+
+      {(ref.official_journal || ref.detected_journal) && (
+        <p className="text-[10px] font-mono text-teal-600/80 bg-teal-50/50 p-1.5 rounded border border-teal-100/50">
           {ref.official_journal || ref.detected_journal}
-          </p>
-          )}
+        </p>
+      )}
 
           {ref.abstract && (
           <details className="text-xs text-slate-600 bg-slate-50/50 rounded-lg border border-slate-100 overflow-hidden group/details">

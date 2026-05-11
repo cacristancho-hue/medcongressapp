@@ -7,6 +7,7 @@ export interface LibraryReference {
   congress_id: string
   congress_name: string
   image_id: string | null
+  image_url: string | null
   raw_text: string
   detected_title: string | null
   detected_authors: string | null
@@ -108,7 +109,8 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
         deleted_at
       ),
       congress_images (
-        deleted_at
+        deleted_at,
+        storage_path_thumbnail
       )
     `)
     .is("deleted_at", null)
@@ -120,6 +122,8 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     return { error: "No se pudo cargar la biblioteca." }
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+
   // Filtrar en memoria las referencias cuyas imágenes asociadas estén borradas
   const activeRows = (data ?? []).filter((row: any) => {
     // Si no tiene imagen_id (ej. agregada manualmente), es válida
@@ -128,7 +132,7 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     return row.congress_images === null || row.congress_images.deleted_at === null
   })
 
-  const rows = activeRows as unknown as ReferenceCandidateRow[]
+  const rows = activeRows as unknown as any[]
   
   // 2. Motor de Deduplicación Top Mundial (In-Memory + Master Linkage)
   const libraryMap = new Map<string, LibraryReference>()
@@ -150,19 +154,18 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     
     const key = masterId || doi || pmid || normalizedTitle || row.id
 
-    // --- MOTOR DE DEPURACIÓN ÉLITE ---
-    // 1. Filtrar ruido: Si no está verificado Y tiene confianza muy baja (< 0.35) Y no tiene metadatos oficiales
-    const isVeryLowConfidence = (row.confidence_score ?? 0) < 0.35
-    const hasNoOfficialData = !row.official_title && !row.detected_doi && !row.detected_pmid
-    const isUnverified = row.verification_status === "not_verified"
+    // --- MOTOR DE DEPURACIÓN ÉLITE (AJUSTADO) ---
+    // 1. Filtrar ruido extremo: Solo si no hay título, no hay DOI, y la confianza es casi nula (< 0.20)
+    const isExtremeNoise = (row.confidence_score ?? 0) < 0.20
+    const hasNoIdentity = !row.official_title && !row.detected_title && !row.detected_doi && !row.detected_pmid
     
-    if (isUnverified && isVeryLowConfidence && hasNoOfficialData) {
-      return // Ignorar este scrap de OCR
+    if (hasNoIdentity && isExtremeNoise) {
+      return // Ignorar basura de OCR
     }
 
-    // 2. Filtrar fragmentos cortos: Si el texto original es demasiado corto y no hay título
-    if (!row.detected_title && (row.raw_reference_text?.length ?? 0) < 30 && !row.detected_doi) {
-      return // Ignorar fragmentos irrelevantes
+    // 2. Filtrar fragmentos absurdamente cortos ( < 12 chars ej. "p < 0.05")
+    if (hasNoIdentity && (row.raw_reference_text?.length ?? 0) < 12) {
+      return 
     }
 
     const current: LibraryReference = {
@@ -170,6 +173,9 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       congress_id: row.congress_id,
       congress_name: row.congresses?.name || "Material General",
       image_id: row.image_id,
+      image_url: row.congress_images?.storage_path_thumbnail 
+        ? `${supabaseUrl}/storage/v1/object/public/congress-photos/${row.congress_images.storage_path_thumbnail}`
+        : null,
       raw_text: row.raw_reference_text ?? "",
       detected_title: row.detected_title,
       detected_authors: row.detected_authors,
