@@ -115,30 +115,30 @@ const REPORT_SYSTEM_PROMPT = (language: "es" | "en") =>
    IMPORTANTE: Redacta COMPLETAMENTE en ${language === "es" ? "Español" : "Inglés"}.
 
    INSTRUCCIONES DE PRODUCTO:
-   1. **Esquema de Ponencia (Script)**: Crea una estructura lógica para que el médico pueda replicar esta charla. 
-   2. **Dualidad de Fuentes**: 
-      - Usa [foto:N] para referenciar hallazgos visuales específicos de las diapositivas.
-      - Usa [ref:ID] para integrar la evidencia de los artículos científicos reales (Abstracts/Citas).
-   3. **Estructura Crítica**: Diferencia entre lo que el ponente afirmó (basado en OCR) y lo que la literatura científica dice (basado en los Abstracts proporcionados).
+   1. **Esquema de Ponencia (Script)**: Crea una estructura lógica para que el médico pueda replicar esta charla de forma fluida.
+   2. **Enfoque de Enriquecimiento (No Juicio)**: Tu labor es COMPLEMENTAR. El ponente tiene tiempo limitado; tú usas los artículos para aportar los detalles técnicos que no caben en una diapositiva (ej: metodología, subgrupos). Mantén siempre un tono de respeto profesional.
+   3. **Dualidad de Fuentes**: 
+      - Usa [foto:N] para los mensajes clave presentados.
+      - Usa [ref:ID] para la profundidad científica de los artículos de soporte.
 
    ESTRUCTURA DEL DOCUMENTO (Markdown):
    # [Título sugerido para la Ponencia]
 
    ## I. Apertura y Mensajes Clave
-   (Resumen ejecutivo para captar la atención en los primeros 2 minutos)
+   (Resumen de los conceptos fundamentales presentados)
 
-   ## II. Desarrollo Temático (Cuerpo de la Ponencia)
-   Para cada bloque temático identificado:
+   ## II. Desarrollo Temático (Profundización Académica)
+   Para cada bloque temático:
    ### [Nombre del Módulo]
-   - **Guion Narrativo**: Qué decir y en qué orden.
-   - **Evidencia Visual**: Referencias a [foto:N] con los datos clave (p-values, dosis, etc.).
-   - **Profundidad Científica**: Integra información de los ABSTRACTS proporcionados. No te limites al título del estudio.
+   - **Guion Narrativo**: Estructura sugerida para explicar el tema.
+   - **Evidencia Visual**: Mensajes destacados en [foto:N].
+   - **Contexto Complementario**: Información extraída de los ABSTRACTS para dar más solidez al tema tratado.
+   
+   ## III. Perlas Clínicas y Aplicación
+   (Puntos accionables para la práctica diaria basados en la sesión)
 
-   ## III. Discusión y Perlas Clínicas
-   (Puntos accionables y "take-home messages")
-
-   ## IV. Bibliografía de Soporte
-   (Lista numerada de las referencias [ref:ID] con su estado de verificación y conteo de citas).
+   ## IV. Bibliografía y Evidencia Verificada
+   (Lista numerada de las referencias [ref:ID] con su estado y métricas de impacto).
 
    REGLAS DE RIGOR CIENTÍFICO:
    1. **ALERTA DE RETRACTACIÓN**: Si un estudio es [Status: RETRACTED], incluye advertencia en negrita y rojo: **⚠️ ALERTA: ESTUDIO RETRACTADO**.

@@ -210,23 +210,40 @@ export default async function CongresoDetailPage({ params }: Props) {
         />
       </div>
 
-      {/* Gallery */}
+      {/* Discovery Section (Topics + Gallery) */}
       <div className="pt-6 border-t border-slate-100">
-        <div className="mb-4">
-          <h3 className="text-base font-semibold text-slate-900">Galería de Evidencia</h3>
-          <p className="text-xs text-slate-500">Analiza tus fotos para alimentar la IA</p>
+        <div className="mb-6">
+          <h3 className="text-base font-semibold text-slate-900">Hallazgos y Evidencia</h3>
+          <p className="text-xs text-slate-500">Explora el contenido organizado por temas clínicos</p>
         </div>
+        
         {currentCount > 0 && (
-          <PhotoGridWrapper congressId={id} />
+          <CongressDiscovery congressId={id} />
         )}
       </div>
     </div>
   )
 }
 
-async function PhotoGridWrapper({ congressId }: { congressId: string }) {
+import TopicNavigator from "@/components/congresses/topic-navigator"
+import { useState, useMemo } from "react"
+
+async function CongressDiscovery({ congressId }: { congressId: string }) {
   const supabase = await createClient()
 
+  // 1. Obtener tópicos y sus relaciones
+  const { data: topicsData } = await supabase
+    .from("topics")
+    .select(`
+      id, 
+      name, 
+      category, 
+      description,
+      image_topics(image_id)
+    `)
+    .eq("congress_id", congressId)
+
+  // 2. Obtener imágenes
   const { data: images } = await supabase
     .from("congress_images")
     .select(`
@@ -238,13 +255,15 @@ async function PhotoGridWrapper({ congressId }: { congressId: string }) {
       file_size, 
       status, 
       created_at,
-      ocr_results(cleaned_text)
+      ocr_results(cleaned_text),
+      image_topics(topic_id)
     `)
     .eq("congress_id", congressId)
     .order("created_at", { ascending: true })
 
   if (!images?.length) return null
 
+  // Prepara URLs firmadas
   const thumbnailPaths = images.map((image) => image.storage_path_thumbnail ?? image.storage_path_optimized ?? image.storage_path)
   const optimizedPaths = images.map((image) => image.storage_path_optimized ?? image.storage_path)
 
@@ -259,8 +278,11 @@ async function PhotoGridWrapper({ congressId }: { congressId: string }) {
 
   const initialImages = images.map((img, idx) => {
     const ocrData = img.ocr_results as unknown as { cleaned_text: string }[] | undefined
+    const topicRelations = (img.image_topics as unknown as Array<{ topic_id: string }>) || []
+    const topicIds = topicRelations.map(it => it.topic_id)
     return {
       ...img,
+      topic_ids: topicIds,
       ocr_text: ocrData?.[0]?.cleaned_text || null,
       signedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,
       optimizedSignedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,
@@ -268,6 +290,73 @@ async function PhotoGridWrapper({ congressId }: { congressId: string }) {
     }
   })
 
+  const topics = (topicsData ?? []).map(t => {
+    const relations = (t.image_topics as unknown as Array<{ image_id: string }>) || []
+    return {
+      id: t.id,
+      name: t.name,
+      category: t.category,
+      description: t.description,
+      image_count: relations.length
+    }
+  })
 
-  return <PhotoGrid congressId={congressId} initialImages={initialImages} />
+  return (
+    <DiscoveryClient 
+      congressId={congressId}
+      initialImages={initialImages}
+      topics={topics}
+    />
+  )
+}
+
+// Client component wrapper for interactivity
+"use client"
+interface DiscoveryImage extends Photo {
+  topic_ids: string[]
+}
+
+interface DiscoveryTopic {
+  id: string
+  name: string
+  category: string | null
+  description: string | null
+  image_count: number
+}
+
+function DiscoveryClient({ congressId, initialImages, topics }: { 
+  congressId: string; 
+  initialImages: DiscoveryImage[]; 
+  topics: DiscoveryTopic[] 
+}) {
+  const [activeTopicId, setActiveTopicId] = useState<string | null>(null)
+
+  const filteredImages = useMemo(() => {
+    if (!activeTopicId) return initialImages
+    return initialImages.filter(img => img.topic_ids.includes(activeTopicId))
+  }, [activeTopicId, initialImages])
+
+  return (
+    <div className="space-y-8">
+      <TopicNavigator 
+        topics={topics} 
+        activeTopicId={activeTopicId}
+        onTopicClick={setActiveTopicId}
+      />
+      
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+            {activeTopicId ? "Fotos relacionadas con el tema" : "Galería Completa"}
+          </h4>
+          {activeTopicId && (
+            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-100">
+              {filteredImages.length} resultados
+            </span>
+          )}
+        </div>
+        <PhotoGrid congressId={congressId} initialImages={filteredImages} />
+      </div>
+    </div>
+  )
 }
