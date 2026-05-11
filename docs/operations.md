@@ -1,4 +1,4 @@
-# Operations Runbook — MedCongress
+# Operations Runbook — MDCONGRESS
 
 Última actualización: 2026-05-09
 
@@ -25,13 +25,13 @@ Headers que Vercel manda automáticamente al endpoint: `Authorization: Bearer ${
 
 ### Opción B — cron-job.org (gratis, externo) — $0
 - Servicio externo que pinguea URLs en horario.
-- Setup: registrarse → crear cron job con URL = `https://medcongress.app/api/jobs/worker`, header `Authorization: Bearer <CRON_SECRET>`, frecuencia 1 min.
+- Setup: registrarse → crear cron job con URL = `https://MDCONGRESS.app/api/jobs/worker`, header `Authorization: Bearer <CRON_SECRET>`, frecuencia 1 min.
 - Limitación gratis: 1 minuto frecuencia, hasta 50 jobs.
 - **Riesgo**: dependes de un tercero. Si cron-job.org cae, tu cola se acumula.
 
 ### Opción C — pg_cron + http extension (Supabase) — $0 si tu plan lo permite
 - Supabase Pro permite habilitar `pg_cron` y `http` desde Database → Extensions.
-- Función SQL que invoca `https://medcongress.app/api/jobs/worker` con auth Bearer.
+- Función SQL que invoca `https://MDCONGRESS.app/api/jobs/worker` con auth Bearer.
 - Schedule via `cron.schedule('worker', '* * * * *', $$ select net.http_post(...) $$)`.
 - **Limitación**: no todos los planes Supabase exponen `pg_cron` con superuser; verifica antes.
 - **Riesgo**: más complejo de monitorear. Solo recomendado si ya tienes pg_cron disponible.

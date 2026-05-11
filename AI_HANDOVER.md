@@ -8,13 +8,13 @@
 
 ## 📌 Información mínima antes de tocar código
 
-- **Producto**: MedCongress AI Companion (nombre comercial pendiente — ver §10)
+- **Producto**: MDCONGRESS - Elite Academic Companion
 - **Repo**: https://github.com/cacristancho-hue/medcongressapp
 - **Branch activa**: `sprint-1/shell-hardening`
-- **Owner humano**: Carlos Cristancho — `cacristanchoo@gmail.com` / `cac-94@hotmail.com`
-- **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI + Gemini + Anthropic)
+- **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
+- **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-10 — sesión Gemini CLI (Refuerzo Académico + Deduplicación)
+- **Última actualización**: 2026-05-10 — Sesión de Consolidación Élite (Camilo Cristancho)
 
 ---
 

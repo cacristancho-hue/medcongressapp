@@ -1,4 +1,4 @@
-# Disaster Recovery Plan — MedCongress
+# Disaster Recovery Plan — MDCONGRESS
 
 Última actualización: 2026-05-09
 
@@ -54,7 +54,7 @@ Supabase Storage replica los archivos en S3 internamente. **No tenemos backup pr
 7. Storage: contactar Supabase para recuperar el bucket; si imposible, los archivos se perdieron.
 
 ### Si pierdes el repo / Vercel
-1. Repo está en GitHub (`cacristancho-hue/medcongressapp`). Clonar.
+1. Repo está en GitHub (`cacristancho-hue/MDCONGRESSapp`). Clonar.
 2. Vercel: nuevo proyecto apuntando al mismo repo.
 3. Configurar env vars (lista completa abajo).
 4. Deploy.
@@ -69,7 +69,7 @@ Supabase Storage replica los archivos en S3 internamente. **No tenemos backup pr
 | `OPENAI_API_KEY` | platform.openai.com |
 | `GEMINI_API_KEY` | aistudio.google.com |
 | `ANTHROPIC_API_KEY` | console.anthropic.com |
-| `MEDCONGRESS_AI_ENABLED` | configuración propia (`true` en prod) |
+| `MDCONGRESS_AI_ENABLED` | configuración propia (`true` en prod) |
 | `CRON_SECRET` | generar con `openssl rand -hex 32` |
 | `NEXT_PUBLIC_SENTRY_DSN` | sentry.io |
 | `SENTRY_AUTH_TOKEN` | sentry.io (para sourcemaps en build) |
