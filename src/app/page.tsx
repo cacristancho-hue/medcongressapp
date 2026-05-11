@@ -5,12 +5,13 @@ import Logo from "@/components/ui/md-logo"
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header Premium - Minimalista para no competir con el Hero */}
+      {/* Header Premium */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="group cursor-pointer">
+          <div className="flex items-center gap-2 group cursor-pointer">
+            <Logo className="h-8 w-8" />
             <span className="font-black text-slate-900 text-xl tracking-tighter uppercase font-plex-mono group-hover:text-blue-600 transition-colors">
-              MDCONGRESS
+              CONGRESS
             </span>
           </div>
           <div className="flex items-center gap-6">
@@ -37,12 +38,12 @@ export default function LandingPage() {
           {/* Logotipo Central Monumental: Isotipo MD + CONGRESS */}
           <div className="flex flex-col items-center mb-12 group cursor-default">
             <div className="transform hover:scale-110 transition-transform duration-700">
-              <Logo className="h-32 w-32 md:h-40 md:w-40 drop-shadow-[0_35px_60px_-15px_rgba(37,99,235,0.3)]" />
+              <Logo className="h-32 w-32 md:h-44 md:w-44 drop-shadow-[0_35px_60px_-15px_rgba(37,99,235,0.3)]" />
             </div>
             
-            <div className="mt-0 relative overflow-hidden">
-              {/* Palabra CONGRESS - Integración Máxima */}
-              <h2 className="text-3xl md:text-5xl font-black tracking-[0.5em] text-black uppercase font-plex-mono leading-none py-1">
+            <div className="mt-[-8px] md:mt-[-12px] relative overflow-hidden">
+              {/* Palabra CONGRESS - Más pequeño y pegado al Isotipo */}
+              <h2 className="text-xl md:text-3xl font-black tracking-[0.6em] text-black uppercase font-plex-mono leading-none py-1">
                 CONGRESS
               </h2>
               
@@ -51,7 +52,7 @@ export default function LandingPage() {
             </div>
             
             {/* Línea de Soporte Visual - Unificadora */}
-            <div className="w-16 h-1 bg-blue-600 mt-1 rounded-full opacity-30 group-hover:w-32 transition-all duration-1000"></div>
+            <div className="w-12 h-1 bg-blue-600 mt-1 rounded-full opacity-30 group-hover:w-24 transition-all duration-1000"></div>
           </div>
 
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-6 border border-blue-100">
