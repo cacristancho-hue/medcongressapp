@@ -1,6 +1,6 @@
 "use client"
 
-import { ShieldCheck, Info } from "lucide-react"
+import { ShieldCheck, Info, BookOpen } from "lucide-react"
 import Logo from "@/components/ui/md-logo"
 import { OpenAIIcon, GeminiIcon, ClaudeIcon, CrossRefIcon, PubMedIcon, OpenAlexIcon } from "@/components/ui/ai-icons"
 
