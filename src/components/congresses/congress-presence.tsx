@@ -5,7 +5,6 @@
 
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Eye } from "lucide-react"
 
 interface PresenceUser {
   user_id: string
@@ -70,12 +69,15 @@ export default function CongressPresence({
   if (others.length === 0) return null
 
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs text-emerald-800">
-      <Eye className="h-3 w-3" />
-      <span className="font-medium">
+    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50/50 border border-emerald-100 px-3 py-1 text-[10px] text-emerald-700 font-black uppercase tracking-widest shadow-sm">
+      <div className="relative flex h-2 w-2">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+      </div>
+      <span>
         {others.length === 1
-          ? `${others[0].display_name} también está aquí`
-          : `${others.length} colegas viendo este congreso`}
+          ? `${others[0].display_name} en línea`
+          : `${others.length} colegas en línea`}
       </span>
     </div>
   )
