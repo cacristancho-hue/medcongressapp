@@ -31,6 +31,50 @@ interface VerifySingleInput {
   congressId: string
 }
 
+export const updateReferenceCandidate = withAction({
+  name: "reference.update",
+  rateLimit: "reference_verify",
+})(async ({ user, supabase }, input: { id: string; congressId: string; updates: any }) => {
+  const { id, congressId, updates } = input
+
+  const { error } = await supabase
+    .from("reference_candidates")
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (error) throw new Error(`Error actualizando referencia: ${error.message}`)
+
+  revalidatePath(`/dashboard/congresos/${congressId}`)
+  revalidatePath("/dashboard/biblioteca")
+  return { success: true }
+})
+
+export const softDeleteReference = withAction({
+  name: "reference.delete",
+  rateLimit: "reference_verify",
+})(async ({ user, supabase }, input: { id: string; congressId: string }) => {
+  const { id, congressId } = input
+
+  const { error } = await supabase
+    .from("reference_candidates")
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: user.id,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (error) throw new Error(`Error eliminando referencia: ${error.message}`)
+
+  revalidatePath(`/dashboard/congresos/${congressId}`)
+  revalidatePath("/dashboard/biblioteca")
+  return { success: true }
+})
+
 export const verifySingleReference = withAction({
   name: "reference.verify",
   rateLimit: "reference_verify",

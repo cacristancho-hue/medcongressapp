@@ -2,8 +2,9 @@
 
 import { useState, useMemo } from "react"
 import { LibraryReference } from "@/lib/actions/library"
-import { Search, BookOpen, ExternalLink, Filter, ChevronRight } from "lucide-react"
-import { updateReferenceCandidate } from "@/lib/actions/edits"
+import { Search, BookOpen, ExternalLink, Filter, ChevronRight, Trash2, CheckCircle2, AlertCircle } from "lucide-react"
+import { updateReferenceCandidate, softDeleteReference } from "@/lib/actions/references"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
 import { clsx } from "clsx"
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function ReferenceLibrary({ initialReferences }: Props) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCongress, setFilterCongress] = useState<string>("all")
   const [filterSpecialty, setFilterSpecialty] = useState<string>("all")
@@ -258,7 +260,23 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
             {ref.official_authors || ref.detected_authors || "Autores no detectados"} {ref.official_year || ref.detected_year ? `· ${ref.official_year || ref.detected_year}` : ""}
           </p>
           </div>
-          <BookOpen className="h-5 w-5 text-slate-200 group-hover:text-teal-100 transition-colors shrink-0" />
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={async () => {
+                const ok = confirm("¿Eliminar esta referencia de la biblioteca?")
+                if (!ok) return
+                const res = await softDeleteReference({ id: ref.id, congressId: ref.congress_id })
+                if (res.success) {
+                  toast.success("Referencia eliminada")
+                }
+              }}
+              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+              title="Eliminar referencia"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+            <BookOpen className="h-5 w-5 text-slate-200 group-hover:text-teal-100 transition-colors" />
+          </div>
           </div>
 
           {(ref.official_journal || ref.detected_journal) && (
@@ -283,19 +301,38 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
           <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5">
-              <span className={clsx(
-                "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border w-fit",
-                ref.verification_status === "verified" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600" :
-                ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-600 animate-pulse" :
-                ref.verification_status === "ambiguous" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
-                ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
-                "border-slate-300 bg-slate-100 text-slate-500"
-              )}>
-                {ref.verification_status === "verified" ? "Evidencia Validada" : 
-                 ref.verification_status === "retracted" ? "⚠️ Retractado" :
-                 ref.verification_status === "ambiguous" ? "Confirmación Pendiente" :
-                 ref.verification_status === "partially_verified" ? "Validación Parcial" : "No Verificada"}
-              </span>
+              <button
+                onClick={async () => {
+                  const nextStatus = ref.verification_status === 'verified' ? 'ambiguous' : 'verified'
+                  const res = await updateReferenceCandidate({ 
+                    id: ref.id, 
+                    congressId: ref.congress_id, 
+                    updates: { verification_status: nextStatus } 
+                  })
+                  if (res.success) toast.success(`Estado actualizado a ${nextStatus}`)
+                }}
+                className={clsx(
+                  "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border w-fit transition-all flex items-center gap-1 hover:brightness-95",
+                  ref.verification_status === "verified" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600" :
+                  ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-600 animate-pulse" :
+                  ref.verification_status === "ambiguous" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
+                  ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
+                  "border-slate-300 bg-slate-100 text-slate-500"
+                )}
+              >
+                {ref.verification_status === "verified" ? (
+                  <>
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                    Evidencia Validada
+                  </>
+                ) : ref.verification_status === "retracted" ? (
+                  <>
+                    <AlertCircle className="h-2.5 w-2.5" />
+                    ⚠️ Retractado
+                  </>
+                ) : ref.verification_status === "ambiguous" ? "Confirmación Pendiente" :
+                ref.verification_status === "partially_verified" ? "Validación Parcial" : "No Verificada"}
+              </button>
 
               {ref.verification_status === "not_verified" && (!ref.detected_title || !ref.detected_doi) && (
                 <span className="text-[9px] text-amber-600 font-medium flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
@@ -307,7 +344,11 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
             {ref.verification_status === "ambiguous" && (
               <button 
                 onClick={async () => {
-                  const res = await updateReferenceCandidate(ref.id, ref.congress_id, { verification_status: 'verified' })
+                  const res = await updateReferenceCandidate({ 
+                    id: ref.id, 
+                    congressId: ref.congress_id, 
+                    updates: { verification_status: 'verified' } 
+                  })
                   if (res.success) toast.success("Referencia confirmada")
                 }}
                 className="text-[9px] text-amber-700 font-bold underline hover:text-amber-800"

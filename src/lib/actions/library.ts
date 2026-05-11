@@ -72,7 +72,8 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   if (!user) return { error: "No autorizado" }
 
-  // 1. Obtener todas las referencias del usuario
+  // 1. Obtener todas las referencias activas del usuario
+  // Filtramos por congresses activos y congress_images activas
   const { data, error } = await supabase
     .from("reference_candidates")
     .select(`
@@ -101,11 +102,17 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       influential_citation_count,
       is_open_access,
       open_access_url,
-      congresses (
+      congresses!inner (
         name,
-        specialty
+        specialty,
+        deleted_at
+      ),
+      congress_images (
+        deleted_at
       )
     `)
+    .is("deleted_at", null)
+    .is("congresses.deleted_at", null)
     .order("created_at", { ascending: false })
 
   if (error) {
@@ -113,7 +120,15 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     return { error: "No se pudo cargar la biblioteca." }
   }
 
-  const rows = (data ?? []) as unknown as ReferenceCandidateRow[]
+  // Filtrar en memoria las referencias cuyas imágenes asociadas estén borradas
+  const activeRows = (data ?? []).filter((row: any) => {
+    // Si no tiene imagen_id (ej. agregada manualmente), es válida
+    if (!row.image_id) return true
+    // Si tiene imagen, debe no estar borrada
+    return row.congress_images === null || row.congress_images.deleted_at === null
+  })
+
+  const rows = activeRows as unknown as ReferenceCandidateRow[]
   
   // 2. Motor de Deduplicación Top Mundial (In-Memory + Master Linkage)
   const libraryMap = new Map<string, LibraryReference>()
