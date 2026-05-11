@@ -77,6 +77,38 @@ export async function deleteReport(
   return { success: true, message: "Reporte eliminado" }
 }
 
+export async function updateReferenceCandidate(
+  referenceId: string,
+  congressId: string,
+  payload: {
+    verification_status?: string
+    detected_title?: string
+    detected_authors?: string
+    detected_journal?: string
+    detected_year?: string
+  }
+): Promise<{ success?: boolean; error?: string; message?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: "No autorizado" }
+
+  const { error } = await supabase
+    .from("reference_candidates")
+    .update(payload)
+    .eq("id", referenceId)
+    .eq("user_id", user.id)
+
+  if (error) {
+    console.error("Error updating reference candidate:", error)
+    return { error: "No se pudieron guardar los cambios" }
+  }
+
+  revalidatePath(`/dashboard/congresos/${congressId}`)
+  revalidatePath(`/dashboard/biblioteca`)
+  return { success: true, message: "Referencia actualizada con éxito" }
+}
+
 export async function updateImageAnalysis(
   imageId: string,
   congressId: string,

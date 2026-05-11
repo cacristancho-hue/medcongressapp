@@ -26,7 +26,7 @@ export const maxDuration = 60 // 60s max for image vision processing
 
 type LogLevel = "info" | "warn" | "error"
 
-function log(level: LogLevel, msg: string, data?: any) {
+function log(level: LogLevel, msg: string, data?: Record<string, unknown>) {
   const entry = {
     ts: new Date().toISOString(),
     level,
@@ -40,7 +40,7 @@ interface AiJobRow {
   id: string
   job_type: "image_analysis" | "report_generation" | "topics_extraction" | "reference_verification"
   status: "pending" | "processing" | "completed" | "failed"
-  payload: any
+  payload: Record<string, unknown>
   user_id: string
   congress_id?: string
   image_id?: string
@@ -50,12 +50,9 @@ interface AiJobRow {
 // WORKER HANDLERS
 // =============================================================================
 
-interface SupabaseService {
-  from: any
-  storage: any
-}
+import { SupabaseClient } from "@supabase/supabase-js"
 
-async function runImageAnalysis(supabase: SupabaseService, job: AiJobRow) {
+async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
   if (!job.image_id) throw new Error("image_id requerido")
 
   const { data: image, error: imgErr } = await supabase
@@ -259,8 +256,9 @@ async function runImageAnalysis(supabase: SupabaseService, job: AiJobRow) {
     })
 
     return { provider: usage.provider, model: usage.model, references: result.references?.length || 0 }
-  } catch (err: any) {
-    log("error", "IA analysis phase failed in worker", { imageId: job.image_id, error: err.message })
+  } catch (err) {
+    const error = err as Error
+    log("error", "IA analysis phase failed in worker", { imageId: job.image_id, error: error.message })
     await supabase
       .from("congress_images")
       .update({ ai_status: "ai_failed", ocr_status: "ocr_failed" })
@@ -269,7 +267,7 @@ async function runImageAnalysis(supabase: SupabaseService, job: AiJobRow) {
   }
 }
 
-async function runTopicsExtraction(supabase: SupabaseService, job: AiJobRow) {
+async function runTopicsExtraction(supabase: SupabaseClient, job: AiJobRow) {
   if (!job.congress_id) throw new Error("congress_id requerido")
 
   const { data: rows, error: fetchErr } = await supabase
@@ -281,17 +279,20 @@ async function runTopicsExtraction(supabase: SupabaseService, job: AiJobRow) {
   if (fetchErr) throw new Error(`Fetch error: ${fetchErr.message}`)
 
   const documents = (rows ?? [])
-    .map((r: any, idx: number) => ({
-      index: idx,
-      imageId: r.id,
-      text: r.ocr_results?.[0]?.cleaned_text ?? "",
-    }))
-    .filter((d: any) => d.text.trim().length > 0)
+    .map((r, idx) => {
+      const row = r as unknown as { id: string; ocr_results: Array<{ cleaned_text: string | null }> | null }
+      return {
+        index: idx,
+        imageId: row.id,
+        text: row.ocr_results?.[0]?.cleaned_text ?? "",
+      }
+    })
+    .filter((d) => d.text.trim().length > 0)
 
   if (documents.length === 0) return { topicsCreated: 0 }
 
   const { topics, usage } = await extractTopicsFromCorpus({
-    documents: documents.map(({ index, text }: any) => ({ index, text })),
+    documents: documents.map(({ index, text }) => ({ index, text })),
   })
 
   let createdCount = 0
@@ -339,8 +340,8 @@ async function runTopicsExtraction(supabase: SupabaseService, job: AiJobRow) {
   return { topicsCreated: createdCount }
 }
 
-async function runReportGeneration(supabase: SupabaseService, job: AiJobRow) {
-  const { fullText, language } = job.payload
+async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
+  const { fullText, language } = job.payload as { fullText: string; language: "es" | "en" }
   if (!fullText || !language) throw new Error("Payload incompleto para reporte")
 
   log("info", "generating academic report in background", { congressId: job.congress_id })
@@ -373,7 +374,7 @@ async function runReportGeneration(supabase: SupabaseService, job: AiJobRow) {
   return { success: true, model: usage.model }
 }
 
-async function runReferenceVerification(supabase: SupabaseService, job: AiJobRow) {
+async function runReferenceVerification(supabase: SupabaseClient, job: AiJobRow) {
   if (!job.congress_id) throw new Error("congress_id requerido")
 
   const { data: refs, error: fetchErr } = await supabase
@@ -479,12 +480,13 @@ export async function POST(request: Request) {
     }).eq("id", job.id)
 
     return NextResponse.json({ success: true, jobId: job.id })
-  } catch (err: any) {
+  } catch (err) {
+    const error = err as Error
     await supabase.from("ai_jobs").update({
       status: "failed",
       finished_at: new Date().toISOString(),
-      error_message: err.message,
+      error_message: error.message,
     }).eq("id", job.id)
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

@@ -343,6 +343,9 @@ interface OpenAlexWork {
   doi?: string | null
   ids?: { pmid?: string | null }
   is_retracted?: boolean | null
+  abstract_inverted_index?: Record<string, number[]> | null
+  type?: string | null
+  concepts?: Array<{ display_name?: string; level?: number }> | null
 }
 
 interface OpenAlexResponse {
@@ -361,7 +364,7 @@ function openAlexWorkToCandidate(work: OpenAlexWork): ExternalCandidate {
 
   // Reconstruct abstract from inverted index (OpenAlex style)
   let abstract: string | null = null
-  const index = (work as any).abstract_inverted_index as Record<string, number[]> | undefined
+  const index = work.abstract_inverted_index
   if (index) {
     try {
       const words: string[] = []
@@ -389,8 +392,8 @@ function openAlexWorkToCandidate(work: OpenAlexWork): ExternalCandidate {
     retracted: Boolean(work.is_retracted),
     retractionNotice: work.is_retracted ? "OpenAlex is_retracted=true" : null,
     abstract,
-    publicationType: (work as any).type ?? null,
-    meshTerms: (work as any).concepts?.filter((c: any) => c.level <= 1).map((c: any) => c.display_name) ?? []
+    publicationType: work.type ?? null,
+    meshTerms: work.concepts?.filter((c) => (c.level ?? 0) <= 1).map((c) => c.display_name ?? "") ?? []
   }
 }
 

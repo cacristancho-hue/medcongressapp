@@ -3,9 +3,8 @@
 import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Upload, CheckCircle, XCircle, Loader2, AlertTriangle, Check, RefreshCw } from "lucide-react"
+import { Upload, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react"
 import { clsx } from "clsx"
-import { toast } from "sonner"
 import { registerImage } from "@/lib/actions/photos"
 import { enqueueImageAnalysis } from "@/lib/actions/queue"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
@@ -15,7 +14,6 @@ import { Button } from "@/components/ui/button"
 
 const MAX_PHOTOS = 100
 const MAX_FILE_SIZE = 20 * 1024 * 1024
-const CONCURRENCY = 8
 
 type FileStatus = "queued" | "hashing" | "duplicate_check" | "uploading" | "processing" | "done" | "error" | "potential_duplicate"
 
@@ -57,8 +55,6 @@ function generateId() {
 export default function PhotoUploadZone({ congressId, userId, currentCount, aiEnabled = false }: Props) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
-  const dragCounter = useRef(0)
-  const [isDragging, setIsDragging] = useState(false)
   const [items, setItems] = useState<UploadItem[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [hasAcceptedDisclaimer, setHasAcceptedDisclaimer] = useState(false)
@@ -116,12 +112,17 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         return
       }
 
-      const { error: thumbErr } = await supabase.storage
+      const { error: thumbUploadErr } = await supabase.storage
         .from("congress-photos")
         .upload(paths.thumbnail, prepared.thumbnail.file, {
           contentType: prepared.thumbnail.mimeType,
           upsert: true,
         })
+
+      if (thumbUploadErr) {
+        updateItem(item.id, { status: "error", error: thumbUploadErr.message })
+        return
+      }
 
       const { error: regErr } = await registerImage({
         id: item.id,
@@ -152,7 +153,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         file_size: prepared.optimized.sizeBytes,
         mime_type: prepared.optimized.mimeType,
         file_hash: item.hash,
-      } as any)
+      })
 
       if (regErr) {
         updateItem(item.id, { status: "error", error: regErr })

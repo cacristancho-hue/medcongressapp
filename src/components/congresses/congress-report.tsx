@@ -9,7 +9,6 @@ import { Sparkles, Calendar, ChevronDown, ChevronUp, Loader2, Save, Edit3, Trash
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { toast } from "sonner"
-import { clsx } from "clsx"
 
 interface Report {
   id: string
@@ -40,7 +39,7 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
   const handleGenerate = () => {
     startGenerating(async () => {
       try {
-        const result = await generateAcademicReport({ congressId, language: "es" })
+        await generateAcademicReport({ congressId, language: "es" })
         toast.success("Esquema académico generado con éxito")
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Error al generar el esquema")

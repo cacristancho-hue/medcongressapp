@@ -223,7 +223,7 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<ImageAnaly
 
     try {
       const result = await retry(async () => {
-        const content: any[] = [
+        const content: Array<{ type: "text"; text: string } | { type: "image"; image: URL }> = [
           {
             type: "text",
             text: `Analiza esta diapositiva médica. 

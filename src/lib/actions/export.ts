@@ -1,6 +1,8 @@
 "use server"
 
 import JSZip from "jszip"
+import { execSync } from "child_process"
+import path from "path"
 import { withAction } from "@/lib/with-action"
 import { dispatchWebhook } from "@/lib/webhooks"
 
@@ -119,10 +121,6 @@ export const exportCongress = withAction({
   // Professional Medical Exports (RIS + CSV)
   if (refsRes.data && refsRes.data.length > 0) {
     try {
-      const { execSync } = require("child_process")
-      const path = require("path")
-      const fs = require("fs")
-      
       const jsonStr = JSON.stringify(refsRes.data)
       const pythonPath = process.env.PYTHON_PATH || "python"
       

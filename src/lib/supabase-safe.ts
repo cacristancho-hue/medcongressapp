@@ -5,11 +5,11 @@ import { SupabaseClient } from "@supabase/supabase-js"
  * Si falla con el error 42703 (columna no existe), filtra las columnas que pertenecen
  * a las Fases 24-27 (aún no propagadas en algunos entornos) y reintenta.
  */
-export async function safeUpdate(
-  supabase: SupabaseClient<any>,
+export async function safeUpdate<T extends Record<string, unknown>>(
+  supabase: SupabaseClient,
   table: string,
-  payload: Record<string, any>,
-  match: Record<string, any>
+  payload: T,
+  match: Record<string, unknown>
 ) {
   // Columnas introducidas en Fases 24, 25, 26 y 27
   const academicColumns = [

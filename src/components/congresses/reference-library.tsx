@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { LibraryReference } from "@/lib/actions/library"
 import { Search, BookOpen, ExternalLink, Filter, ChevronRight } from "lucide-react"
-import { updateImageAnalysis } from "@/lib/actions/edits"
+import { updateReferenceCandidate } from "@/lib/actions/edits"
 import { toast } from "sonner"
 import Link from "next/link"
 import { clsx } from "clsx"
@@ -223,7 +223,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                     {ref.verification_status === "ambiguous" && (
                       <button 
                         onClick={async () => {
-                          const res = await updateImageAnalysis(ref.id, ref.congress_id, { verification_status: 'verified' } as any)
+                          const res = await updateReferenceCandidate(ref.id, ref.congress_id, { verification_status: 'verified' })
                           if (res.success) toast.success("Referencia confirmada")
                         }}
                         className="text-[9px] text-amber-700 font-bold underline hover:text-amber-800"

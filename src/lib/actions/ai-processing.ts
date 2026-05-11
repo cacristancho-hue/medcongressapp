@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { recordAiUsage } from "@/lib/ai-usage"
-import { analyzeImage, extractTopicsFromCorpus, ImageAnalysisResult, AiUsage } from "@/lib/ai/router"
+import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
 import { withAction } from "@/lib/with-action"
 import { verifyReference } from "@/lib/reference-verification"
 import { execSync } from "child_process"
@@ -99,7 +99,7 @@ export const processImageWithAI = withAction({
         .update({ 
           storage_path_optimized: rectifiedPath, 
           status: "optimized" 
-        } as any)
+        })
         .eq("id", imageId)
 
       // Preparamos el payload base64 para la IA (más rápido y evita problemas de permisos de URL)
@@ -111,7 +111,9 @@ export const processImageWithAI = withAction({
         if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath)
         if (leftPath && fs.existsSync(leftPath)) fs.unlinkSync(leftPath)
         if (rightPath && fs.existsSync(rightPath)) fs.unlinkSync(rightPath)
-      } catch (e) {}
+      } catch {
+        // Ignorar errores de limpieza silenciosamente
+      }
       
     } catch (optErr) {
       console.warn("[processImageWithAI] El recorte de OpenCV falló, usando imagen original:", optErr)
