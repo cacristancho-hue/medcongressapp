@@ -8,7 +8,7 @@ interface LogoProps {
 }
 
 /**
- * MedCongress brand logo.
+ * MDCONGRESS brand logo.
  *
  * Symbol: a stylized stethoscope head + ECG pulse merged into a hexagon,
  * representing "academic medicine + signal extraction". The hexagon nods to
@@ -68,23 +68,23 @@ export function Logo({ className, iconOnly = false, light = false, size = "md" }
         <div className="flex flex-col leading-none">
           <span
             className={cn(
-              "font-bold tracking-tight",
+              "font-bold tracking-tighter",
               s.text,
               light ? "text-white" : "text-slate-900"
             )}
-            style={{ letterSpacing: "-0.02em" }}
+            style={{ letterSpacing: "-0.04em" }}
           >
-            <span className={light ? "text-white" : "text-slate-900"}>Med</span>
-            <span className={light ? "text-teal-200" : "text-teal-600"}>Congress</span>
+            <span className={light ? "text-white" : "text-slate-900"}>MD</span>
+            <span className={light ? "text-blue-200" : "text-blue-600"}>CONGRESS</span>
           </span>
           <span
             className={cn(
-              "uppercase font-medium tracking-[0.18em] mt-0.5",
+              "uppercase font-bold tracking-[0.2em] mt-0.5",
               s.tag,
-              light ? "text-teal-100/80" : "text-slate-400"
+              light ? "text-blue-100/80" : "text-slate-400"
             )}
           >
-            Clinical Companion
+            Academic Companion
           </span>
         </div>
       )}

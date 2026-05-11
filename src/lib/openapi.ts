@@ -70,12 +70,12 @@ export function buildOpenApiDocument() {
   return createDocument({
     openapi: "3.1.0",
     info: {
-      title: "MedCongress API",
+      title: "MDCONGRESS API",
       version: "0.1.0",
       description:
         "API interna y futura API pública. Documenta esquemas reutilizables y endpoints expuestos.",
     },
-    servers: [{ url: "https://medcongress.app" }],
+    servers: [{ url: "https://MDCONGRESS.app" }],
     paths: {
       "/api/health": {
         get: {

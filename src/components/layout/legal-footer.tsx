@@ -2,7 +2,7 @@
 
 import { ShieldCheck, Info } from "lucide-react"
 import Logo from "@/components/ui/md-logo"
-import { OpenAIIcon, GeminiIcon, ClaudeIcon } from "@/components/ui/ai-icons"
+import { OpenAIIcon, GeminiIcon, ClaudeIcon, CrossRefIcon, PubMedIcon, OpenAlexIcon } from "@/components/ui/ai-icons"
 
 export default function LegalFooter() {
   return (
@@ -10,29 +10,43 @@ export default function LegalFooter() {
       <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
           {/* Identidad y Potencia */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div className="flex items-center gap-3">
               <Logo className="h-10 w-10" />
-              <span className="font-extrabold text-slate-900 text-xl tracking-tighter uppercase">MDCONGRESS</span>
+              <span className="font-extrabold text-slate-900 text-xl tracking-tighter uppercase font-plex-mono">MDCONGRESS</span>
             </div>
             
-            <div className="space-y-4">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
-                Soporte Tecnológico Global
-              </p>
-              <div className="flex flex-wrap gap-8 items-center">
-                <div className="flex items-center gap-2 group cursor-default">
-                  <OpenAIIcon />
-                  <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">GPT-4o</span>
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
+                  Soporte Tecnológico Multi-IA
+                </p>
+                <div className="flex flex-wrap gap-8 items-center">
+                  <div className="flex items-center gap-2 group cursor-default">
+                    <OpenAIIcon />
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">GPT-4o</span>
+                  </div>
+                  <div className="flex items-center gap-2 group cursor-default">
+                    <GeminiIcon />
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Gemini</span>
+                  </div>
+                  <div className="flex items-center gap-2 group cursor-default">
+                    <ClaudeIcon />
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Claude 3.5</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 group cursor-default">
-                  <GeminiIcon />
-                  <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Gemini</span>
-                </div>
-                <div className="flex items-center gap-2 group cursor-default">
-                  <ClaudeIcon />
-                  <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Claude</span>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <BookOpen className="h-3.5 w-3.5 text-emerald-500" />
+                  Fuentes de Evidencia Científica
+                </p>
+                <div className="flex flex-wrap gap-6 items-center">
+                  <CrossRefIcon />
+                  <PubMedIcon />
+                  <OpenAlexIcon />
                 </div>
               </div>
             </div>

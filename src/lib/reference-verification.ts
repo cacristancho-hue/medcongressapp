@@ -57,7 +57,7 @@ interface ExternalCandidate {
 }
 
 const POLITE_USER_AGENT =
-  "MedCongressAI/1.0 (https://github.com/cacristancho-hue/medcongressapp; mailto:cacristanchoo@gmail.com)"
+  "MDCONGRESSAI/1.0 (https://github.com/cacristancho-hue/MDCONGRESSapp; mailto:cacristanchoo@gmail.com)"
 
 const FETCH_TIMEOUT_MS = 8000
 

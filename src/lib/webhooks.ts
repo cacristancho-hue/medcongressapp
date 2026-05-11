@@ -3,7 +3,7 @@
 //   1. Caller invokes dispatchWebhook(event, payload, scope)
 //   2. We find every enabled endpoint subscribed to that event in scope
 //   3. We enqueue webhook_deliveries rows for each (worker delivers them async)
-//   4. Worker signs the payload with HMAC-SHA256 (header X-MedCongress-Signature)
+//   4. Worker signs the payload with HMAC-SHA256 (header X-MDCONGRESS-Signature)
 //   5. Retry exponential backoff up to max_attempts; failed becomes 'failed'
 
 import { createClient } from "@/lib/supabase/server"
@@ -140,9 +140,9 @@ export async function processNextWebhookDelivery(): Promise<boolean> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-MedCongress-Event": delivery.event,
-        "X-MedCongress-Signature": signature,
-        "User-Agent": "MedCongress-Webhooks/1.0",
+        "X-MDCONGRESS-Event": delivery.event,
+        "X-MDCONGRESS-Signature": signature,
+        "User-Agent": "MDCONGRESS-Webhooks/1.0",
       },
       body,
     })

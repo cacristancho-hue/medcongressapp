@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { ChevronRight, X } from "lucide-react"
 
-const STORAGE_KEY = "medcongress.onboarding.completed.v1"
+const STORAGE_KEY = "MDCONGRESS.onboarding.completed.v1"
 
 interface Step {
   target: string

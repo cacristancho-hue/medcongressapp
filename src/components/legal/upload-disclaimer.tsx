@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ShieldAlert, FileText, Sparkles, BookOpenCheck, Server } from "lucide-react"
 
-const ACCEPT_KEY = "medcongress.disclaimer.accepted.v1"
+const ACCEPT_KEY = "MDCONGRESS.disclaimer.accepted.v1"
 
 interface Props {
   onAccept: () => void
