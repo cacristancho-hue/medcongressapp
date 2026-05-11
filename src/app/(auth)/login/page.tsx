@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Logo from "@/components/ui/md-logo"
-import { ShieldCheck, LogIn } from "lucide-react"
+import { ShieldCheck } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -42,28 +42,25 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
       
       <div className="w-full max-w-md relative z-10">
-        <div className="flex flex-col items-center mb-10 group">
-          <Logo className="h-16 w-16 md:h-20 md:w-20 mb-4" />
-          <div className="text-center">
-            <h1 className="text-xl font-black tracking-[0.3em] text-slate-900 uppercase font-plex-mono leading-none">
-              MDCONGRESS
-            </h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">
-              Estructurando conocimiento médico
-            </p>
+        {/* Bloque de Marca Unificado - Idéntico al Hero */}
+        <div className="flex flex-col items-center mb-10 group cursor-default">
+          <div className="transform hover:scale-105 transition-transform duration-700">
+            <Logo className="h-20 w-20" />
           </div>
+          <div className="mt-[-8px] relative overflow-hidden">
+            <h1 className="text-2xl font-black tracking-[0.5em] text-black uppercase font-plex-mono leading-none py-1">
+              CONGRESS
+            </h1>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_10s_infinite] skew-x-[-20deg]"></div>
+          </div>
+          <div className="w-10 h-0.5 bg-blue-600 mt-1 rounded-full opacity-20"></div>
         </div>
 
         <Card className="border-slate-100 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-50 pb-8 pt-10 px-8 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-slate-900 rounded-2xl shadow-lg">
-                <LogIn className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Iniciar sesión</CardTitle>
+            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">Iniciar sesión</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Acceda a sus congresos y reportes técnicos.
+              Bienvenido de nuevo a su centro académico.
             </CardDescription>
           </CardHeader>
           
