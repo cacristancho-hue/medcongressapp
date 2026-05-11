@@ -29,7 +29,7 @@ export default function LegalFooter() {
                   </div>
                   <div className="flex items-center gap-2 group cursor-default">
                     <GeminiIcon />
-                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Gemini</span>
+                    <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Gemini 2.0</span>
                   </div>
                   <div className="flex items-center gap-2 group cursor-default">
                     <ClaudeIcon />
