@@ -64,20 +64,20 @@ export default function LandingPage() {
           <div className="pt-16 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
             <div className="space-y-4">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                Potenciado por IA de última generación
+                Sustento tecnológico de vanguardia
               </p>
               <div className="flex flex-wrap gap-8 items-center">
                 <div className="flex items-center gap-2 group cursor-default">
                   <OpenAIIcon />
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">GPT-4o</span>
+                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">OpenAI</span>
                 </div>
                 <div className="flex items-center gap-2 group cursor-default">
                   <GeminiIcon />
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Gemini 1.5</span>
+                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Google Gemini</span>
                 </div>
                 <div className="flex items-center gap-2 group cursor-default">
                   <ClaudeIcon />
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Claude 3.5</span>
+                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Anthropic Claude</span>
                 </div>
               </div>
             </div>
