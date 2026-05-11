@@ -1,5 +1,7 @@
 import Link from "next/link"
-import { ShieldCheck, BookOpen, FileText, Zap, Microscope } from "lucide-react"
+import { ShieldCheck, BookOpen, FileText, Zap } from "lucide-react"
+import Logo from "@/components/ui/md-logo"
+import { OpenAIIcon, GeminiIcon, ClaudeIcon } from "@/components/ui/ai-icons"
 
 export default function LandingPage() {
   return (
@@ -7,9 +9,9 @@ export default function LandingPage() {
       {/* Header Premium */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Microscope className="h-6 w-6 text-blue-600" />
-            <span className="font-bold text-slate-900 text-xl tracking-tight uppercase">MDCONGRESS</span>
+          <div className="flex items-center gap-2 group cursor-pointer">
+            <Logo className="h-9 w-9" />
+            <span className="font-bold text-slate-900 text-xl tracking-tight uppercase group-hover:text-blue-600 transition-colors">MDCONGRESS</span>
           </div>
           <div className="flex items-center gap-6">
             <Link
@@ -33,7 +35,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-transparent to-transparent"></div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full mb-8 border border-blue-100">
-            <Zap className="h-3 w-3" />
+            <Zap className="h-3 w-3 animate-pulse" />
             Actualización Médica Inteligente
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight mb-6 leading-[1.1]">
@@ -60,18 +62,21 @@ export default function LandingPage() {
 
           {/* Sección Potenciado Por - Élite Visual */}
           <div className="pt-12 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-10">
               Potenciado simultáneamente por las tecnologías líderes
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-700">
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-sm font-bold text-slate-800">OpenAI GPT-4o</span>
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-20">
+              <div className="flex items-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500 group cursor-default">
+                <OpenAIIcon />
+                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">OpenAI GPT-4o</span>
               </div>
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-sm font-bold text-slate-800">Google Gemini</span>
+              <div className="flex items-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500 group cursor-default">
+                <GeminiIcon />
+                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">Google Gemini</span>
               </div>
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-sm font-bold text-slate-800">Anthropic Claude</span>
+              <div className="flex items-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500 group cursor-default">
+                <ClaudeIcon />
+                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">Anthropic Claude</span>
               </div>
             </div>
           </div>
@@ -79,7 +84,7 @@ export default function LandingPage() {
       </section>
 
       {/* Características de Élite */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
+      <section className="max-w-5xl mx-auto px-6 py-20 mb-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {
@@ -106,23 +111,6 @@ export default function LandingPage() {
           ))}
         </div>
       </section>
-
-      <footer className="mt-auto border-t border-slate-100 bg-white py-12 text-center px-6">
-        <div className="max-w-4xl mx-auto flex flex-col items-center gap-6">
-          <div className="flex items-center gap-2 opacity-50">
-            <Microscope className="h-5 w-5 text-slate-900" />
-            <span className="font-bold text-slate-900 text-sm tracking-tight uppercase">MDCONGRESS</span>
-          </div>
-          <p className="text-[11px] text-slate-400 font-medium max-w-sm">
-            MDCONGRESS · Herramienta de soporte académico personal para especialistas médicos. 
-            Rigor científico al instante.
-          </p>
-          <div className="flex gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            <Link href="/terms" className="hover:text-blue-600 transition-colors">Términos</Link>
-            <Link href="/privacy" className="hover:text-blue-600 transition-colors">Privacidad</Link>
-          </div>
-        </div>
-      </footer>
     </main>
   )
 }
