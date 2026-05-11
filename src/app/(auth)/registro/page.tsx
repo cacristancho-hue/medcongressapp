@@ -84,8 +84,8 @@ export default function RegisterPage() {
             <h1 className="text-xl font-black tracking-[0.3em] text-slate-900 uppercase font-plex-mono leading-none">
               MDCONGRESS
             </h1>
-            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-2">
-              Plataforma Académica de Élite
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">
+              Estructurando conocimiento médico
             </p>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function RegisterPage() {
             </div>
             <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Crear cuenta</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Únase a la nueva era de organización académica.
+              Inicie su registro para acceder a reportes técnicos y bibliografía.
             </CardDescription>
           </CardHeader>
           
@@ -206,7 +206,7 @@ export default function RegisterPage() {
                 </p>
                 <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                  Conexión Segura de Élite
+                  Acceso Seguro MDCONGRESS
                 </div>
               </div>
             </CardFooter>

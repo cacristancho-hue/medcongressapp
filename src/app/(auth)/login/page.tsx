@@ -48,8 +48,8 @@ export default function LoginPage() {
             <h1 className="text-xl font-black tracking-[0.3em] text-slate-900 uppercase font-plex-mono leading-none">
               MDCONGRESS
             </h1>
-            <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest mt-2">
-              Plataforma Académica de Élite
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2">
+              Estructurando conocimiento médico
             </p>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl font-black text-slate-900 tracking-tight">Iniciar sesión</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Bienvenido de nuevo a su centro de control académico.
+              Acceda a sus congresos y reportes técnicos.
             </CardDescription>
           </CardHeader>
           
