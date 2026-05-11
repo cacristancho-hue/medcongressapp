@@ -38,16 +38,11 @@ export default function Sidebar({ user, profile }: SidebarProps) {
   return (
     <aside className="w-64 min-h-screen bg-white border-r border-slate-100 flex flex-col shadow-[1px_0_10px_rgba(0,0,0,0.02)]">
       <div className="px-6 py-8">
-        <Link href="/dashboard" className="flex flex-col items-start gap-4 group">
-          <Logo className="h-12 w-12" />
-          <div className="flex flex-col">
-            <span className="font-black text-slate-900 text-lg tracking-tighter uppercase font-plex-mono leading-none">
-              MDCONGRESS
-            </span>
-            <span className="text-[9px] font-bold text-blue-600/60 uppercase tracking-[0.2em] mt-1">
-              Elite Academic
-            </span>
-          </div>
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <Logo className="h-11 w-11" />
+          <span className="font-black text-slate-900 text-[13px] tracking-[0.4em] uppercase font-plex-mono group-hover:text-blue-600 transition-colors mt-0.5">
+            CONGRESS
+          </span>
         </Link>
       </div>
 
