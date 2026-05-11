@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import PhotoUploadZone from "@/components/congresses/photo-upload-zone"
-import PhotoGrid from "@/components/congresses/photo-grid"
 import CongressReport from "@/components/congresses/congress-report"
 import JobsStatus from "@/components/congresses/jobs-status"
 import CongressPresence from "@/components/congresses/congress-presence"
@@ -310,53 +309,5 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
   )
 }
 
-// Client component wrapper for interactivity
-"use client"
-interface DiscoveryImage extends Photo {
-  topic_ids: string[]
-}
+import DiscoveryClient from "@/components/congresses/discovery-client"
 
-interface DiscoveryTopic {
-  id: string
-  name: string
-  category: string | null
-  description: string | null
-  image_count: number
-}
-
-function DiscoveryClient({ congressId, initialImages, topics }: { 
-  congressId: string; 
-  initialImages: DiscoveryImage[]; 
-  topics: DiscoveryTopic[] 
-}) {
-  const [activeTopicId, setActiveTopicId] = useState<string | null>(null)
-
-  const filteredImages = useMemo(() => {
-    if (!activeTopicId) return initialImages
-    return initialImages.filter(img => img.topic_ids.includes(activeTopicId))
-  }, [activeTopicId, initialImages])
-
-  return (
-    <div className="space-y-8">
-      <TopicNavigator 
-        topics={topics} 
-        activeTopicId={activeTopicId}
-        onTopicClick={setActiveTopicId}
-      />
-      
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            {activeTopicId ? "Fotos relacionadas con el tema" : "Galería Completa"}
-          </h4>
-          {activeTopicId && (
-            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-100">
-              {filteredImages.length} resultados
-            </span>
-          )}
-        </div>
-        <PhotoGrid congressId={congressId} initialImages={filteredImages} />
-      </div>
-    </div>
-  )
-}
