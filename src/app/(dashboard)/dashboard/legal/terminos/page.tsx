@@ -1,8 +1,8 @@
 import Link from "next/link"
 
 export const metadata = {
-  title: "Términos de uso · MedCongress",
-  description: "Términos y condiciones de uso de MedCongress AI Companion.",
+  title: "Términos de uso · MDCONGRESS",
+  description: "Términos y condiciones de uso de MDCONGRESS AI Companion.",
 }
 
 const LAST_UPDATED = "9 de mayo de 2026"
@@ -28,7 +28,7 @@ export default function TerminosPage() {
 
       <h2>1. Naturaleza del servicio</h2>
       <p>
-        MedCongress AI Companion (en adelante, &ldquo;la Herramienta&rdquo;) es una aplicación web
+        MDCONGRESS AI Companion (en adelante, &ldquo;la Herramienta&rdquo;) es una aplicación web
         diseñada para ayudar a profesionales de la salud a organizar material académico recopilado
         durante congresos médicos. La Herramienta permite cargar fotografías de diapositivas, posters
         u otro material gráfico, extraer texto mediante reconocimiento óptico de caracteres (OCR) e

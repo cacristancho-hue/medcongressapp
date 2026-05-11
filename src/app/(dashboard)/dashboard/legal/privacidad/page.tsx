@@ -1,8 +1,8 @@
 import Link from "next/link"
 
 export const metadata = {
-  title: "Política de privacidad · MedCongress",
-  description: "Política de tratamiento de datos personales — MedCongress AI Companion.",
+  title: "Política de privacidad · MDCONGRESS",
+  description: "Política de tratamiento de datos personales — MDCONGRESS AI Companion.",
 }
 
 const LAST_UPDATED = "9 de mayo de 2026"

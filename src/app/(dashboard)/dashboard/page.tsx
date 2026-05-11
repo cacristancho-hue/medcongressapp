@@ -138,7 +138,7 @@ function FirstTimeWelcome() {
         <div className="relative max-w-xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium tracking-wide backdrop-blur">
             <Sparkles className="h-3 w-3" />
-            Bienvenido a MedCongress
+            Bienvenido a MDCONGRESS
           </span>
           <h2 className="mt-4 text-2xl sm:text-3xl font-bold leading-tight">
             Tu primer congreso, organizado en minutos.
