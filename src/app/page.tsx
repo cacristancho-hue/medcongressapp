@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { ShieldCheck, BookOpen, FileText, Zap, Microscope, Globe } from "lucide-react"
+import { ShieldCheck, BookOpen, FileText, Globe } from "lucide-react"
 import Logo from "@/components/ui/md-logo"
-import { OpenAIIcon, GeminiIcon, ClaudeIcon, CrossRefIcon, PubMedIcon, OpenAlexIcon } from "@/components/ui/ai-icons"
 
 export default function LandingPage() {
   return (
@@ -31,77 +30,44 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section Élite */}
-      <section className="relative px-6 py-20 md:py-28 overflow-hidden bg-white">
+      <section className="relative px-6 py-12 md:py-20 overflow-hidden bg-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           {/* Logo Central de Gran Formato */}
-          <div className="flex justify-center mb-10 transform hover:scale-105 transition-transform duration-700 cursor-none">
-            <Logo className="h-24 w-24 md:h-28 md:w-28 drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)] animate-fade-in-up" />
+          <div className="flex justify-center mb-8 transform hover:scale-105 transition-transform duration-700 cursor-none">
+            <Logo className="h-20 w-20 md:h-24 md:w-24 drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)] animate-fade-in-up" />
           </div>
 
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-8 border border-blue-100">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-6 border border-blue-100">
             <Globe className="h-3 w-3" />
             Tecnología Médica de Vanguardia
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter mb-8 leading-[0.95]">
+          <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6 leading-[0.95]">
             La inteligencia clínica que organiza sus <span className="text-blue-600">congresos médicos.</span>
           </h1>
-          <p className="text-xl text-slate-500 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
+          <p className="text-lg md:text-xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
             Transforme las fotografías de sus conferencias en reportes técnicos y evidencia bibliográfica verificada al instante. Sin ruido, solo ciencia.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/registro"
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-10 py-5 text-base font-bold text-white hover:bg-blue-600 shadow-2xl transition-all active:scale-95"
+              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-8 py-4 text-sm md:text-base font-bold text-white hover:bg-blue-600 shadow-2xl transition-all active:scale-95"
             >
               Empezar ahora
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-10 py-5 text-base font-bold text-slate-700 hover:border-blue-600 hover:text-blue-600 transition-all"
+              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-8 py-4 text-sm md:text-base font-bold text-slate-700 hover:border-blue-600 hover:text-blue-600 transition-all"
             >
               Explorar demo
             </Link>
-          </div>
-
-          {/* Sello de Confianza y Potencia */}
-          <div className="pt-16 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
-            <div className="space-y-4">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                Sustento tecnológico de vanguardia
-              </p>
-              <div className="flex flex-wrap gap-8 items-center">
-                <div className="flex items-center gap-2 group cursor-default">
-                  <OpenAIIcon />
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">OpenAI</span>
-                </div>
-                <div className="flex items-center gap-2 group cursor-default">
-                  <GeminiIcon />
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Google Gemini</span>
-                </div>
-                <div className="flex items-center gap-2 group cursor-default">
-                  <ClaudeIcon />
-                  <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">Anthropic Claude</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                Fuentes de evidencia verificada
-              </p>
-              <div className="flex flex-wrap gap-6 items-center">
-                <CrossRefIcon />
-                <PubMedIcon />
-                <OpenAlexIcon />
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
       {/* Características de Élite */}
-      <section className="max-w-5xl mx-auto px-6 py-24 mb-24">
+      <section className="max-w-5xl mx-auto px-6 py-16 mb-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {[
             {
