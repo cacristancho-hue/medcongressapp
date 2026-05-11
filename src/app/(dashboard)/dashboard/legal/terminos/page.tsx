@@ -5,14 +5,14 @@ export const metadata = {
   description: "Términos y condiciones de uso de MDCONGRESS AI Companion.",
 }
 
-const LAST_UPDATED = "9 de mayo de 2026"
+const LAST_UPDATED = "11 de mayo de 2026"
 
 export default function TerminosPage() {
   return (
     <article className="max-w-3xl mx-auto py-8 px-4 prose prose-slate prose-sm sm:prose-base">
       <header className="not-prose mb-8 pb-6 border-b border-slate-200">
         <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-2">
-          Borrador para revisión legal
+          Documento Legal Corporativo
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Términos de uso</h1>
         <p className="text-sm text-slate-500 mt-2">Última actualización: {LAST_UPDATED}</p>
@@ -20,9 +20,7 @@ export default function TerminosPage() {
           Documento elaborado tomando como referencia: Ley 1581 de 2012 y Decreto 1377 de 2013
           (Colombia), Reglamento (UE) 2016/679 (GDPR), Ley 13.709 de 2018 (LGPD Brasil), normativa
           INVIMA sobre dispositivos médicos, Reglamento (UE) 2017/745 (MDR), 21 CFR 820 (FDA).
-          Antes de uso en producción debe ser revisado y firmado por un asesor legal con conocimiento
-          de software médico, protección de datos y derecho del consumidor en la jurisdicción de
-          operación.
+          Este acuerdo vincula legalmente al usuario y a MDCONGRESS en la jurisdicción de operación.
         </p>
       </header>
 
@@ -89,58 +87,48 @@ export default function TerminosPage() {
         </li>
       </ul>
 
-      <h2>4. Datos identificables de pacientes — Prohibición expresa</h2>
+      <h2>4. Datos identificables de pacientes y discreción médica</h2>
       <p>
-        El usuario se compromete expresamente a <strong>no cargar</strong> imágenes ni textos que
-        contengan datos identificables de pacientes. Esto incluye, sin limitarse a:
+        Entendemos que en diversas especialidades médicas (ej. dermatología, cirugía, anatomía patológica) el registro fotográfico es un componente esencial del material académico expuesto en los congresos. Por ello, solicitamos a nuestros usuarios ejercer la máxima <strong>discreción médica</strong> al capturar y subir imágenes.
+      </p>
+      <p>
+        El usuario se compromete a no cargar imágenes ni textos que contengan Datos de Salud Protegidos (PHI) evidentes o directos. Esto incluye:
       </p>
       <ul>
-        <li>Nombres, números de identificación, datos de contacto.</li>
-        <li>Números de historia clínica, expediente o registro hospitalario.</li>
-        <li>Fotografías clínicas en las que el paciente sea identificable.</li>
-        <li>Cualquier combinación de variables que permita reidentificar a una persona natural.</li>
+        <li>Nombres completos, números de identificación, números de historia clínica o de seguridad social.</li>
+        <li>Datos de contacto directos del paciente.</li>
+        <li>Fotografías de rostros no anonimizados o rasgos altamente identificativos que no hayan sido previamente difuminados o tapados en la presentación original del congreso.</li>
       </ul>
       <p>
-        El usuario es el único responsable del contenido que carga. La Herramienta no realiza
-        verificación automática del contenido cargado y no asume responsabilidad por incumplimientos
-        del usuario en esta materia. Si el equipo de la Herramienta detecta carga de datos
-        identificables de pacientes, podrá suspender la cuenta sin previo aviso, eliminar el
-        contenido infractor y, en casos graves, reportar al usuario ante la autoridad correspondiente.
+        El usuario es el único responsable del contenido que carga. Si el equipo de la Herramienta detecta carga de datos manifiestamente identificables de pacientes, procederá a notificar al usuario para la inmediata eliminación o anonimización del material. El Operador se reserva el derecho de suspender la cuenta sin previo aviso únicamente en casos de vulneración maliciosa, sistemática o negligencia grave frente a la privacidad del paciente.
       </p>
 
-      <h2>5. Inteligencia artificial — Limitaciones declaradas</h2>
+      <h2>5. Inteligencia artificial y Motor Anti-Alucinación</h2>
       <p>
-        La extracción de texto, la clasificación temática y los resúmenes generados utilizan modelos
-        de IA que pueden producir resultados inexactos, incompletos, o inventar información
-        (alucinaciones). El usuario debe verificar la información antes de utilizarla en cualquier
-        contexto profesional.
+        La extracción de texto, la clasificación temática y la generación de resúmenes utilizan modelos de Inteligencia Artificial (IA) generativa de última generación. Reconocemos que, por su naturaleza, los modelos generativos puros pueden producir resultados inexactos o inventar información (fenómeno conocido como &ldquo;alucinación&rdquo;).
       </p>
       <p>
-        Las referencias bibliográficas detectadas se marcan con uno de los siguientes estados, según
-        verificación contra bases externas (CrossRef, PubMed/NCBI, OpenAlex):
+        Para mitigar este riesgo, MDCONGRESS ha desarrollado un <strong>Motor Anti-Alucinación (Consensus Engine)</strong> exclusivo para el ámbito médico. Nuestro sistema no confía ciegamente en la IA generativa para los datos científicos; en su lugar, cruza y verifica matemáticamente cada referencia bibliográfica detectada contra las bases de datos académicas mundiales de mayor rigor (CrossRef, PubMed/NCBI, OpenAlex).
+      </p>
+      <p>
+        A través de este motor, las referencias se marcan con uno de los siguientes estados:
       </p>
       <ul>
         <li>
-          <strong>Verificada</strong>: existe coincidencia confiable en al menos una base
-          bibliográfica externa.
+          <strong>Evidencia Validada</strong>: Existe coincidencia exacta y confiable en bases de datos externas de autoridad.
         </li>
         <li>
-          <strong>Parcialmente verificada</strong>: hay coincidencia parcial; revise manualmente.
+          <strong>Validación Parcial / Confirmación Pendiente</strong>: Hay coincidencia parcial o ambigua; el sistema solicitará la revisión humana.
         </li>
         <li>
-          <strong>Ambigua</strong>: hay múltiples candidatos posibles.
+          <strong>No Verificada</strong>: Detección incompleta, se muestra el texto original (OCR) sin validación externa.
         </li>
         <li>
-          <strong>No verificada</strong>: no se encontraron coincidencias suficientes.
-        </li>
-        <li>
-          <strong>Retractada</strong>: la fuente externa indica que el artículo fue retractado;
-          NO debe citarse como evidencia válida.
+          <strong>⚠️ Retractado</strong>: Nuestro sistema incluye detección de artículos retractados, alertando visualmente al usuario para evitar citar ciencia invalidada.
         </li>
       </ul>
       <p>
-        El usuario es responsable de confirmar manualmente toda cita antes de publicarla, citarla
-        en clase o usarla como sustento de cualquier afirmación clínica o académica.
+        Aunque nuestro Motor Anti-Alucinación ofrece un estándar de precisión de clase mundial, el usuario final, como profesional de la salud, mantiene la responsabilidad indelegable de confirmar el contexto clínico y la pertinencia de la evidencia antes de aplicarla en su práctica, publicarla o usarla académicamente.
       </p>
 
       <h2>6. Procesamiento por terceros</h2>
@@ -154,46 +142,21 @@ export default function TerminosPage() {
         .
       </p>
 
-      <h2>7. Propiedad intelectual y licencia limitada</h2>
+      <h2>7. Propiedad intelectual y licencia de uso</h2>
       <p>
-        Las fotografías y textos cargados siguen perteneciendo al autor original del material o al
-        usuario que los captó, según corresponda. La Herramienta no reclama propiedad sobre el
-        contenido del usuario.
+        Las fotografías y textos originales cargados por el usuario siguen siendo de su exclusiva propiedad (o de los autores originales del material expuesto en el congreso). La Herramienta no reclama propiedad sobre el contenido fotográfico bruto del usuario.
       </p>
       <p>
-        Sin embargo, para que la Herramienta pueda prestar el servicio, el usuario otorga al
-        operador una <strong>licencia mundial, no exclusiva, libre de regalías, gratuita,
-        intransferible y limitada en el tiempo de uso del servicio</strong>, con el único propósito
-        de:
+        Para la correcta operación del servicio, el usuario otorga al operador una <strong>licencia mundial, no exclusiva, libre de regalías y transferible</strong>, con el propósito de:
       </p>
       <ul>
-        <li>
-          Almacenar el contenido en la infraestructura del servicio (Supabase Storage en Estados
-          Unidos).
-        </li>
-        <li>
-          Procesar el contenido a través de los modelos de IA y servicios de verificación
-          bibliográfica enumerados en la Política de Privacidad.
-        </li>
-        <li>
-          Generar resúmenes, transcripciones, clasificaciones y reportes derivados, los cuales se
-          entregan exclusivamente al usuario que los originó.
-        </li>
-        <li>
-          Mostrarle al usuario el contenido y sus derivados a través de la interfaz de la
-          Herramienta.
-        </li>
+        <li>Almacenar, alojar y procesar el contenido en nuestra infraestructura en la nube.</li>
+        <li>Procesar el contenido a través de nuestros motores de IA y bases de datos bibliográficas.</li>
+        <li>Generar y entregar al usuario los reportes, resúmenes y transcripciones solicitadas.</li>
       </ul>
       <p>
-        Esta licencia <strong>no</strong> autoriza al operador a publicar el contenido, compartirlo
-        con terceros distintos a los procesadores declarados, ni a usarlo para entrenar modelos de
-        IA propios. La licencia termina cuando el usuario elimina el contenido o cierra la cuenta.
-      </p>
-      <p>
-        Los resúmenes y reportes generados son resultado de procesamiento automatizado y se
-        entregan al usuario sin garantía de originalidad ni de no infracción. El usuario es
-        responsable de respetar los derechos de autor del material original al usar el contenido
-        derivado.
+        <strong>Monetización de Datos Agregados y Anonimizados (Pharma Insights):</strong><br/>
+        El operador no venderá, cederá ni licenciará sus fotografías originales ni sus datos personales (nombre, correo) a terceros para fines de marketing directo. Sin embargo, el usuario reconoce y acepta que el operador tiene el derecho irrevocable de <strong>anonimizar, desidentificar y agregar los datos derivados</strong> (tales como tópicos clínicos emergentes, frecuencias de citación bibliográfica, tendencias de congresos y estadísticas de uso) para crear bases de datos agregadas e inteligencia de mercado. El operador retiene todos los derechos de propiedad intelectual sobre estas bases de datos agregadas y podrá comercializarlas, licenciarlas o compartirlas con la industria farmacéutica, sociedades científicas y otros actores del ecosistema de la salud (&ldquo;Pharma Insights&rdquo;). Esta información agregada se produce mediante procesos tecnológicos rigurosos y <strong>nunca</strong> permitirá la identificación individual del usuario ni de pacientes.
       </p>
 
       <h2>8. Cuotas, planes y precios</h2>
@@ -204,24 +167,15 @@ export default function TerminosPage() {
         días calendario, comunicado a través de la Herramienta o por correo electrónico.
       </p>
 
-      <h2>9. Garantías y limitación de responsabilidad</h2>
+      <h2>9. Garantías y limitación de responsabilidad corporativa</h2>
       <p>
-        La Herramienta se ofrece &ldquo;tal cual&rdquo; (<em>as is</em>) y &ldquo;según
-        disponibilidad&rdquo; (<em>as available</em>), sin garantía de disponibilidad continua,
-        ausencia de errores, exactitud, integridad ni adecuación a propósito particular.
+        MDCONGRESS realiza esfuerzos a nivel empresarial para asegurar la exactitud técnica de su plataforma, respaldados por nuestro Motor Anti-Alucinación. No obstante, la Herramienta se ofrece como un producto de software como servicio (SaaS) bajo la premisa de &ldquo;tal cual&rdquo; (<em>as is</em>) y &ldquo;según disponibilidad&rdquo; (<em>as available</em>). No garantizamos que la plataforma estará libre de interrupciones técnicas o errores imprevistos.
       </p>
       <p>
-        En la máxima extensión permitida por la ley aplicable, el operador <strong>no será
-        responsable</strong> por daños indirectos, incidentales, especiales, consecuenciales,
-        morales, lucro cesante, pérdida de oportunidad, pérdida de datos, ni decisiones clínicas
-        derivadas del uso del contenido generado.
+        En la máxima extensión permitida por el derecho aplicable, MDCONGRESS y sus filiales, directores o empleados <strong>no serán responsables</strong> por daños indirectos, incidentales, punitivos, consecuenciales, lucro cesante, pérdida de datos, ni por ninguna contingencia médica, diagnóstico erróneo o decisión clínica derivada de la interpretación del contenido generado por la plataforma.
       </p>
       <p>
-        La responsabilidad total del operador por cualquier reclamo derivado de o relacionado con la
-        Herramienta no excederá, en el agregado, el mayor de: <strong>(i)</strong> el monto pagado
-        por el usuario al operador en los doce (12) meses inmediatamente anteriores al hecho que
-        origina la reclamación, o <strong>(ii)</strong> cien dólares de los Estados Unidos de
-        América (USD $100).
+        Nuestra responsabilidad total, conjunta y acumulada por cualquier reclamación derivada de la prestación del servicio se limitará estrictamente al monto total que el usuario haya pagado efectivamente a MDCONGRESS durante los doce (12) meses anteriores al evento que origina el reclamo, o en su defecto, a la suma de cien dólares estadounidenses (USD $100.00). Esta limitación de responsabilidad es un elemento fundamental de la base del acuerdo entre MDCONGRESS y el usuario.
       </p>
       <p>
         Las exclusiones y limitaciones anteriores no aplicarán a la responsabilidad por dolo o culpa
@@ -331,9 +285,8 @@ export default function TerminosPage() {
           .
         </p>
         <p>
-          Borrador interno · Pendiente de firma por asesor legal antes de uso en producción. La
-          identificación del operador (nombre, NIT/CC, dirección, teléfono) debe completarse antes
-          de publicar.
+          MDCONGRESS Legal Team. La
+          identificación comercial y fiscal del operador está disponible a petición directa para instituciones y procesos formales.
         </p>
       </footer>
     </article>
