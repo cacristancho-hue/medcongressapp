@@ -34,14 +34,14 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           {/* Logotipo Central: Isotipo MD + CONGRESS de Élite */}
-          <div className="flex flex-col items-center mb-12 group cursor-default">
+          <div className="flex flex-col items-center mb-10 group cursor-default">
             <div className="transform hover:scale-105 transition-transform duration-700">
               <Logo className="h-20 w-20 md:h-24 md:w-24" />
             </div>
             
-            <div className="mt-8 relative overflow-hidden">
-              {/* Palabra CONGRESS en Negro Puro y Extra Negrita */}
-              <h2 className="text-3xl md:text-5xl font-black tracking-[0.5em] text-black uppercase font-plex-mono leading-none py-1">
+            <div className="mt-2 relative overflow-hidden">
+              {/* Palabra CONGRESS en Negro Puro y Extra Negrita - Más compacto */}
+              <h2 className="text-2xl md:text-4xl font-black tracking-[0.5em] text-black uppercase font-plex-mono leading-none py-1">
                 CONGRESS
               </h2>
               
@@ -50,7 +50,7 @@ export default function LandingPage() {
             </div>
             
             {/* Línea de Soporte Visual Minimalista */}
-            <div className="w-12 h-1 bg-blue-600 mt-4 rounded-full opacity-20 group-hover:w-24 transition-all duration-1000"></div>
+            <div className="w-10 h-0.5 bg-blue-600 mt-2 rounded-full opacity-20 group-hover:w-20 transition-all duration-1000"></div>
           </div>
 
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-6 border border-blue-100">
