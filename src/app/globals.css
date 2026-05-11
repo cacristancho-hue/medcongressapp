@@ -316,6 +316,14 @@ code, kbd, pre, samp,
   100% { transform: scale(2.8); opacity: 0; }
 }
 
+/* Shimmer / Flash effect for cinematic branding */
+@keyframes shimmer {
+  0% { transform: translateX(-150%) skewX(-12deg); opacity: 0; }
+  20% { opacity: 0.5; }
+  50% { transform: translateX(150%) skewX(-12deg); opacity: 0; }
+  100% { transform: translateX(150%) skewX(-12deg); opacity: 0; }
+}
+
 /* ============================================================
    Print styles — academic reports ready for clinical/journal use
    ============================================================ */

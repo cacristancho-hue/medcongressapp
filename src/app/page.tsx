@@ -34,8 +34,17 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           {/* Logo Central de Gran Formato */}
-          <div className="flex justify-center mb-8 transform hover:scale-105 transition-transform duration-700 cursor-none">
-            <Logo className="h-20 w-20 md:h-24 md:w-24 drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)] animate-fade-in-up" />
+          <div className="flex flex-col items-center mb-10 group cursor-none">
+            <div className="transform hover:scale-105 transition-transform duration-700">
+              <Logo className="h-20 w-20 md:h-24 md:w-24 drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)] animate-fade-in-up" />
+            </div>
+            <div className="mt-6 overflow-hidden relative group/text">
+              <h2 className="text-3xl md:text-4xl font-black tracking-[0.4em] text-black uppercase font-plex-mono">
+                CONGRESS
+              </h2>
+              {/* Reflejo Cinematográfico (Flash de Cámara) */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/90 to-transparent -translate-x-full group-hover/text:animate-[shimmer_2s_infinite] animate-[shimmer_4s_infinite] skew-x-[-20deg]"></div>
+            </div>
           </div>
 
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-6 border border-blue-100">
