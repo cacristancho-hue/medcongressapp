@@ -60,22 +60,22 @@ export default function LandingPage() {
             Actualización Médica de Élite
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6 leading-[0.95]">
-            Estructuramos el conocimiento de sus <span className="text-blue-600">congresos médicos.</span>
+            Estructuramos sus <span className="text-blue-600">fotos de congresos</span> en conocimiento médico.
           </h1>
           <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
-            Transforme sus capturas visuales en reportes técnicos y evidencia bibliográfica verificada al instante. Sin ruido, solo ciencia.
+            Transforme sus capturas visuales en reportes técnicos y bibliografía verificada al instante. Sin ruido, solo ciencia.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/registro"
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-8 py-4 text-sm md:text-base font-bold text-white hover:bg-blue-600 shadow-2xl transition-all active:scale-95"
+              className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-10 py-5 text-base font-bold text-white hover:bg-slate-900 shadow-[0_20px_50px_rgba(37,99,235,0.2)] transition-all active:scale-95"
             >
               Empezar ahora
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-8 py-4 text-sm md:text-base font-bold text-slate-700 hover:border-blue-600 hover:text-blue-600 transition-all"
+              className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-10 py-5 text-base font-bold text-slate-700 hover:border-blue-600 hover:text-blue-600 transition-all"
             >
               Explorar demo
             </Link>
@@ -83,30 +83,73 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Sustento Tecnológico de Élite - Explicación de Utilidad */}
+      <section className="bg-slate-900 py-20 px-6 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+        <div className="max-w-5xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-sm font-bold text-blue-400 uppercase tracking-[0.3em] mb-4">Arquitectura de Inteligencia Triple</h2>
+            <p className="text-2xl md:text-3xl font-bold text-white tracking-tight">Sustentado por los líderes mundiales en IA</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <OpenAIIcon />
+                <span className="text-white font-bold">OpenAI</span>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                <strong className="text-slate-200">Precisión Clínica:</strong> Motor principal para la auditoría de integridad y validación de datos médicos complejos.
+              </p>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <GeminiIcon />
+                <span className="text-white font-bold">Google Gemini</span>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                <strong className="text-slate-200">Visión de Vanguardia:</strong> Especializado en la captura masiva de diapositivas y detección instantánea de referencias.
+              </p>
+            </div>
+
+            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <ClaudeIcon />
+                <span className="text-white font-bold">Anthropic Claude</span>
+              </div>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                <strong className="text-slate-200">Síntesis Académica:</strong> Responsable de redactar guiones de ponencia con un tono médico de postgrado impecable.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Características de Élite */}
-      <section className="max-w-5xl mx-auto px-6 py-16 mb-16">
+      <section className="max-w-5xl mx-auto px-6 py-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {[
             {
               icon: <FileText className="h-10 w-10 text-blue-600" />,
-              title: "Resúmenes Académicos",
-              desc: "Obtenga la síntesis estructurada de cada charla, organizada por temas clínicos y lista para consulta rápida.",
+              title: "Reportes Estructurados",
+              desc: "Obtenga la síntesis técnica de cada ponencia, organizada por ejes temáticos y lista para sesiones clínicas.",
             },
             {
               icon: <BookOpen className="h-10 w-10 text-blue-600" />,
-              title: "Bibliografía Verificada",
+              title: "Bibliografía de Soporte",
               desc: "Acceda a abstracts oficiales y verifique el impacto científico de las citas detectadas en las diapositivas.",
             },
             {
               icon: <ShieldCheck className="h-10 w-10 text-blue-600" />,
-              title: "Sesiones Clínicas",
-              desc: "Guiones estructurados con rigor científico para replicar y compartir el conocimiento con sus colegas.",
+              title: "Rigor y Verificación",
+              desc: "Filtramos el ruido visual para entregarle solo información validada con los más altos estándares académicos.",
             },
           ].map((feature, i) => (
-            <div key={i} className="group bg-white rounded-3xl border border-slate-100 p-10 hover:border-blue-200 hover:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] transition-all duration-500">
-              <div className="mb-8 transform group-hover:-translate-y-2 transition-transform duration-500">{feature.icon}</div>
-              <h3 className="font-bold text-slate-900 text-xl mb-4 tracking-tighter">{feature.title}</h3>
-              <p className="text-slate-500 leading-relaxed font-medium">{feature.desc}</p>
+            <div key={i} className="group bg-white rounded-3xl border border-slate-100 p-10 hover:border-blue-100 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.05)] transition-all duration-500">
+              <div className="mb-8 transform group-hover:-translate-y-1 transition-transform duration-500">{feature.icon}</div>
+              <h3 className="font-bold text-slate-900 text-xl mb-4 tracking-tight">{feature.title}</h3>
+              <p className="text-slate-500 leading-relaxed font-medium text-sm">{feature.desc}</p>
             </div>
           ))}
         </div>
