@@ -1,46 +1,39 @@
-import type { MetadataRoute } from "next"
+import { type MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MedCongress",
-    short_name: "MedCongress",
-    description:
-      "Convierte cada congreso médico en conocimiento académico organizado, verificable y exportable.",
+    name: "MDCONGRESS - Elite Academic Companion",
+    short_name: "MDCONGRESS",
+    description: "Multi-Model AI for Clinical Evidence and Medical Congresses",
     start_url: "/dashboard",
-    scope: "/",
     display: "standalone",
-    orientation: "portrait",
     background_color: "#ffffff",
-    theme_color: "#0d9488",
-    lang: "es-CO",
-    dir: "ltr",
-    categories: ["medical", "education", "productivity"],
+    theme_color: "#0f172a",
     icons: [
       {
         src: "/favicon.svg",
         sizes: "any",
         type: "image/svg+xml",
-        purpose: "any",
+        purpose: "maskable",
       },
       {
         src: "/apple-icon.svg",
-        sizes: "180x180",
+        sizes: "any",
         type: "image/svg+xml",
-        purpose: "maskable",
+        purpose: "any",
       },
     ],
+    orientation: "portrait",
     shortcuts: [
       {
-        name: "Mis congresos",
-        short_name: "Congresos",
-        url: "/dashboard/congresos",
-        description: "Ver tus congresos guardados",
+        name: "Mi Biblioteca",
+        url: "/dashboard/biblioteca",
+        icons: [{ src: "/favicon.svg", sizes: "any" }],
       },
       {
-        name: "Biblioteca",
-        short_name: "Biblioteca",
-        url: "/dashboard/biblioteca",
-        description: "Tu bibliografía consolidada",
+        name: "Nuevo Congreso",
+        url: "/dashboard/congresos/nuevo",
+        icons: [{ src: "/favicon.svg", sizes: "any" }],
       },
     ],
   }

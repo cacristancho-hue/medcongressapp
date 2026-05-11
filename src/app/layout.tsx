@@ -2,20 +2,21 @@ import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { Toaster } from "sonner"
 import ServiceWorkerRegister from "@/components/layout/service-worker-register"
+import LegalFooter from "@/components/layout/legal-footer"
 import { fontInter, fontPlexMono } from "@/lib/fonts"
 
 export const metadata: Metadata = {
   title: {
-    default: "MedCongress — Companion académico para médicos",
-    template: "%s · MedCongress",
+    default: "MDCONGRESS - Elite Academic Companion",
+    template: "%s · MDCONGRESS",
   },
   description:
-    "Convierte tus fotos de congresos médicos en conocimiento académico organizado, verificable y exportable.",
-  applicationName: "MedCongress",
+    "Multi-Model AI for Clinical Evidence and Medical Congresses. Evidence at the speed of sight.",
+  applicationName: "MDCONGRESS",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "MedCongress",
+    statusBarStyle: "black-translucent",
+    title: "MDCONGRESS",
   },
   formatDetection: { telephone: false },
   icons: {
@@ -25,13 +26,11 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0d9488" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
-  ],
+  themeColor: "#0f172a",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 }
 
@@ -46,7 +45,10 @@ export default function RootLayout({
       className={`${fontInter.variable} ${fontPlexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-fg)]">
-        {children}
+        <main className="flex-1">
+          {children}
+        </main>
+        <LegalFooter />
         <Toaster
           position="top-center"
           richColors
