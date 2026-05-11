@@ -210,7 +210,7 @@ export default function PhotoGrid({ congressId, initialImages }: Props) {
             return (
               <div 
                 key={photo.id} 
-                id={`photo-${photo.id}`}
+                id={`photo-index-${idx}`}
                 onClick={() => isSelectionMode ? toggleSelect(photo.id) : (!isProcessing && setViewerIndex(idx))} 
                 className={clsx(
                   "relative cursor-pointer transition-all duration-200 rounded-lg overflow-hidden",

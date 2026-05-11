@@ -52,21 +52,25 @@ export const verifySingleReference = withAction({
 
   const result = await verifyReference(toInput(ref))
 
-  const { error: updateError } = await supabase
-    .from("reference_candidates")
-    .update({
-      verification_status: result.status,
-      confidence_score: result.confidenceScore,
-      detected_title: result.matchedTitle ?? ref.detected_title,
-      detected_authors: result.matchedAuthors ?? ref.detected_authors,
-      detected_year: result.matchedYear ?? ref.detected_year,
-      detected_journal: result.matchedJournal ?? ref.detected_journal,
-      detected_doi: result.matchedDoi ?? ref.detected_doi,
-      detected_pmid: result.matchedPmid,
-      verification_source: result.source,
-      verification_notes: result.notes,
-    })
-    .eq("id", referenceId)
+  const { error: updateError } = await safeUpdate(supabase, "reference_candidates", {
+    verification_status: result.status,
+    confidence_score: result.confidenceScore,
+    detected_title: result.matchedTitle ?? ref.detected_title,
+    detected_authors: result.matchedAuthors ?? ref.detected_authors,
+    detected_year: result.matchedYear ?? ref.detected_year,
+    detected_journal: result.matchedJournal ?? ref.detected_journal,
+    detected_doi: result.matchedDoi ?? ref.detected_doi,
+    detected_pmid: result.matchedPmid,
+    verification_source: result.source,
+    verification_notes: result.notes,
+    official_title: result.matchedTitle,
+    official_authors: result.matchedAuthors,
+    official_year: result.matchedYear,
+    official_journal: result.matchedJournal,
+    abstract: result.abstract,
+    publication_type: result.publicationType,
+    mesh_terms: result.meshTerms
+  }, { id: referenceId })
 
   if (updateError) throw new Error("Error al actualizar la referencia")
 
@@ -111,6 +115,14 @@ export const verifyCongressReferences = withAction({
           detected_pmid: result.matchedPmid,
           verification_source: result.source,
           verification_notes: result.notes,
+          official_title: result.matchedTitle,
+          official_authors: result.matchedAuthors,
+          official_year: result.matchedYear,
+          official_journal: result.matchedJournal,
+          abstract: result.abstract,
+          publication_type: result.publicationType,
+          mesh_terms: result.meshTerms
+          // El master_id se gestiona automáticamente vía SQL Trigger
         })
         .eq("id", ref.id)
 

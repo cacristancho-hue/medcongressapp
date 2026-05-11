@@ -65,13 +65,11 @@ const IMAGE_ANALYSIS_SCHEMA = z.object({
         name: z.string().describe("Nombre técnico del tema."),
         category: z
           .string()
-          .optional()
           .describe(
             "Categoría amplia: 'Diagnóstico', 'Tratamiento', 'Epidemiología', 'Fisiopatología', 'Metodología', etc."
           ),
         description: z
           .string()
-          .optional()
           .describe("Frase corta que aclara el tema."),
       })
     )
@@ -80,48 +78,73 @@ const IMAGE_ANALYSIS_SCHEMA = z.object({
   references: z
     .array(
       z.object({
-        detected_title: z.string().optional(),
-        detected_authors: z.string().optional(),
-        detected_year: z.string().optional(),
-        detected_journal: z.string().optional(),
-        detected_doi: z.string().optional(),
+        detected_title: z.string().describe("Título del estudio."),
+        detected_authors: z.string().describe("Autores (si están disponibles)."),
+        detected_year: z.string().describe("Año de publicación."),
+        detected_journal: z.string().describe("Nombre de la revista médica."),
+        detected_doi: z.string().describe("DOI si es visible."),
       })
     )
     .describe("Referencias bibliográficas detectadas."),
 })
 
-const IMAGE_ANALYSIS_SYSTEM_PROMPT = `Eres un asistente médico experto. Analiza imágenes de diapositivas, posters o material gráfico de congresos médicos.
+const IMAGE_ANALYSIS_SYSTEM_PROMPT = `Eres un sistema de Inteligencia Médica de ELITE (v2026). Tu misión es procesar diapositivas académicas con RIGOR CIENTÍFICO ABSOLUTO.
 
-REGLAS CRÍTICAS:
-1. IDENTIFICACIÓN: Determina la especialidad médica predominante.
-2. OCR: Extrae TODO el texto literal en 'raw_text'. Prioriza títulos, datos numéricos y conclusiones.
-3. RESUMEN: 'medical_summary' debe incluir: objetivo, datos clave (p-values, IC, dosis, criterios) y conclusión clínica.
-4. TOPICS: Hasta 5 temas en terminología médica técnica.
-5. REFERENCIAS: Detecta citas, nombres de estudios (EMPA-REG, KEYNOTE-001) y journals.
-6. NUNCA inventes datos. Si algo no es legible, omítelo.`
+REGLAS DE ORO (INNEGOCIABLES):
+1. **INTEGRIDAD BIBLIOGRÁFICA UBICUA**: La omisión de una referencia es un fallo de integridad. Las referencias pueden aparecer en CUALQUIER PARTE de la diapositiva (no solo en el pie de página). Debes escanear el cuerpo del texto, cuadros laterales y gráficos en busca de citas.
+2. **USO DE IMÁGENES**: 
+   - Usa la 'Imagen Principal' para detectar referencias en el medio o parte superior de la diapositiva.
+   - Usa los 'Zooms' solo como ayuda para el texto que sea demasiado pequeño en la principal. 
+   - NO limites tu búsqueda de bibliografía a las áreas de los zooms.
+3. **FIDELIDAD OCR**: Extrae el texto literal respetando saltos de línea. Si hay obstrucciones, márcalas con [obstruido].
+4. **PRECISIÓN TÉCNICA**: Los 'topics' deben usar terminología médica estándar. 
+
+FLUJO DE ANÁLISIS:
+- Paso 1: Escanea TODA la 'Imagen Principal' buscando patrones de citas (autores, años entre paréntesis, DOIs, nombres de journals).
+- Paso 2: Si detectas una cita en el pie de página, usa 'Zoom Inferior Izquierdo/Derecho' para confirmar los detalles.
+- Paso 3: Reporta TODA referencia detectada en el array 'references', sin importar su posición en la imagen.
+
+ESTRUCTURA DE REFERENCIAS:
+- Captura: Título, Autores (primeros 3 + et al), Año, Journal y DOI/PMID si es legible. 
+- Si la cita está cortada, extrae los caracteres que veas. Nuestro motor de consenso de 2026 lo resolverá.`
 
 const REPORT_SYSTEM_PROMPT = (language: "es" | "en") =>
-  `Eres un experto en comunicación científica médica. Genera un Esquema Estructurado para Presentación Académica.
+  `Eres el motor de síntesis académica más avanzado (Claude 4.6). Genera un Esquema Estructurado para Presentación Académica de nivel postgrado.
 
 IMPORTANTE: Redacta COMPLETAMENTE en ${language === "es" ? "Español" : "Inglés"}.
 
 ESTRUCTURA Markdown:
 # [Título del Congreso]
-## Diapositiva 1: Introducción y Objetivos
-## Diapositivas 2-N: Hallazgos por Eje Temático (cita evidencia técnica con p-values, HR, N)
-## Diapositiva Final: Conclusiones y Perlas Clínicas (Take-home messages)
-## Bibliografía de Apoyo
 
-REGLAS: tono profesional y preciso. NO alucines datos. Si algo no está claro en el OCR, no lo incluyas.`
+## Resumen Ejecutivo
+(Síntesis de alto nivel de los mensajes clave)
+
+## Ejes Temáticos Detallados
+Para cada tema principal:
+### [Nombre del Tema]
+- **Hallazgos Clave**: Evidencia técnica precisa (p-values, HR, N, dosis). 
+- **Trazabilidad**: OBLIGATORIO citar fuente \`[foto:N]\`.
+- **Bibliografía**: Cita formalmente \`[ref:TITULO_CORTO]\`.
+
+## Conclusiones y Perlas Clínicas
+(Puntos accionables con base científica)
+
+## Bibliografía y Evidencia Verificada
+(Listado consolidado con DOI/PMID y [Status: VERIFIED/RETRACTED])
+
+REGLAS DE RIGOR CIENTÍFICO:
+1. **ALERTA DE RETRACTACIÓN**: Si un estudio es [Status: RETRACTED], incluye advertencia en negrita y rojo: **⚠️ ALERTA: ESTUDIO RETRACTADO**.
+2. **PRIORIZACIÓN**: Prioriza evidencia [Status: VERIFIED].
+3. **FORMATO**: Usa tablas Markdown extensas para comparativas técnicas. Tono profesional y académico.`
 
 function pickModel(provider: ProviderId, role: "fast" | "vision" | "reasoning") {
   switch (provider) {
     case "openai":
       return role === "fast" ? "gpt-4o-mini" : "gpt-4o"
     case "google":
-      return role === "reasoning" ? "gemini-2.5-pro" : "gemini-2.5-flash"
+      return role === "reasoning" ? "gemini-3.1-pro" : "gemini-3.1-flash"
     case "anthropic":
-      return role === "reasoning" ? "claude-sonnet-4-6" : "claude-haiku-4-5"
+      return role === "reasoning" ? "claude-sonnet-4.6" : "claude-haiku-4.5"
   }
 }
 
@@ -162,42 +185,83 @@ function ensureGoogleEnvAlias() {
 
 interface AnalyzeImageInput {
   imageUrl: string
+  zoomLeftUrl?: string
+  zoomRightUrl?: string
   forceProvider?: ProviderId
+}
+
+async function retry<T>(
+  fn: () => Promise<T>,
+  retries = 2,
+  delay = 1000
+): Promise<T> {
+  try {
+    return await fn()
+  } catch (error) {
+    if (retries <= 0) throw error
+    await new Promise((resolve) => setTimeout(resolve, delay))
+    return retry(fn, retries - 1, delay * 2)
+  }
 }
 
 export async function analyzeImage(input: AnalyzeImageInput): Promise<ImageAnalysisOutput> {
   ensureGoogleEnvAlias()
+  // Priorizar Google para visión por su excelente manejo de múltiples imágenes de alta resolución
   const order: ProviderId[] = input.forceProvider
     ? [input.forceProvider]
     : ["google", "openai"]
 
-  let lastError: unknown = null
+  const errors: Array<{ provider: ProviderId; error: string }> = []
 
   for (const provider of order) {
-    if (!hasKey(provider)) continue
+    if (!hasKey(provider)) {
+      errors.push({ provider, error: "API Key no configurada" })
+      continue
+    }
 
     const model = pickModel(provider, "vision")
 
     try {
-      const result = await generateObject({
-        model: modelHandle(provider, model),
-        schema: IMAGE_ANALYSIS_SCHEMA,
-        system: IMAGE_ANALYSIS_SYSTEM_PROMPT,
-        messages: [
+      const result = await retry(async () => {
+        const content: any[] = [
           {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Analiza esta imagen de congreso médico:",
-              },
-              {
-                type: "image",
-                image: new URL(input.imageUrl),
-              },
-            ],
+            type: "text",
+            text: `Analiza esta diapositiva médica. 
+                   REGLA DE ORO PARA CITAS: Se proporcionan hasta 3 imágenes. 
+                   1. 'Imagen Principal': Vista completa de la diapositiva.
+                   2. 'Zoom Inferior Izquierdo' y 'Zoom Inferior Derecho': Ampliaciones de alta calidad de los pies de página. 
+                   
+                   TU PRIORIDAD: Extraer TODAS las referencias bibliográficas visibles. 
+                   Usa los Zooms para leer el texto pequeño de las citas. 
+                   Incluso si la cita es parcial, extrae lo que sea legible (ej: solo autores y año, o solo título parcial). 
+                   Extrae: título, autores, año, journal y DOI de CADA cita detectada.`,
           },
-        ],
+          {
+            type: "image",
+            image: new URL(input.imageUrl),
+          }
+        ]
+
+        if (input.zoomLeftUrl) {
+          content.push({ type: "text", text: "Zoom Inferior Izquierdo (Citas):" })
+          content.push({ type: "image", image: new URL(input.zoomLeftUrl) })
+        }
+        if (input.zoomRightUrl) {
+          content.push({ type: "text", text: "Zoom Inferior Derecho (Citas):" })
+          content.push({ type: "image", image: new URL(input.zoomRightUrl) })
+        }
+
+        return await generateObject({
+          model: modelHandle(provider, model),
+          schema: IMAGE_ANALYSIS_SCHEMA,
+          system: IMAGE_ANALYSIS_SYSTEM_PROMPT,
+          messages: [
+            {
+              role: "user",
+              content,
+            },
+          ],
+        })
       })
 
       return {
@@ -210,13 +274,22 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<ImageAnaly
         },
       }
     } catch (error) {
-      lastError = error
-      console.warn(`[ai/router] analyzeImage failed on ${provider}/${model}:`, error)
+      const msg = error instanceof Error ? error.message : String(error)
+      errors.push({ provider, error: msg })
+      console.warn(`[ai/router] analyzeImage failed on ${provider}/${model} after retries:`, msg)
       continue
     }
   }
 
-  throw lastError ?? new Error("Ningún proveedor de IA disponible para analyzeImage")
+  const errorSummary = errors.map(e => `${e.provider.toUpperCase()}: ${e.error}`).join(" | ")
+  
+  // Si detectamos errores de red conocidos (DNS, timeout), enriquecemos el mensaje para el usuario
+  const isNetworkError = /ENOTFOUND|ETIMEDOUT|ECONNREFUSED|fetch failed/i.test(errorSummary)
+  const userMessage = isNetworkError 
+    ? `Error de conectividad. Por favor, verifica tu conexión a internet o DNS. Detalles: ${errorSummary}`
+    : `Ningún proveedor disponible. Detalles: ${errorSummary}`
+
+  throw new Error(userMessage)
 }
 
 // ---------------------------------------------------------------------------

@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react"
 import { LibraryReference } from "@/lib/actions/library"
 import { Search, BookOpen, ExternalLink, Filter, ChevronRight } from "lucide-react"
+import { updateImageAnalysis } from "@/lib/actions/edits"
+import { toast } from "sonner"
 import Link from "next/link"
 import { clsx } from "clsx"
 
@@ -161,50 +163,145 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                     <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
                       {ref.specialty || "General"}
                     </span>
+                    {ref.publication_type && (
+                      <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium uppercase">
+                        {ref.publication_type.replace(/-/g, " ")}
+                      </span>
+                    )}
                     <Link 
                       href={`/dashboard/congresos/${ref.congress_id}?highlight=${ref.image_id}`}
-                      className="text-[10px] text-slate-400 hover:text-blue-500 flex items-center gap-1 font-medium transition-colors"
+                      className="text-[10px] text-slate-400 hover:text-blue-500 flex items-center gap-1 font-medium transition-colors ml-auto"
                     >
                       {ref.congress_name} <ChevronRight className="h-2.5 w-2.5" />
                     </Link>
                   </div>
                   <h4 className="text-sm font-bold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">
-                    {ref.detected_title || "Sin título detectado"}
+                    {ref.official_title || ref.detected_title || "Sin título detectado"}
                   </h4>
                   <p className="text-xs text-slate-500 mt-1">
-                    {ref.detected_authors} {ref.detected_year ? `· ${ref.detected_year}` : ""}
+                    {ref.official_authors || ref.detected_authors} {ref.official_year || ref.detected_year ? `· ${ref.official_year || ref.detected_year}` : ""}
                   </p>
                 </div>
                 <BookOpen className="h-5 w-5 text-slate-200 group-hover:text-blue-100 transition-colors shrink-0" />
               </div>
 
-              {ref.detected_journal && (
+              {(ref.official_journal || ref.detected_journal) && (
                 <p className="text-[10px] font-mono text-blue-500/80 bg-blue-50/50 p-1.5 rounded border border-blue-100/50">
-                  {ref.detected_journal}
+                  {ref.official_journal || ref.detected_journal}
                 </p>
               )}
 
-              <div className="mt-auto pt-2 flex items-center justify-between border-t border-slate-50">
-                <span className={clsx(
-                  "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border",
-                  ref.verification_status === "verified" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" :
-                  ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-400" :
-                  "border-slate-700 bg-slate-800 text-slate-500"
-                )}>
-                  {ref.verification_status === "verified" ? "Evidencia Validada" : 
-                   ref.verification_status === "partially_verified" ? "Validación Parcial" : "Pendiente"}
-                </span>
+              {ref.abstract && (
+                <details className="text-xs text-slate-600 bg-slate-50/50 rounded-lg border border-slate-100 overflow-hidden group/details">
+                  <summary className="px-3 py-2 cursor-pointer font-medium hover:bg-slate-100 transition-colors list-none flex items-center justify-between">
+                    <span>Ver Resumen (Abstract)</span>
+                    <ChevronRight className="h-3 w-3 transition-transform group-open/details:rotate-90" />
+                  </summary>
+                  <div className="px-3 py-2 border-t border-slate-100 leading-relaxed text-[11px] text-slate-700">
+                    {ref.abstract}
+                  </div>
+                </details>
+              )}
 
-                <div className="flex items-center gap-2">
-                  <a 
-                    href={`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(ref.detected_title || ref.raw_text)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
-                    title="Buscar en PubMed"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
+              <div className="mt-auto pt-2 flex flex-col gap-2 border-t border-slate-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-1">
+                    <span className={clsx(
+                      "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border w-fit",
+                      ref.verification_status === "verified" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600" :
+                      ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-600 animate-pulse" :
+                      ref.verification_status === "ambiguous" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
+                      ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
+                      "border-slate-300 bg-slate-100 text-slate-500"
+                    )}>
+                      {ref.verification_status === "verified" ? "Evidencia Validada" : 
+                       ref.verification_status === "retracted" ? "⚠️ Retractado" :
+                       ref.verification_status === "ambiguous" ? "Confirmación Pendiente" :
+                       ref.verification_status === "partially_verified" ? "Validación Parcial" : "Pendiente"}
+                    </span>
+
+                    {ref.verification_status === "ambiguous" && (
+                      <button 
+                        onClick={async () => {
+                          const res = await updateImageAnalysis(ref.id, ref.congress_id, { verification_status: 'verified' } as any)
+                          if (res.success) toast.success("Referencia confirmada")
+                        }}
+                        className="text-[9px] text-amber-700 font-bold underline hover:text-amber-800"
+                      >
+                        Confirmar como correcta
+                      </button>
+                    )}
+                    <div className="flex items-center gap-2">
+                      {ref.detection_count > 1 && (
+                        <span className="text-[9px] text-teal-600 font-bold bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-100 flex items-center gap-1">
+                          <span className="relative flex h-1.5 w-1.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
+                          </span>
+                          Consolidado ({ref.detection_count})
+                        </span>
+                      )}
+                      {ref.citation_count !== null && (
+                        <span className="text-[9px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100" title="Citas encontradas en OpenAlex/CrossRef">
+                          {ref.citation_count.toLocaleString()} citas
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {ref.mesh_terms && ref.mesh_terms.length > 0 && (
+                      <div className="hidden sm:flex flex-wrap gap-1 justify-end max-w-[150px]">
+                        {ref.mesh_terms.slice(0, 2).map((term, i) => (
+                          <span key={i} className="text-[8px] bg-slate-50 text-slate-400 px-1 rounded-sm border border-slate-100 uppercase tracking-tighter truncate max-w-[70px]">
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {ref.is_open_access && ref.open_access_url && (
+                      <a 
+                        href={ref.open_access_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                      >
+                        <ExternalLink className="h-2.5 w-2.5" />
+                        PDF GRATIS
+                      </a>
+                    )}
+                    {ref.detected_doi && (
+                      <a 
+                        href={`https://doi.org/${ref.detected_doi}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[9px] font-mono text-slate-400 hover:text-blue-600"
+                        title={ref.detected_doi}
+                      >
+                        DOI
+                      </a>
+                    )}
+                    {ref.detected_pmid && (
+                      <a 
+                        href={`https://pubmed.ncbi.nlm.nih.gov/${ref.detected_pmid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[9px] font-mono text-slate-400 hover:text-blue-600"
+                        title={ref.detected_pmid}
+                      >
+                        PMID
+                      </a>
+                    )}
+                    <a 
+                      href={`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(ref.official_title || ref.detected_title || ref.raw_text)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+                      title="Buscar en PubMed"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

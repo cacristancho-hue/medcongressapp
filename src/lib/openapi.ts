@@ -5,7 +5,6 @@
 // As we expose more endpoints (POST /api/v1/congresses, etc.) we add their
 // schemas here. The Swagger UI rendered by /api/docs reads this same source.
 
-import "zod-openapi/extend"
 import { z } from "zod"
 import { createDocument } from "zod-openapi"
 
@@ -19,13 +18,13 @@ export const HealthResponseSchema = z
     checks: z.record(z.string(), z.enum(["ok", "fail", "skipped"])),
     timestamp: z.string().datetime(),
   })
-  .openapi({ ref: "HealthResponse" })
+  .meta({ id: "HealthResponse" })
 
 export const ErrorResponseSchema = z
   .object({
     error: z.string(),
   })
-  .openapi({ ref: "ErrorResponse" })
+  .meta({ id: "ErrorResponse" })
 
 export const WebhookPayloadSchema = z
   .object({
@@ -40,11 +39,11 @@ export const WebhookPayloadSchema = z
     ]),
     payload: z.record(z.string(), z.unknown()),
   })
-  .openapi({ ref: "WebhookPayload" })
+  .meta({ id: "WebhookPayload" })
 
 export const VerificationStatusSchema = z
   .enum(["verified", "partially_verified", "ambiguous", "not_verified", "retracted"])
-  .openapi({ ref: "VerificationStatus" })
+  .meta({ id: "VerificationStatus" })
 
 export const ReferenceCandidateSchema = z
   .object({
@@ -61,7 +60,7 @@ export const ReferenceCandidateSchema = z
     confidence_score: z.number().min(0).max(1).nullable(),
     created_at: z.string().datetime(),
   })
-  .openapi({ ref: "ReferenceCandidate" })
+  .meta({ id: "ReferenceCandidate" })
 
 // =============================================================================
 // Document

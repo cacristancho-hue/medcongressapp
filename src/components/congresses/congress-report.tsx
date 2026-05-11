@@ -2,195 +2,365 @@
 
 import { useState, useTransition } from "react"
 import { generateAcademicReport } from "@/lib/actions/polyglot-reports"
-import { updateReportContent } from "@/lib/actions/edits"
+import { updateReportContent, updateReportTitle, deleteReport } from "@/lib/actions/edits"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Sparkles, FileText, Loader2, Calendar, ChevronDown, ChevronUp, Printer, Edit3, Save, X, Languages } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Sparkles, Calendar, ChevronDown, ChevronUp, Loader2, Save, Edit3, Trash2, X, Check } from "lucide-react"
 import ReactMarkdown from "react-markdown"
-import { clsx } from "clsx"
+import remarkGfm from "remark-gfm"
 import { toast } from "sonner"
+import { clsx } from "clsx"
 
 interface Report {
   id: string
   title: string
   content: string
   created_at: string
+  report_type: string
 }
 
-interface Props {
+interface CongressReportProps {
   congressId: string
   reports: Report[]
 }
 
-export default function CongressReport({ congressId, reports }: Props) {
-  const [isGenerating, startGeneration] = useTransition()
-  const [expandedReportId, setExpandedReportId] = useState<string | null>(reports[0]?.id || null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editContent, setEditContent] = useState("")
-  const [lang, setLang] = useState<"es" | "en">("es")
+export default function CongressReport({ congressId, reports }: CongressReportProps) {
+  const [isGenerating, startGenerating] = useTransition()
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(
+    reports.length > 0 ? reports[0].id : null
+  )
+  const [isEditing, setIsEditing] = useState<string | null>(null)
+  const [isRenaming, setIsRenaming] = useState<string | null>(null)
+  const [tempContent, setTempContent] = useState("")
+  const [tempTitle, setTempTitle] = useState("")
+  const [isSaving, startSaving] = useTransition()
+  const [isDeleting, startDeleting] = useTransition()
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
-  async function handleGenerate() {
-    startGeneration(async () => {
-      const result = await generateAcademicReport({ congressId, language: lang })
-      if (!result.success) {
-        toast.error(result.error)
-      } else {
+  const handleGenerate = () => {
+    startGenerating(async () => {
+      try {
+        const result = await generateAcademicReport({ congressId, language: "es" })
         toast.success("Esquema académico generado con éxito")
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Error al generar el esquema")
       }
     })
   }
 
-  function startEditing(report: Report) {
-    setEditingId(report.id)
-    setEditContent(report.content)
+  const handleStartEdit = (report: Report) => {
+    setTempContent(report.content)
+    setIsEditing(report.id)
   }
 
-  async function handleSaveEdit(reportId: string) {
-    startGeneration(async () => {
-      const result = await updateReportContent(reportId, congressId, editContent)
-      if (result.error) {
-        toast.error(result.error)
+  const handleSaveEdit = (reportId: string) => {
+    startSaving(async () => {
+      const res = await updateReportContent(reportId, congressId, tempContent)
+      if (res.success) {
+        toast.success(res.message)
+        setIsEditing(null)
       } else {
-        toast.success(result.message)
-        setEditingId(null)
+        toast.error(res.error)
+      }
+    })
+  }
+
+  const handleStartRename = (report: Report) => {
+    setTempTitle(report.title)
+    setIsRenaming(report.id)
+  }
+
+  const handleSaveRename = (reportId: string) => {
+    if (!tempTitle.trim()) return
+    startSaving(async () => {
+      const res = await updateReportTitle(reportId, congressId, tempTitle)
+      if (res.success) {
+        toast.success(res.message)
+        setIsRenaming(null)
+      } else {
+        toast.error(res.error)
+      }
+    })
+  }
+
+  const handleDeleteReport = (reportId: string) => {
+    startDeleting(async () => {
+      const res = await deleteReport(reportId, congressId)
+      if (res.success) {
+        toast.success(res.message)
+        setConfirmDelete(null)
+      } else {
+        toast.error(res.error)
       }
     })
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+      <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-blue-500" />
-          Síntesis Académica Políglota
+          <Sparkles className="h-5 w-5 text-teal-600" />
+          Resúmenes y Esquemas Académicos
         </h3>
-        
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-lg self-start sm:self-auto">
-          <div className="flex items-center gap-1 px-2 text-xs font-bold text-slate-500 mr-1">
-            <Languages className="h-3.5 w-3.5" /> Salida:
-          </div>
-          <button 
-            onClick={() => setLang("es")}
-            className={clsx(
-              "px-3 py-1 text-xs font-bold rounded-md transition-all",
-              lang === "es" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            ES
-          </button>
-          <button 
-            onClick={() => setLang("en")}
-            className={clsx(
-              "px-3 py-1 text-xs font-bold rounded-md transition-all",
-              lang === "en" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"
-            )}
-          >
-            EN
-          </button>
-          
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            size="sm"
-            className="ml-2 bg-blue-600 hover:bg-blue-700 text-white font-bold h-8"
-          >
-            {isGenerating ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-3.5 w-3.5" />
-                Generar Presentación
-              </>
-            )}
-          </Button>
-        </div>
+        <Button
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          size="sm"
+          className="bg-teal-600 hover:bg-teal-700"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generando...
+            </>
+          ) : (
+            <>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generar Presentación
+            </>
+          )}
+        </Button>
       </div>
 
       {reports.length === 0 ? (
-        <Card className="border-dashed border-2 bg-slate-50">
-          <CardContent className="py-10 text-center">
-            <div className="bg-white p-3 rounded-full w-fit mx-auto mb-4 shadow-sm border">
-              <FileText className="h-6 w-6 text-slate-400" />
+        <Card className="bg-slate-50 border-dashed border-2">
+          <CardContent className="py-12 flex flex-col items-center justify-center text-center">
+            <div className="bg-white p-3 rounded-full shadow-sm mb-4">
+              <Sparkles className="h-6 w-6 text-slate-300" />
             </div>
-            <p className="text-sm text-slate-600 font-medium">Aún no hay esquemas generados</p>
-            <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-              Analiza tus fotos con IA y genera una estructura lista para PowerPoint en el idioma que prefieras.
+            <p className="text-slate-500 text-sm max-w-xs">
+              Aún no has generado ningún esquema académico para este congreso.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {reports.map((report) => (
-            <Card key={report.id} className="overflow-hidden border-slate-200 shadow-sm transition-all print:shadow-none print:border-none">
-              <CardHeader
-                className="cursor-pointer hover:bg-slate-50 transition-colors py-4 print:hidden"
-                onClick={() => setExpandedReportId(expandedReportId === report.id ? null : report.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <FileText className="h-4 w-4 text-blue-600" />
+            <Card key={report.id} className="overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex flex-col">
+                <CardHeader 
+                  className="cursor-pointer hover:bg-slate-50 transition-colors py-4"
+                  onClick={() => !isRenaming && setExpandedReportId(expandedReportId === report.id ? null : report.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="p-2 bg-teal-50 rounded-lg shrink-0">
+                        <Sparkles className="h-4 w-4 text-teal-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        {isRenaming === report.id ? (
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              value={tempTitle}
+                              onChange={(e) => setTempTitle(e.target.value)}
+                              className="text-sm font-semibold text-slate-900 border-b border-teal-500 focus:outline-none bg-transparent w-full"
+                              autoFocus
+                            />
+                            <button onClick={() => handleSaveRename(report.id)} className="text-emerald-600 hover:text-emerald-700 p-1">
+                              <Check className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => setIsRenaming(null)} className="text-slate-400 hover:text-slate-500 p-1">
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <CardTitle className="text-sm font-bold text-slate-900 truncate">
+                            {report.title}
+                          </CardTitle>
+                        )}
+                        <CardDescription className="text-[10px] flex items-center gap-1 mt-0.5">
+                          <Calendar className="h-3 w-3" />
+                          <span suppressHydrationWarning>
+                            {new Date(report.created_at).toLocaleDateString("es-CO", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-sm font-bold text-slate-800">{report.title}</CardTitle>
-                      <CardDescription className="text-[10px] flex items-center gap-1 mt-0.5">
-                        <Calendar className="h-3 w-3" />
-                        {new Date(report.created_at).toLocaleDateString("es-CO", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </CardDescription>
+                    
+                    <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
+                      {expandedReportId === report.id && !isEditing && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                            onClick={() => handleStartRename(report)}
+                            title="Renombrar"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => setConfirmDelete(report.id)}
+                            title="Eliminar"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      {expandedReportId === report.id ? (
+                        <ChevronUp className="h-4 w-4 text-slate-400 ml-1" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-slate-400 ml-1" />
+                      )}
                     </div>
                   </div>
-                  {expandedReportId === report.id ? (
-                    <ChevronUp className="h-4 w-4 text-slate-400" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-slate-400" />
-                  )}
-                </div>
-              </CardHeader>
+                </CardHeader>
+
+                {/* Confirmación de eliminación */}
+                {confirmDelete === report.id && (
+                  <div className="bg-red-50 border-y border-red-100 px-6 py-3 flex items-center justify-between animate-in slide-in-from-top duration-200">
+                    <p className="text-xs font-medium text-red-700 flex items-center gap-2">
+                       <Trash2 className="h-3.5 w-3.5" />
+                       ¿Seguro que quieres eliminar este reporte?
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 text-xs text-slate-500 hover:bg-red-100/50"
+                        onClick={() => setConfirmDelete(null)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="h-7 text-xs bg-red-600 hover:bg-red-700"
+                        onClick={() => handleDeleteReport(report.id)}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : "Eliminar definitivamente"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {expandedReportId === report.id && (
-                <CardContent className="border-t bg-white py-6 print:border-none print:p-0">
-                  <div className="flex justify-end gap-2 mb-4 print:hidden">
-                    {editingId === report.id ? (
-                      <>
-                        <Button variant="outline" size="sm" onClick={() => setEditingId(null)} className="text-slate-600">
-                          <X className="h-4 w-4 mr-2" /> Cancelar
+                <CardContent className="pt-0 pb-6 border-t border-slate-50 mt-2">
+                  <div className="flex justify-end mb-4 pt-4">
+                    {isEditing === report.id ? (
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setIsEditing(null)}
+                          className="text-slate-500"
+                        >
+                          Cancelar
                         </Button>
-                        <Button size="sm" onClick={() => handleSaveEdit(report.id)} disabled={isGenerating} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                          <Save className="h-4 w-4 mr-2" /> Guardar
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleSaveEdit(report.id)}
+                          disabled={isSaving}
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                        >
+                          {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                          Guardar Cambios
                         </Button>
-                      </>
+                      </div>
                     ) : (
-                      <>
-                        <Button variant="outline" size="sm" onClick={() => startEditing(report)} className="text-slate-600 hover:text-slate-900">
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => window.print()} className="text-slate-600 hover:text-slate-900">
-                          <Printer className="h-4 w-4 mr-2" />
-                          PDF
-                        </Button>
-                      </>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleStartEdit(report)}
+                        className="text-slate-600 hover:bg-slate-50"
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Editar Contenido
+                      </Button>
                     )}
                   </div>
 
-                  {editingId === report.id ? (
+                  {isEditing === report.id ? (
                     <textarea
-                      value={editContent}
-                      onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full min-h-[400px] p-4 text-sm font-mono border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50 text-slate-800 leading-relaxed"
+                      value={tempContent}
+                      onChange={(e) => setTempContent(e.target.value)}
+                      className="w-full min-h-[400px] p-4 text-sm font-sans border rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none leading-relaxed text-slate-700 bg-slate-50/30"
+                      placeholder="Escribe el contenido del reporte..."
                     />
                   ) : (
-                    <div className="prose prose-slate prose-sm max-w-none 
-                      prose-headings:text-slate-900 prose-headings:font-bold
-                      prose-p:text-slate-700 prose-p:leading-relaxed
-                      prose-strong:text-slate-900
-                      prose-ul:list-disc prose-li:my-1 print:prose-base">
-                      <ReactMarkdown>{report.content}</ReactMarkdown>
+                    <div className="prose prose-slate prose-sm max-w-none">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({ children }) => <h1 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-lg font-bold text-teal-800 mt-8 mb-3">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-md font-bold text-slate-800 mt-6 mb-2">{children}</h3>,
+                          table: ({ children }) => (
+                            <div className="my-6 overflow-x-auto rounded-lg border border-slate-200">
+                              <table className="w-full text-left border-collapse">{children}</table>
+                            </div>
+                          ),
+                          thead: ({ children }) => <thead className="bg-slate-50">{children}</thead>,
+                          th: ({ children }) => <th className="px-4 py-3 font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-200">{children}</th>,
+                          td: ({ children }) => (
+                            <td className="px-4 py-3 border-t border-slate-100 text-slate-600 first:pl-6 last:pr-6">
+                              {children}
+                            </td>
+                          ),
+                          p: ({ children }) => {
+                            if (typeof children === "string") {
+                              const parts = children.split(/(\[foto:\d+\]|\[ref:[^\]]+\]|\*\*⚠️ ALERTA: ESTUDIO RETRACTADO\*\*)/g);
+                              return (
+                                <p className="leading-relaxed mb-4 last:mb-0">
+                                  {parts.map((part, i) => {
+                                    if (part === "**⚠️ ALERTA: ESTUDIO RETRACTADO**") {
+                                      return (
+                                        <span key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold animate-pulse">
+                                          ⚠️ ALERTA: ESTUDIO RETRACTADO
+                                        </span>
+                                      );
+                                    }
+
+                                    const fotoMatch = part.match(/\[foto:(\d+)\]/);
+                                    if (fotoMatch) {
+                                      const num = fotoMatch[1];
+                                      return (
+                                        <button
+                                          key={i}
+                                          onClick={() => {
+                                            const element = document.getElementById(`photo-${num}`);
+                                            if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                          }}
+                                          className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold hover:bg-blue-100 transition-colors mx-0.5"
+                                        >
+                                          FOTO {num}
+                                        </button>
+                                      );
+                                    }
+
+                                    const refMatch = part.match(/\[ref:([^\]]+)\]/);
+                                    if (refMatch) {
+                                      const refTitle = refMatch[1];
+                                      return (
+                                        <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium italic mx-0.5">
+                                          {refTitle}
+                                        </span>
+                                      );
+                                    }
+
+                                    return part;
+                                  })}
+                                </p>
+                              );
+                            }
+                            return <p className="leading-relaxed mb-4 last:mb-0">{children}</p>;
+                          }
+                        }}
+                      >
+                        {report.content}
+                      </ReactMarkdown>
                     </div>
                   )}
                 </CardContent>

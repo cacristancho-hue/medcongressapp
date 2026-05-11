@@ -2,8 +2,13 @@
 
 import { revalidatePath } from "next/cache"
 import { recordAiUsage } from "@/lib/ai-usage"
-import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
+import { analyzeImage, extractTopicsFromCorpus, ImageAnalysisResult, AiUsage } from "@/lib/ai/router"
 import { withAction } from "@/lib/with-action"
+import { verifyReference } from "@/lib/reference-verification"
+import { execSync } from "child_process"
+import path from "path"
+import fs from "fs"
+import os from "os"
 
 interface AIReference {
   detected_title?: string
@@ -40,26 +45,106 @@ export const processImageWithAI = withAction({
     .update({ ai_status: "ai_pending", ocr_status: "ocr_pending" })
     .eq("id", imageId)
 
+  // --- FASE 1: OPTIMIZACIÓN Y RECTIFICACIÓN (PERSISTENTE) ---
+  let finalAnalysisUrl: string | null = null
+  let leftBuffer: Buffer | undefined
+  let rightBuffer: Buffer | undefined
+  let originalSignedUrl: string | null = null
+
   try {
+    // Siempre partimos de la original para evitar degradación acumulativa
     const { data: signedUrlData, error: urlError } = await supabase.storage
       .from("congress-photos")
-      .createSignedUrl(image.storage_path_optimized || image.storage_path, 300)
+      .createSignedUrl(image.storage_path, 300)
 
     if (urlError || !signedUrlData?.signedUrl) {
-      throw new Error("No se pudo generar el acceso temporal para la IA")
+      throw new Error("No se pudo generar el acceso temporal para la optimización")
+    }
+    originalSignedUrl = signedUrlData.signedUrl
+
+    const inputPath = path.join(os.tmpdir(), `input_sa_${imageId}.jpg`)
+    const outputPath = path.join(os.tmpdir(), `optimized_sa_${imageId}.jpg`)
+
+    const response = await fetch(originalSignedUrl)
+    const buffer = Buffer.from(await response.arrayBuffer())
+    fs.writeFileSync(inputPath, buffer)
+
+    const optimizeScript = path.join(process.cwd(), "tools", "optimize_slide.py")
+    const pythonPath = process.env.PYTHON_PATH || "python"
+
+    try {
+      // Ejecución del motor de visión (OpenCV)
+      execSync(`${pythonPath} "${optimizeScript}" "${inputPath}" "${outputPath}"`)
+      
+      const optimizedBuffer = fs.readFileSync(outputPath)
+      // Usamos un sufijo consistente para la versión rectificada
+      const rectifiedPath = image.storage_path.split('.').slice(0, -1).join('.') + '_rectified.jpg'
+      
+      const leftPath = outputPath.replace(".jpg", "_zL.jpg")
+      const rightPath = outputPath.replace(".jpg", "_zR.jpg")
+      
+      if (fs.existsSync(leftPath)) leftBuffer = fs.readFileSync(leftPath)
+      if (fs.existsSync(rightPath)) rightBuffer = fs.readFileSync(rightPath)
+
+      // Subir la imagen rectificada de inmediato para que el usuario la vea
+      await supabase.storage
+        .from("congress-photos")
+        .upload(rectifiedPath, optimizedBuffer, {
+          contentType: "image/jpeg",
+          upsert: true,
+        })
+
+      await supabase
+        .from("congress_images")
+        .update({ 
+          storage_path_optimized: rectifiedPath, 
+          status: "optimized" 
+        } as any)
+        .eq("id", imageId)
+
+      // Preparamos el payload base64 para la IA (más rápido y evita problemas de permisos de URL)
+      finalAnalysisUrl = `data:image/jpeg;base64,${optimizedBuffer.toString('base64')}`
+      
+      // Limpieza preventiva
+      try {
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
+        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath)
+        if (leftPath && fs.existsSync(leftPath)) fs.unlinkSync(leftPath)
+        if (rightPath && fs.existsSync(rightPath)) fs.unlinkSync(rightPath)
+      } catch (e) {}
+      
+    } catch (optErr) {
+      console.warn("[processImageWithAI] El recorte de OpenCV falló, usando imagen original:", optErr)
+      finalAnalysisUrl = originalSignedUrl
+    }
+  } catch (phase1Err) {
+    console.error("[processImageWithAI] Fallo crítico en Fase 1:", phase1Err)
+    throw new Error("No se pudo preparar la imagen para el análisis.")
+  }
+
+  // --- FASE 2: ANÁLISIS IA (UBICUO Y AGRESIVO) ---
+  try {
+    const { data: result, usage } = await analyzeImage({
+      imageUrl: finalAnalysisUrl!,
+      zoomLeftUrl: leftBuffer ? `data:image/jpeg;base64,${leftBuffer.toString('base64')}` : undefined,
+      zoomRightUrl: rightBuffer ? `data:image/jpeg;base64,${rightBuffer.toString('base64')}` : undefined,
+    })
+
+    // Auditoría Heurística (Safety Net)
+    if ((!result.references || result.references.length === 0) && 
+        /(\d{4}|et al|doi:|j\. |clin\.|med\.|lancet|nejm)/i.test(result.raw_text)) {
+      console.log(`[ai-auditor] Posible cita omitida detectada en texto bruto de imagen ${imageId}`)
     }
 
-    const { data: result, usage } = await analyzeImage({
-      imageUrl: signedUrlData.signedUrl,
-    })
+    await supabase
+      .from("ocr_results")
+      .upsert({
+        image_id: imageId,
+        raw_text: result.raw_text,
+        cleaned_text: result.medical_summary,
+      }, { onConflict: "image_id" })
 
-    const { error: ocrErr } = await supabase.from("ocr_results").insert({
-      image_id: imageId,
-      raw_text: result.raw_text,
-      cleaned_text: result.medical_summary,
-    })
-    if (ocrErr) throw ocrErr
-
+    // Procesar Tópicos
     if (result.topics?.length > 0) {
       for (const topic of result.topics) {
         if (!topic.name?.trim()) continue
@@ -74,12 +159,12 @@ export const processImageWithAI = withAction({
         if (!topicId) {
           const { data: created } = await supabase
             .from("topics")
-            .insert({
+            .upsert({
               congress_id: image.congress_id,
               name: topic.name,
               category: topic.category ?? null,
               description: topic.description ?? null,
-            })
+            }, { onConflict: "congress_id,name" })
             .select("id")
             .single()
           topicId = created?.id
@@ -88,15 +173,15 @@ export const processImageWithAI = withAction({
         if (topicId) {
           await supabase
             .from("image_topics")
-            .upsert(
-              { image_id: imageId, topic_id: topicId },
-              { onConflict: "image_id,topic_id" }
-            )
+            .upsert({ image_id: imageId, topic_id: topicId }, { onConflict: "image_id,topic_id" })
         }
       }
     }
 
+    // Procesar Referencias
     if (result.references?.length > 0) {
+      await supabase.from("reference_candidates").delete().eq("image_id", imageId)
+
       const refEntries = result.references.map((r: AIReference) => ({
         congress_id: image.congress_id,
         image_id: imageId,
@@ -109,16 +194,45 @@ export const processImageWithAI = withAction({
         detected_doi: r.detected_doi,
         verification_status: "not_verified",
       }))
-      await supabase.from("reference_candidates").insert(refEntries)
+      
+      const { data: insertedRefs } = await supabase.from("reference_candidates").insert(refEntries).select()
+
+      if (insertedRefs) {
+        for (const ref of insertedRefs) {
+          try {
+            const vResult = await verifyReference({
+              id: ref.id,
+              raw_text: ref.raw_reference_text,
+              detected_title: ref.detected_title,
+              detected_authors: ref.detected_authors,
+              detected_year: ref.detected_year,
+              detected_journal: ref.detected_journal,
+              detected_doi: ref.detected_doi,
+            })
+            
+            await supabase.from("reference_candidates").update({
+              verification_status: vResult.status,
+              confidence_score: vResult.confidenceScore,
+              detected_doi: vResult.matchedDoi ?? ref.detected_doi,
+              detected_pmid: vResult.matchedPmid,
+              verification_source: vResult.source,
+              official_title: vResult.matchedTitle,
+              official_authors: vResult.matchedAuthors,
+              official_year: vResult.matchedYear,
+              official_journal: vResult.matchedJournal,
+              abstract: vResult.abstract,
+              publication_type: vResult.publicationType,
+            }).eq("id", ref.id)
+          } catch (e) {
+            console.warn("[processImageWithAI] Fallo auto-verificación:", ref.id, e)
+          }
+        }
+      }
     }
 
     await supabase
       .from("congress_images")
-      .update({
-        ai_status: "ai_done",
-        ocr_status: "ocr_done",
-        status: "ocr_done",
-      })
+      .update({ ai_status: "ai_done", ocr_status: "ocr_done", status: "ocr_done" })
       .eq("id", imageId)
 
     await recordAiUsage({
@@ -133,7 +247,8 @@ export const processImageWithAI = withAction({
     })
 
     revalidatePath(`/dashboard/congresos/${image.congress_id}`)
-    return { data: result, provider: usage.provider }
+    return { data: result, provider: usage.provider, success: true }
+
   } catch (error: unknown) {
     await supabase
       .from("congress_images")
@@ -153,10 +268,6 @@ export const processImageWithAI = withAction({
     throw error
   }
 })
-
-// =============================================================================
-// extractCongressTopics — re-extract topics from existing OCR corpus (1 LLM call)
-// =============================================================================
 
 export const extractCongressTopics = withAction({
   name: "ai.topics_extraction",

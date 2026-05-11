@@ -53,6 +53,8 @@ export default async function DashboardPage() {
   ])
 
   const firstName = profile?.full_name?.split(" ")[0] ?? "doctor/a"
+  const specialty = profile?.specialty
+  const role = profile?.role
   const greeting = greetingForHour()
   const isFirstTime = (congressCount ?? 0) === 0
 
@@ -64,8 +66,13 @@ export default async function DashboardPage() {
           {greeting}
         </p>
         <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-          Hola, {firstName}.
+          Hola, <span className="font-plex-mono">{firstName}</span>.
         </h1>
+        {specialty && (
+          <p className="text-teal-700 font-medium text-sm mt-1">
+            {specialty} {role ? `· ${role}` : ""}
+          </p>
+        )}
         <p className="text-slate-600 mt-2 text-base max-w-xl">
           Convierte cada foto de congreso en conocimiento académico verificado.
         </p>

@@ -94,7 +94,7 @@ export default async function CongresoDetailPage({ params }: Props) {
             <span className="text-sm text-slate-500">📍 {congress.location}</span>
           )}
           {congress.start_date && (
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-slate-500" suppressHydrationWarning>
               📅{" "}
               {new Date(congress.start_date).toLocaleDateString("es-CO", {
                 year: "numeric",

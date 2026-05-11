@@ -39,8 +39,19 @@ interface AnalysisData {
     verification_status?: string | null
     verification_notes?: string | null
     confidence_score?: number | null
+    detected_doi?: string | null
+    detected_pmid?: string | null
+    is_open_access?: boolean
+    open_access_url?: string | null
+    citation_count?: number | null
+    official_title?: string | null
+    official_authors?: string | null
+    official_year?: string | null
+    official_journal?: string | null
   }[];
   specialty?: string | null;
+  optimizedSignedUrl?: string | null;
+  status?: string;
 }
 
 export default function PhotoViewer({ photos, congressId, initialIndex, onClose, onDelete }: PhotoViewerProps) {
@@ -260,28 +271,32 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
               <Button
                 variant={isProcessed ? "outline" : "default"}
                 size="sm"
-                onClick={isProcessed ? () => setShowMetadata(!showMetadata) : handleAnalyze}
+                onClick={handleAnalyze}
                 disabled={isProcessing}
                 className={clsx(
                   "flex items-center justify-center gap-2 w-full",
                   isProcessed 
-                    ? (showMetadata ? "bg-white text-slate-900" : "border-slate-500 text-slate-300 hover:text-white") 
+                    ? "border-blue-500/50 text-blue-400 hover:bg-blue-500/10" 
                     : "bg-blue-600 hover:bg-blue-700"
                 )}
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isProcessed ? (
-                   <FileText className="h-4 w-4" />
                 ) : (
                   <BrainCircuit className="h-4 w-4" />
                 )}
-                {isProcessed ? (showMetadata ? "Ocultar Datos" : "Ver Datos") : isProcessing ? "Procesando..." : "Analizar con IA"}
+                {isProcessing ? "Procesando..." : isProcessed ? "Volver a Analizar" : "Analizar con IA"}
               </Button>
-              {!isProcessed && !isProcessing && (
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-                  Motor: GPT-4o Vision
-                </p>
+              
+              {isProcessed && !isProcessing && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMetadata(!showMetadata)}
+                  className="text-[10px] text-slate-400 hover:text-white uppercase tracking-wider"
+                >
+                  {showMetadata ? "Ocultar Datos" : "Ver Datos"}
+                </Button>
               )}
             </div>
 
@@ -392,37 +407,65 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                           <p className="text-[10px] text-slate-400">
                             {ref.detected_authors} {ref.detected_year ? `· ${ref.detected_year}` : ""}
                           </p>
-                          {ref.detected_journal && (
-                            <p className="text-[10px] text-blue-400/70 mt-1 font-mono">{ref.detected_journal}</p>
-                          )}
                           <div className="mt-2 flex flex-wrap gap-2">
                             <span className={clsx(
                               "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border",
                               ref.verification_status === "verified" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" :
+                              ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-500 animate-pulse" :
                               ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-400" :
                               "border-slate-700 bg-slate-800 text-slate-500"
                             )}>
                               {ref.verification_status === "verified" ? "Verificado" : 
+                               ref.verification_status === "retracted" ? "⚠️ Retractado" :
                                ref.verification_status === "partially_verified" ? "Parcial" : "Pendiente"}
                             </span>
                             
-                            {/* Enlaces externos de búsqueda médica */}
-                            <a 
-                              href={`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(ref.detected_title || ref.raw_text)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors flex items-center gap-1"
-                            >
-                              PubMed <ExternalLink className="h-2 w-2" />
-                            </a>
-                            <a 
-                              href={`https://scholar.google.com/scholar?q=${encodeURIComponent(`${ref.detected_title} ${ref.detected_authors}`)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1"
-                            >
-                              Scholar <ExternalLink className="h-2 w-2" />
-                            </a>
+                            {/* PDF Gratis */}
+                            {ref.is_open_access && ref.open_access_url && (
+                              <a 
+                                href={ref.open_access_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors flex items-center gap-1"
+                                title="Descargar PDF"
+                              >
+                                PDF Gratis <ExternalLink className="h-2 w-2" />
+                              </a>
+                            )}
+
+                            {/* Enlaces directos */}
+                            {ref.detected_doi && (
+                              <a 
+                                href={`https://doi.org/${ref.detected_doi}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors flex items-center gap-1"
+                              >
+                                DOI <ExternalLink className="h-2 w-2" />
+                              </a>
+                            )}
+                            {ref.detected_pmid && (
+                              <a 
+                                href={`https://pubmed.ncbi.nlm.nih.gov/${ref.detected_pmid}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition-colors flex items-center gap-1"
+                              >
+                                PMID <ExternalLink className="h-2 w-2" />
+                              </a>
+                            )}
+                            
+                            {/* Fallback a búsqueda solo si no hay identificadores directos */}
+                            {!ref.detected_doi && !ref.detected_pmid && (
+                              <a 
+                                href={`https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(ref.official_title || ref.detected_title || ref.raw_text)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-slate-500/30 bg-slate-500/10 text-slate-300 hover:bg-slate-500/20 transition-colors flex items-center gap-1"
+                              >
+                                Buscar PubMed <ExternalLink className="h-2 w-2" />
+                              </a>
+                            )}
                           </div>
                         </li>
                       ))}

@@ -36,6 +36,9 @@ export interface VerifiedReference {
   sourcesChecked: VerificationSource[]
   retracted: boolean
   notes: string
+  abstract?: string | null
+  publicationType?: string | null
+  meshTerms?: string[]
 }
 
 interface ExternalCandidate {
@@ -48,6 +51,9 @@ interface ExternalCandidate {
   pmid: string | null
   retracted: boolean
   retractionNotice: string | null
+  abstract?: string | null
+  publicationType?: string | null
+  meshTerms?: string[]
 }
 
 const POLITE_USER_AGENT =
@@ -353,6 +359,25 @@ function openAlexWorkToCandidate(work: OpenAlexWork): ExternalCandidate {
   const pmidRaw = work.ids?.pmid ?? null
   const pmid = pmidRaw ? pmidRaw.replace(/^https?:\/\/.*\/(\d+)$/, "$1") : null
 
+  // Reconstruct abstract from inverted index (OpenAlex style)
+  let abstract: string | null = null
+  const index = (work as any).abstract_inverted_index as Record<string, number[]> | undefined
+  if (index) {
+    try {
+      const words: string[] = []
+      let maxPos = 0
+      for (const positions of Object.values(index)) {
+        for (const pos of positions) if (pos > maxPos) maxPos = pos
+      }
+      for (const [word, positions] of Object.entries(index)) {
+        for (const pos of positions) words[pos] = word
+      }
+      abstract = words.join(" ").trim()
+    } catch (e) {
+      console.warn("[openalex] failed to reconstruct abstract:", e)
+    }
+  }
+
   return {
     source: "openalex",
     title: work.title ?? null,
@@ -363,6 +388,9 @@ function openAlexWorkToCandidate(work: OpenAlexWork): ExternalCandidate {
     pmid,
     retracted: Boolean(work.is_retracted),
     retractionNotice: work.is_retracted ? "OpenAlex is_retracted=true" : null,
+    abstract,
+    publicationType: (work as any).type ?? null,
+    meshTerms: (work as any).concepts?.filter((c: any) => c.level <= 1).map((c: any) => c.display_name) ?? []
   }
 }
 
@@ -455,9 +483,13 @@ function mapStatus(input: {
     input.yearScore * 0.15 +
     input.journalScore * 0.15
 
-  if (input.doiMatch || input.pmidMatch || composite >= 0.82) return "verified"
-  if (composite >= 0.55) return "partially_verified"
-  if (input.candidateCount > 1 && composite >= 0.35) return "ambiguous"
+  // RIGOR MÉDICO: Solo verificamos automáticamente si hay match de ID fuerte
+  // o si la similitud textual es extremadamente alta (>85%).
+  if (input.doiMatch || input.pmidMatch || composite >= 0.85) return "verified"
+  
+  // Si la similitud es media, lo marcamos como ambiguo para pedir confirmación humana
+  if (composite >= 0.50) return "ambiguous"
+  
   return "not_verified"
 }
 
@@ -595,6 +627,9 @@ export async function verifyReference(input: ReferenceInput): Promise<VerifiedRe
     sourcesChecked,
     retracted,
     notes,
+    abstract: best?.candidate.abstract,
+    publicationType: best?.candidate.publicationType,
+    meshTerms: best?.candidate.meshTerms,
   }
 }
 

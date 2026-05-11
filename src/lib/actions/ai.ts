@@ -14,16 +14,21 @@ export async function getImageAnalysis(imageId: string) {
     return { ocr: null, topics: [], references: [] }
   }
 
-  const { data: image } = await supabase
+  const { data: imageData } = await supabase
     .from("congress_images")
-    .select("id")
+    .select("id, storage_path, storage_path_optimized, status")
     .eq("id", imageId)
     .eq("user_id", user.id)
     .single()
 
-  if (!image) {
+  if (!imageData) {
     return { ocr: null, topics: [], references: [] }
   }
+
+  // Generar URL firmada fresca para la versión optimizada
+  const { data: signed } = await supabase.storage
+    .from("congress-photos")
+    .createSignedUrl(imageData.storage_path_optimized || imageData.storage_path, 3600)
 
   const [ocrResponse, referencesResponse, topicsJoinResponse] = await Promise.all([
     supabase
@@ -34,7 +39,7 @@ export async function getImageAnalysis(imageId: string) {
     supabase
       .from("reference_candidates")
       .select(
-        "raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, verification_status, confidence_score"
+        "raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, verification_status, confidence_score, detected_doi, detected_pmid, is_open_access, open_access_url, citation_count, official_title, official_authors, official_year, official_journal"
       )
       .eq("image_id", imageId),
     supabase
@@ -57,11 +62,22 @@ export async function getImageAnalysis(imageId: string) {
       detected_journal: ref.detected_journal,
       verification_status: ref.verification_status,
       confidence_score: ref.confidence_score,
+      detected_doi: ref.detected_doi,
+      detected_pmid: ref.detected_pmid,
+      is_open_access: ref.is_open_access,
+      open_access_url: ref.open_access_url,
+      citation_count: ref.citation_count,
+      official_title: ref.official_title,
+      official_authors: ref.official_authors,
+      official_year: ref.official_year,
+      official_journal: ref.official_journal,
     })) ?? []
 
   return {
     ocr: ocrResponse.data?.cleaned_text ?? null,
     topics,
     references,
+    optimizedSignedUrl: signed?.signedUrl ?? null,
+    status: imageData.status
   }
 }

@@ -32,17 +32,38 @@ export const generateAcademicReport = withAction({
     .eq("congress_id", congressId)
     .eq("user_id", user.id)
 
-  const { data: ocrData } = await supabase
+  const { data: ocrResults } = await supabase
     .from("ocr_results")
-    .select("cleaned_text")
+    .select("image_id, cleaned_text")
     .in("image_id", images?.map((img) => img.id) || [])
 
-  if (!ocrData || ocrData.length === 0) {
+  const { data: references } = await supabase
+    .from("reference_candidates")
+    .select("image_id, detected_title, detected_authors, detected_year, detected_journal, verification_status, detected_doi, detected_pmid")
+    .eq("congress_id", congressId)
+
+  if (!ocrResults || ocrResults.length === 0) {
     throw new Error("No hay datos analizados. Analiza algunas fotos primero.")
   }
 
-  const fullText = ocrData
-    .map((d) => d.cleaned_text)
+  // Construir contexto enriquecido para la IA
+  const fullText = (images || [])
+    .map((img, idx) => {
+      const ocr = ocrResults.find((o) => o.image_id === img.id)?.cleaned_text
+      if (!ocr) return null
+
+      const imgRefs = (references || [])
+        .filter((r) => r.image_id === img.id)
+        .map((r) => {
+          const status = r.verification_status?.toUpperCase() || "PENDING"
+          const doi = r.detected_doi ? ` [DOI: ${r.detected_doi}]` : ""
+          const pmid = r.detected_pmid ? ` [PMID: ${r.detected_pmid}]` : ""
+          return `- [REF] ${r.detected_authors || "Autores desconocidos"} (${r.detected_year || "n.d."}). ${r.detected_title || "Sin título"}. ${r.detected_journal || ""}${doi}${pmid} [Status: ${status}]`
+        })
+        .join("\n")
+
+      return `=== FOTO_${idx + 1} ===\nTEXTO DETECTADO:\n${ocr}\n${imgRefs ? `\nREFERENCIAS BIBLIOGRÁFICAS EN ESTA FOTO:\n${imgRefs}` : ""}`
+    })
     .filter(Boolean)
     .join("\n\n---\n\n")
     .slice(0, 100_000)

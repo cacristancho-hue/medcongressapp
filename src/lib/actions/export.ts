@@ -58,10 +58,9 @@ export const exportCongress = withAction({
     supabase
       .from("reference_candidates")
       .select(
-        "id, image_id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, detected_doi, detected_pmid, verification_status, confidence_score"
+        "id, image_id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, detected_doi, detected_pmid, verification_status, confidence_score, official_title, official_authors, official_year, official_journal, citation_count, is_open_access"
       )
-      .eq("congress_id", congressId),
-    supabase
+      .eq("congress_id", congressId),    supabase
       .from("topics")
       .select("id, name, category, description, image_topics(image_id)")
       .eq("congress_id", congressId),
@@ -116,6 +115,59 @@ export const exportCongress = withAction({
   // References
   root.file("references.json", JSON.stringify(refsRes.data ?? [], null, 2))
   root.file("topics.json", JSON.stringify(topicsRes.data ?? [], null, 2))
+
+  // Professional Medical Exports (RIS + CSV)
+  if (refsRes.data && refsRes.data.length > 0) {
+    try {
+      const { execSync } = require("child_process")
+      const path = require("path")
+      const fs = require("fs")
+      
+      const jsonStr = JSON.stringify(refsRes.data)
+      const pythonPath = process.env.PYTHON_PATH || "python"
+      
+      // 1. Generate RIS (Zotero/Mendeley)
+      const risScript = path.join(process.cwd(), "tools", "export_ris.py")
+      const risOutput = execSync(`${pythonPath} "${risScript}"`, { input: jsonStr }).toString()
+      root.file("BIBLIOGRAFIA.ris", risOutput)
+      
+      // 2. Generate CSV (Excel)
+      const escapeCsv = (str: string | number | null | undefined) => {
+        const val = String(str ?? "").replace(/"/g, '""')
+        return `"${val}"`
+      }
+      const csvHeader = "Título,Autores,Journal,Año,DOI,PMID,Citas,OA,Estado\n"
+      const csvRows = refsRes.data.map(r => {
+        return [
+          escapeCsv(r.official_title || r.detected_title),
+          escapeCsv(r.official_authors || r.detected_authors),
+          escapeCsv(r.official_journal || r.detected_journal),
+          escapeCsv(r.official_year || r.detected_year),
+          escapeCsv(r.detected_doi),
+          escapeCsv(r.detected_pmid),
+          escapeCsv(r.citation_count),
+          escapeCsv(r.is_open_access ? "SÍ" : "NO"),
+          escapeCsv(r.verification_status)
+        ].join(",")
+      }).join("\n")
+      root.file("TABLA_EVIDENCIA_EXCEL.csv", csvHeader + csvRows)
+
+      // 3. Generate Human-readable Summary (MD)
+      const refMarkdown = refsRes.data
+        .map((r, i) => {
+          const status = (r.verification_status || "pending").toUpperCase()
+          const doi = r.detected_doi ? ` [DOI: ${r.detected_doi}]` : ""
+          const pmid = r.detected_pmid ? ` [PMID: ${r.detected_pmid}]` : ""
+          const citations = r.citation_count ? ` · Citado: ${r.citation_count} veces` : ""
+          return `${i + 1}. ${r.official_authors || r.detected_authors || "N/A"}. **${r.official_title || r.detected_title || "Sin título"}**. ${r.official_journal || r.detected_journal || ""}${doi}${pmid}${citations} — *Status: ${status}*`
+        })
+        .join("\n\n")
+      root.file("RESUMEN_BIBLIOGRAFICO.md", `# Referencias Detectadas - ${congress.name}\n\n${refMarkdown}`)
+    } catch (err) {
+      console.error("Error generating professional exports:", err)
+      // Fallback to simple JSON if python fails
+    }
+  }
 
   // Images + OCR per image
   const imagesFolder = root.folder("images")

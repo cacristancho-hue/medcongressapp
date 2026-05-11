@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
 import {
   ArrowLeft,
   FileText,
@@ -304,8 +305,10 @@ export default async function ResumenPage({ params }: Props) {
                 {reports.length > 1 && ` · ${reports.length} versiones`}
               </p>
             </CardHeader>
-            <CardContent className="prose prose-sm prose-slate max-w-none pt-0">
-              <ReactMarkdown>{latestReport.content}</ReactMarkdown>
+            <CardContent className="prose prose-sm prose-slate max-w-none pt-0 font-plex-mono">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {latestReport.content}
+              </ReactMarkdown>
             </CardContent>
           </Card>
         ) : (

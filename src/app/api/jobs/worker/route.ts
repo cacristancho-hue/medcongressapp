@@ -2,282 +2,333 @@
 // Authentication: Bearer token = CRON_SECRET (must match env var).
 // Vercel Cron will hit this endpoint every minute on Pro plan.
 //
-// Why one-job-per-call: keeps function execution under Vercel's 60s budget,
-// avoids partial state on cold start, and gives natural backoff per item.
-// For high volume we can fan out (claim N at a time) later.
+// Why one-job-per-call:
+// 1. Avoids Vercel 10s/60s function timeouts.
+// 2. Each call is an independent transaction.
+// 3. Simple scaling: more cron hits = more throughput.
 
-import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/supabase/service"
-import { analyzeImage, generateReport, extractTopicsFromCorpus } from "@/lib/ai/router"
-import { verifyReference } from "@/lib/reference-verification"
+import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
 import { recordAiUsage } from "@/lib/ai-usage"
-import { log } from "@/lib/logger"
-import { processNextWebhookDelivery } from "@/lib/webhooks"
+import { verifyReference } from "@/lib/reference-verification"
+import { NextResponse } from "next/server"
+import { execSync } from "child_process"
+import path from "path"
+import fs from "fs"
+import os from "os"
 
-export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+export const maxDuration = 60 // 60s max for image vision processing
+
+// =============================================================================
+// TYPES & LOGGING
+// =============================================================================
+
+type LogLevel = "info" | "warn" | "error"
+
+function log(level: LogLevel, msg: string, data?: any) {
+  const entry = {
+    ts: new Date().toISOString(),
+    level,
+    msg,
+    ...data,
+  }
+  console.log(JSON.stringify(entry))
+}
 
 interface AiJobRow {
   id: string
+  job_type: "image_analysis" | "report_generation" | "topics_extraction" | "reference_verification"
+  status: "pending" | "processing" | "completed" | "failed"
+  payload: any
   user_id: string
-  organization_id: string | null
-  job_type: "image_analysis" | "topics_extraction" | "report_generation" | "reference_verification"
-  status: string
-  payload: Record<string, unknown>
-  congress_id: string | null
-  image_id: string | null
-  attempt_count: number
-  max_attempts: number
-}
-
-function unauthorized() {
-  return NextResponse.json({ error: "unauthorized" }, { status: 401 })
-}
-
-export async function POST(req: NextRequest) {
-  const auth = req.headers.get("authorization") ?? ""
-  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`
-  if (!process.env.CRON_SECRET || auth !== expected) {
-    return unauthorized()
-  }
-
-  const supabase = createServiceClient()
-
-  // Process any pending webhook delivery first (cheap, fast).
-  // The cron tick is once per minute so we can comfortably do both.
-  const webhookProcessed = await processNextWebhookDelivery()
-
-  // Claim next pending job atomically (ai_jobs_claim_next uses FOR UPDATE SKIP LOCKED).
-  const { data: claimed, error: claimErr } = await supabase.rpc("ai_jobs_claim_next", {
-    p_worker_id: "vercel-cron",
-  })
-
-  if (claimErr) {
-    log("error", "worker claim failed", { err: claimErr.message })
-    return NextResponse.json({ error: claimErr.message }, { status: 500 })
-  }
-
-  if (!claimed || (Array.isArray(claimed) && claimed.length === 0)) {
-    return NextResponse.json({ message: "no pending jobs", webhookProcessed })
-  }
-
-  const job: AiJobRow = Array.isArray(claimed) ? claimed[0] : claimed
-
-  try {
-    let result: Record<string, unknown> = {}
-    switch (job.job_type) {
-      case "image_analysis":
-        result = await runImageAnalysis(supabase, job)
-        break
-      case "topics_extraction":
-        result = await runTopicsExtraction(supabase, job)
-        break
-      case "report_generation":
-        result = await runReportGeneration(supabase, job)
-        break
-      case "reference_verification":
-        result = await runReferenceVerification(supabase, job)
-        break
-      default:
-        throw new Error(`Unknown job_type: ${job.job_type}`)
-    }
-
-    await supabase
-      .from("ai_jobs")
-      .update({
-        status: "succeeded",
-        finished_at: new Date().toISOString(),
-        result,
-      })
-      .eq("id", job.id)
-
-    return NextResponse.json({ jobId: job.id, status: "succeeded", result })
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "unknown"
-    log("error", "worker job failed", { jobId: job.id, jobType: job.job_type, err: message })
-
-    const finalState =
-      job.attempt_count >= job.max_attempts ? "failed" : "pending"
-
-    await supabase
-      .from("ai_jobs")
-      .update({
-        status: finalState,
-        error_message: message,
-        finished_at: finalState === "failed" ? new Date().toISOString() : null,
-      })
-      .eq("id", job.id)
-
-    return NextResponse.json(
-      { jobId: job.id, status: finalState, error: message },
-      { status: 200 }
-    )
-  }
+  congress_id?: string
+  image_id?: string
 }
 
 // =============================================================================
-// Job runners. Each receives a service-role supabase + the job row.
+// WORKER HANDLERS
 // =============================================================================
 
 interface SupabaseService {
-  from: ReturnType<typeof createServiceClient>["from"]
-  storage: ReturnType<typeof createServiceClient>["storage"]
+  from: any
+  storage: any
 }
 
 async function runImageAnalysis(supabase: SupabaseService, job: AiJobRow) {
   if (!job.image_id) throw new Error("image_id requerido")
 
-  const { data: image } = await supabase
+  const { data: image, error: imgErr } = await supabase
     .from("congress_images")
     .select("id, user_id, congress_id, storage_path, storage_path_optimized")
     .eq("id", job.image_id)
     .single()
 
-  if (!image) throw new Error("Imagen no encontrada")
+  if (imgError || !image) throw new Error(`Imagen no encontrada: ${imgErr?.message}`)
 
-  const { data: signed } = await supabase.storage
-    .from("congress-photos")
-    .createSignedUrl(image.storage_path_optimized || image.storage_path, 300)
-  if (!signed?.signedUrl) throw new Error("No se pudo firmar URL")
+  log("info", "starting robust image analysis", { imageId: job.image_id })
 
-  const { data: result, usage } = await analyzeImage({ imageUrl: signed.signedUrl })
+  // --- FASE 1: OPTIMIZACIÓN Y RECTIFICACIÓN ---
+  let finalAnalysisUrl: string | null = null
+  let leftBuffer: Buffer | undefined
+  let rightBuffer: Buffer | undefined
+  let originalSignedUrl: string | null = null
 
-  await supabase.from("ocr_results").insert({
-    image_id: job.image_id,
-    raw_text: result.raw_text,
-    cleaned_text: result.medical_summary,
-  })
+  try {
+    const { data: signed } = await supabase.storage
+      .from("congress-photos")
+      .createSignedUrl(image.storage_path, 900) 
+    if (!signed?.signedUrl) throw new Error("No pudo firmarse la URL de la imagen original")
+    originalSignedUrl = signed.signedUrl
 
-  if (result.topics?.length > 0) {
-    for (const t of result.topics) {
-      if (!t.name?.trim()) continue
-      const { data: existing } = await supabase
-        .from("topics")
-        .select("id")
-        .eq("congress_id", image.congress_id)
-        .eq("name", t.name)
-        .maybeSingle()
-      let topicId = existing?.id
-      if (!topicId) {
-        const { data: created } = await supabase
+    const inputPath = path.join(os.tmpdir(), `input_job_${job.image_id}.jpg`)
+    const outputPath = path.join(os.tmpdir(), `optimized_job_${job.image_id}.jpg`)
+
+    const response = await fetch(originalSignedUrl)
+    const buffer = Buffer.from(await response.arrayBuffer())
+    fs.writeFileSync(inputPath, buffer)
+
+    const optimizeScript = path.join(process.cwd(), "tools", "optimize_slide.py")
+    const pythonPath = process.env.PYTHON_PATH || "python"
+
+    try {
+      execSync(`${pythonPath} "${optimizeScript}" "${inputPath}" "${outputPath}"`)
+      
+      const optimizedBuffer = fs.readFileSync(outputPath)
+      const rectifiedPath = image.storage_path.split('.').slice(0, -1).join('.') + '_rectified.jpg'
+      
+      const leftPath = outputPath.replace(".jpg", "_zL.jpg")
+      const rightPath = outputPath.replace(".jpg", "_zR.jpg")
+      
+      if (fs.existsSync(leftPath)) leftBuffer = fs.readFileSync(leftPath)
+      if (fs.existsSync(rightPath)) rightBuffer = fs.readFileSync(rightPath)
+
+      await supabase.storage
+        .from("congress-photos")
+        .upload(rectifiedPath, optimizedBuffer, {
+          contentType: "image/jpeg",
+          upsert: true,
+        })
+
+      await supabase
+        .from("congress_images")
+        .update({ storage_path_optimized: rectifiedPath, status: "optimized" })
+        .eq("id", job.image_id)
+
+      finalAnalysisUrl = `data:image/jpeg;base64,${optimizedBuffer.toString('base64')}`
+      
+      // Limpieza de archivos temporales
+      if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
+      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath)
+      if (fs.existsSync(leftPath)) fs.unlinkSync(leftPath)
+      if (fs.existsSync(rightPath)) fs.unlinkSync(rightPath)
+    } catch (execErr) {
+      log("warn", "slide optimization failed in worker, using original", { error: execErr })
+      finalAnalysisUrl = originalSignedUrl
+    }
+  } catch (phase1Err) {
+    log("error", "critical failure in Phase 1 (worker)", { error: phase1Err })
+    throw phase1Err
+  }
+
+  // --- FASE 2: ANÁLISIS IA ---
+  try {
+    const { data: result, usage } = await analyzeImage({
+      imageUrl: finalAnalysisUrl!,
+      zoomLeftUrl: leftBuffer ? `data:image/jpeg;base64,${leftBuffer.toString('base64')}` : undefined,
+      zoomRightUrl: rightBuffer ? `data:image/jpeg;base64,${rightBuffer.toString('base64')}` : undefined,
+    })
+
+    // Auditoría Heurística
+    if ((!result.references || result.references.length === 0) && 
+        /(\d{4}|et al|doi:|j\. |clin\.|med\.|lancet|nejm)/i.test(result.raw_text)) {
+      log("warn", "posible referencia omitida en worker", { imageId: job.image_id })
+    }
+
+    const { error: ocrErr } = await supabase.from("ocr_results").upsert({
+      image_id: job.image_id,
+      raw_text: result.raw_text,
+      cleaned_text: result.medical_summary,
+    }, { onConflict: "image_id" })
+    if (ocrErr) log("error", "failed to save ocr_results", { error: ocrErr })
+
+    // Tópicos
+    if (result.topics?.length > 0) {
+      for (const t of result.topics) {
+        if (!t.name?.trim()) continue
+        const { data: existing } = await supabase
           .from("topics")
-          .insert({
-            congress_id: image.congress_id,
-            name: t.name,
-            category: t.category ?? null,
-            description: t.description ?? null,
-          })
           .select("id")
-          .single()
-        topicId = created?.id
-      }
-      if (topicId) {
-        await supabase
-          .from("image_topics")
-          .upsert({ image_id: job.image_id, topic_id: topicId }, { onConflict: "image_id,topic_id" })
+          .eq("congress_id", image.congress_id)
+          .eq("name", t.name)
+          .maybeSingle()
+        let topicId = existing?.id
+        if (!topicId) {
+          const { data: created } = await supabase
+            .from("topics")
+            .upsert({
+              congress_id: image.congress_id,
+              name: t.name,
+              category: t.category ?? null,
+              description: t.description ?? null,
+            }, { onConflict: "congress_id,name" })
+            .select("id")
+            .single()
+          topicId = created?.id
+        }
+        if (topicId) {
+          await supabase
+            .from("image_topics")
+            .upsert({ image_id: job.image_id, topic_id: topicId }, { onConflict: "image_id,topic_id" })
+        }
       }
     }
+
+    // Referencias
+    if (result.references?.length > 0) {
+      await supabase.from("reference_candidates").delete().eq("image_id", job.image_id)
+      const { data: insertedRefs, error: insErr } = await supabase.from("reference_candidates").insert(
+        result.references.map((r) => ({
+          congress_id: image.congress_id,
+          image_id: job.image_id,
+          user_id: image.user_id,
+          raw_reference_text: `${r.detected_title ?? ""} ${r.detected_authors ?? ""} ${r.detected_journal ?? ""}`.trim(),
+          detected_title: r.detected_title,
+          detected_authors: r.detected_authors,
+          detected_year: r.detected_year,
+          detected_journal: r.detected_journal,
+          detected_doi: r.detected_doi,
+          verification_status: "not_verified",
+        }))
+      ).select()
+
+      if (insErr) {
+        log("error", "failed to insert references in worker", { error: insErr })
+      } else if (insertedRefs) {
+        for (const ref of insertedRefs) {
+          try {
+            const vResult = await verifyReference({
+              id: ref.id,
+              raw_text: ref.raw_reference_text,
+              detected_title: ref.detected_title,
+              detected_authors: ref.detected_authors,
+              detected_year: ref.detected_year,
+              detected_journal: ref.detected_journal,
+              detected_doi: ref.detected_doi,
+            })
+            
+            await supabase.from("reference_candidates").update({
+              verification_status: vResult.status,
+              confidence_score: vResult.confidenceScore,
+              detected_title: vResult.matchedTitle ?? ref.detected_title,
+              detected_authors: vResult.matchedAuthors ?? ref.detected_authors,
+              detected_year: vResult.matchedYear ?? ref.detected_year,
+              detected_journal: vResult.matchedJournal ?? ref.detected_journal,
+              detected_doi: vResult.matchedDoi ?? ref.detected_doi,
+              detected_pmid: vResult.matchedPmid,
+              verification_source: vResult.source,
+              verification_notes: vResult.notes,
+              official_title: vResult.matchedTitle,
+              official_authors: vResult.matchedAuthors,
+              official_year: vResult.matchedYear,
+              official_journal: vResult.matchedJournal,
+              abstract: vResult.abstract,
+              publication_type: vResult.publicationType,
+            }).eq("id", ref.id)
+          } catch (vErr) {
+            log("warn", "auto-verify failed in worker", { refId: ref.id, error: vErr })
+          }
+        }
+      }
+    }
+
+    await supabase
+      .from("congress_images")
+      .update({ ai_status: "ai_done", ocr_status: "ocr_done", status: "ocr_done" })
+      .eq("id", job.image_id)
+
+    await recordAiUsage({
+      userId: image.user_id,
+      actionType: "image_analysis",
+      model: usage.model,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      congressId: image.congress_id,
+      imageId: job.image_id,
+      status: "success",
+    })
+
+    return { provider: usage.provider, model: usage.model, references: result.references?.length || 0 }
+  } catch (err: any) {
+    log("error", "IA analysis phase failed in worker", { imageId: job.image_id, error: err.message })
+    await supabase
+      .from("congress_images")
+      .update({ ai_status: "ai_failed", ocr_status: "ocr_failed" })
+      .eq("id", job.image_id)
+    throw err
   }
-
-  if (result.references?.length > 0) {
-    await supabase.from("reference_candidates").insert(
-      result.references.map((r) => ({
-        congress_id: image.congress_id,
-        image_id: job.image_id,
-        user_id: image.user_id,
-        raw_reference_text: `${r.detected_title ?? ""} ${r.detected_authors ?? ""} ${r.detected_journal ?? ""}`.trim(),
-        detected_title: r.detected_title,
-        detected_authors: r.detected_authors,
-        detected_year: r.detected_year,
-        detected_journal: r.detected_journal,
-        detected_doi: r.detected_doi,
-        verification_status: "not_verified",
-      }))
-    )
-  }
-
-  await supabase
-    .from("congress_images")
-    .update({ ai_status: "ai_done", ocr_status: "ocr_done", status: "ocr_done" })
-    .eq("id", job.image_id)
-
-  await recordAiUsage({
-    userId: image.user_id,
-    actionType: "image_analysis",
-    model: usage.model,
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
-    congressId: image.congress_id,
-    imageId: job.image_id,
-    status: "success",
-  })
-
-  return { provider: usage.provider, model: usage.model }
 }
 
 async function runTopicsExtraction(supabase: SupabaseService, job: AiJobRow) {
   if (!job.congress_id) throw new Error("congress_id requerido")
 
-  const { data: rows } = await supabase
+  const { data: rows, error: fetchErr } = await supabase
     .from("congress_images")
     .select("id, ocr_results(cleaned_text)")
     .eq("congress_id", job.congress_id)
     .order("created_at", { ascending: true })
 
-  type Row = { id: string; ocr_results: Array<{ cleaned_text: string | null }> | null }
-  const documents = ((rows ?? []) as Row[])
-    .map((r, idx) => ({
+  if (fetchErr) throw new Error(`Fetch error: ${fetchErr.message}`)
+
+  const documents = (rows ?? [])
+    .map((r: any, idx: number) => ({
       index: idx,
       imageId: r.id,
       text: r.ocr_results?.[0]?.cleaned_text ?? "",
     }))
-    .filter((d) => d.text.trim().length > 0)
+    .filter((d: any) => d.text.trim().length > 0)
 
-  if (documents.length === 0) throw new Error("No hay OCR previo")
+  if (documents.length === 0) return { topicsCreated: 0 }
 
   const { topics, usage } = await extractTopicsFromCorpus({
-    documents: documents.map(({ index, text }) => ({ index, text })),
+    documents: documents.map(({ index, text }: any) => ({ index, text })),
   })
 
-  let topicsCreated = 0
-  let linksCreated = 0
+  let createdCount = 0
   for (const t of topics) {
     if (!t.name?.trim()) continue
-    const { data: existing } = await supabase
+    const { data: created, error: upsertErr } = await supabase
       .from("topics")
+      .upsert({
+        congress_id: job.congress_id,
+        name: t.name,
+        category: t.category,
+        description: t.description,
+      }, { onConflict: "congress_id,name" })
       .select("id")
-      .eq("congress_id", job.congress_id)
-      .eq("name", t.name)
-      .maybeSingle()
-    let topicId = existing?.id
-    if (!topicId) {
-      const { data: created } = await supabase
-        .from("topics")
-        .insert({
-          congress_id: job.congress_id,
-          name: t.name,
-          category: t.category ?? null,
-          description: t.description ?? null,
-        })
-        .select("id")
-        .single()
-      topicId = created?.id
-      if (topicId) topicsCreated++
+      .single()
+
+    if (upsertErr) {
+      log("warn", "failed to upsert topic", { topic: t.name, error: upsertErr })
+      continue
     }
-    if (!topicId) continue
-    for (const idx of t.image_indices ?? []) {
-      const doc = documents[idx]
-      if (!doc) continue
-      const { error } = await supabase
-        .from("image_topics")
-        .upsert({ image_id: doc.imageId, topic_id: topicId }, { onConflict: "image_id,topic_id" })
-      if (!error) linksCreated++
+
+    if (created?.id) {
+      createdCount++
+      for (const idx of t.image_indices) {
+        const doc = documents[idx]
+        if (doc) {
+          await supabase
+            .from("image_topics")
+            .upsert({ image_id: doc.imageId, topic_id: created.id }, { onConflict: "image_id,topic_id" })
+        }
+      }
     }
   }
 
   await recordAiUsage({
     userId: job.user_id,
-    actionType: "image_analysis",
+    actionType: "image_analysis", // use general type or specific
     model: usage.model,
     inputTokens: usage.inputTokens,
     outputTokens: usage.outputTokens,
@@ -285,41 +336,29 @@ async function runTopicsExtraction(supabase: SupabaseService, job: AiJobRow) {
     status: "success",
   })
 
-  return { topicsCreated, linksCreated, model: usage.model }
+  return { topicsCreated: createdCount }
 }
 
 async function runReportGeneration(supabase: SupabaseService, job: AiJobRow) {
-  if (!job.congress_id) throw new Error("congress_id requerido")
-  const language = (job.payload?.language as "es" | "en") ?? "es"
+  const { fullText, language } = job.payload
+  if (!fullText || !language) throw new Error("Payload incompleto para reporte")
 
-  const { data: images } = await supabase
-    .from("congress_images")
-    .select("id")
-    .eq("congress_id", job.congress_id)
+  log("info", "generating academic report in background", { congressId: job.congress_id })
 
-  const { data: ocrData } = await supabase
-    .from("ocr_results")
-    .select("cleaned_text")
-    .in("image_id", (images ?? []).map((img) => img.id))
+  const { generateReport: aiGenerateReport } = await import("@/lib/ai/router")
+  const { content, usage } = await aiGenerateReport({ fullText, language })
 
-  if (!ocrData || ocrData.length === 0) throw new Error("Sin OCR previo")
+  if (!content) throw new Error("IA no generó contenido para el reporte")
 
-  const fullText = ocrData
-    .map((d) => d.cleaned_text)
-    .filter(Boolean)
-    .join("\n\n---\n\n")
-    .slice(0, 100_000)
-
-  const { content, usage } = await generateReport({ fullText, language })
-  if (!content) throw new Error("IA no generó contenido")
-
-  await supabase.from("reports").insert({
+  const { error: insErr } = await supabase.from("reports").insert({
     congress_id: job.congress_id,
     user_id: job.user_id,
-    title: `Esquema Académico (${language.toUpperCase()})`,
+    title: `Esquema Académico Automático (${language.toUpperCase()})`,
     content,
     report_type: "academic_outline",
   })
+
+  if (insErr) throw new Error(`Error guardando reporte: ${insErr.message}`)
 
   await recordAiUsage({
     userId: job.user_id,
@@ -331,45 +370,121 @@ async function runReportGeneration(supabase: SupabaseService, job: AiJobRow) {
     status: "success",
   })
 
-  return { provider: usage.provider, model: usage.model }
+  return { success: true, model: usage.model }
 }
 
 async function runReferenceVerification(supabase: SupabaseService, job: AiJobRow) {
-  const refId = job.payload?.referenceId as string | undefined
-  if (!refId) throw new Error("referenceId requerido")
+  if (!job.congress_id) throw new Error("congress_id requerido")
 
-  const { data: ref } = await supabase
+  const { data: refs, error: fetchErr } = await supabase
     .from("reference_candidates")
     .select("id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, detected_doi")
-    .eq("id", refId)
-    .single()
-  if (!ref) throw new Error("Referencia no encontrada")
+    .eq("congress_id", job.congress_id)
+    .neq("verification_status", "verified")
+    .neq("verification_status", "retracted")
 
-  const result = await verifyReference({
-    id: ref.id,
-    raw_text: ref.raw_reference_text,
-    detected_title: ref.detected_title,
-    detected_authors: ref.detected_authors,
-    detected_year: ref.detected_year,
-    detected_journal: ref.detected_journal,
-    detected_doi: ref.detected_doi,
-  })
+  if (fetchErr) throw new Error(`Fetch error: ${fetchErr.message}`)
+  if (!refs?.length) return { processed: 0, retracted: 0 }
 
-  await supabase
-    .from("reference_candidates")
-    .update({
-      verification_status: result.status,
-      confidence_score: result.confidenceScore,
-      detected_title: result.matchedTitle ?? ref.detected_title,
-      detected_authors: result.matchedAuthors ?? ref.detected_authors,
-      detected_year: result.matchedYear ?? ref.detected_year,
-      detected_journal: result.matchedJournal ?? ref.detected_journal,
-      detected_doi: result.matchedDoi ?? ref.detected_doi,
-      detected_pmid: result.matchedPmid,
-      verification_source: result.source,
-      verification_notes: result.notes,
-    })
-    .eq("id", refId)
+  log("info", "bulk reference verification in background", { count: refs.length })
 
-  return { status: result.status, retracted: result.retracted }
+  let processed = 0
+  let retracted = 0
+
+  for (const ref of refs) {
+    try {
+      const vResult = await verifyReference({
+        id: ref.id,
+        raw_text: ref.raw_reference_text,
+        detected_title: ref.detected_title,
+        detected_authors: ref.detected_authors,
+        detected_year: ref.detected_year,
+        detected_journal: ref.detected_journal,
+        detected_doi: ref.detected_doi,
+      })
+
+      await supabase
+        .from("reference_candidates")
+        .update({
+          verification_status: vResult.status,
+          confidence_score: vResult.confidenceScore,
+          detected_title: vResult.matchedTitle ?? ref.detected_title,
+          detected_authors: vResult.matchedAuthors ?? ref.detected_authors,
+          detected_year: vResult.matchedYear ?? ref.detected_year,
+          detected_journal: vResult.matchedJournal ?? ref.detected_journal,
+          detected_doi: vResult.matchedDoi ?? ref.detected_doi,
+          detected_pmid: vResult.matchedPmid,
+          verification_source: vResult.source,
+          verification_notes: vResult.notes,
+          official_title: vResult.matchedTitle,
+          official_authors: vResult.matchedAuthors,
+          official_year: vResult.matchedYear,
+          official_journal: vResult.matchedJournal,
+          abstract: vResult.abstract,
+          publication_type: vResult.publicationType,
+        })
+        .eq("id", ref.id)
+
+      processed++
+      if (vResult.retracted) retracted++
+      
+      // Prevent rate limits on external APIs
+      await new Promise(r => setTimeout(r, 400))
+    } catch (err) {
+      log("warn", "verification failed for single ref in background", { refId: ref.id, error: err })
+    }
+  }
+
+  return { processed, retracted }
+}
+
+// =============================================================================
+// MAIN WORKER ENDPOINT
+// =============================================================================
+
+export async function POST(request: Request) {
+  const authHeader = request.headers.get("authorization")
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const supabase = createServiceClient()
+
+  const { data: job, error: jobErr } = await supabase
+    .from("ai_jobs")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (jobErr) return NextResponse.json({ error: jobErr.message }, { status: 500 })
+  if (!job) return NextResponse.json({ message: "No jobs pending" })
+
+  await supabase.from("ai_jobs").update({ status: "processing", started_at: new Date().toISOString() }).eq("id", job.id)
+
+  try {
+    let result
+    switch (job.job_type) {
+      case "image_analysis": result = await runImageAnalysis(supabase, job); break
+      case "topics_extraction": result = await runTopicsExtraction(supabase, job); break
+      case "report_generation": result = await runReportGeneration(supabase, job); break
+      case "reference_verification": result = await runReferenceVerification(supabase, job); break
+    }
+
+    await supabase.from("ai_jobs").update({
+      status: "completed",
+      finished_at: new Date().toISOString(),
+      result,
+    }).eq("id", job.id)
+
+    return NextResponse.json({ success: true, jobId: job.id })
+  } catch (err: any) {
+    await supabase.from("ai_jobs").update({
+      status: "failed",
+      finished_at: new Date().toISOString(),
+      error_message: err.message,
+    }).eq("id", job.id)
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+  }
 }

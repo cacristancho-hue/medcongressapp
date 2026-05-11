@@ -14,7 +14,7 @@
 - **Owner humano**: Carlos Cristancho — `cacristanchoo@gmail.com` / `cac-94@hotmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI + Gemini + Anthropic)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-09 — sesión Claude Opus 4.7 (bases sólidas)
+- **Última actualización**: 2026-05-10 — sesión Gemini CLI (Refuerzo Académico + Deduplicación)
 
 ---
 
@@ -808,6 +808,23 @@ app/
 - 0 dependencias nuevas
 
 **Verificación**: lint clean.
+
+### 2026-05-10 · Gemini CLI (Sesión de Refuerzo Académico)
+
+**1. Enriquecimiento Académico Profundo (Fase 24-27):**
+- **Deduplicación Top Mundial**: Implementado motor de deduplicación in-memory en `getLibraryReferences` que agrupa estudios por DOI, PMID o título normalizado, consolidando detecciones múltiples en una única entrada maestra.
+- **Abstracts & MeSH Terms**: Refactorizado el pipeline de verificación para capturar y reconstruir abstracts desde OpenAlex e integrar términos MeSH (palabras clave médicas) para contexto clínico instantáneo.
+- **Impacto y Open Access**: Integración de conteo de citas y detección de enlaces PDF gratuitos (Open Access) directamente en la biblioteca.
+
+**2. UI/UX de Biblioteca de Élite:**
+- **Visualización de Consenso**: Badge animado "Consolidado" que muestra el conteo de detecciones en diferentes diapositivas/congresos.
+- **Lectura de Abstracts**: Implementado componente expandible para lectura de resúmenes académicos sin salir de la biblioteca.
+- **Diseño de Referencias**: Mejorada la legibilidad de autores, años y journals, priorizando metadatos oficiales sobre el OCR.
+
+**3. Infraestructura y Resiliencia:**
+- **Auditoría RLS**: Confirmada la seguridad de las 16 tablas sensibles ante accesos no autorizados mediante la herramienta `tools/audit_rls.py`.
+- **Fallback de Esquema**: Implementada lógica de compatibilidad que permite la visualización de metadatos académicos incluso si las columnas físicas de la Fase 24+ no están presentes en la DB remota.
+- **Validación de Router**: Verificada la operatividad del router multi-LLM (Gemini 2.5 Flash, Claude 3.5 Sonnet, GPT-4o) con las credenciales locales.
 
 ---
 

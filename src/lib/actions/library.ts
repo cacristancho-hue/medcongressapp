@@ -13,10 +13,25 @@ export interface LibraryReference {
   detected_year: string | null
   detected_journal: string | null
   detected_doi: string | null
+  detected_pmid: string | null
   verification_status: string
   confidence_score: number | null
   created_at: string
   specialty: string | null
+  // Nuevos campos
+  official_title: string | null
+  official_authors: string | null
+  official_year: string | null
+  official_journal: string | null
+  abstract: string | null
+  publication_type: string | null
+  mesh_terms: string[] | null
+  detection_count: number
+  // Métricas de impacto
+  citation_count: number | null
+  influential_citation_count: number | null
+  is_open_access: boolean
+  open_access_url: string | null
 }
 
 interface ReferenceCandidateRow {
@@ -29,9 +44,21 @@ interface ReferenceCandidateRow {
   detected_year: string | null
   detected_journal: string | null
   detected_doi: string | null
+  detected_pmid: string | null
   verification_status: string
   confidence_score: number | null
   created_at: string
+  official_title: string | null
+  official_authors: string | null
+  official_year: string | null
+  official_journal: string | null
+  abstract: string | null
+  publication_type: string | null
+  mesh_terms: string[] | null
+  citation_count: number | null
+  influential_citation_count: number | null
+  is_open_access: boolean
+  open_access_url: string | null
   congresses: {
     name: string
     specialty: string | null
@@ -44,6 +71,7 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   if (!user) return { error: "No autorizado" }
 
+  // 1. Obtener todas las referencias del usuario
   const { data, error } = await supabase
     .from("reference_candidates")
     .select(`
@@ -56,9 +84,21 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       detected_year,
       detected_journal,
       detected_doi,
+      detected_pmid,
       verification_status,
       confidence_score,
       created_at,
+      official_title,
+      official_authors,
+      official_year,
+      official_journal,
+      abstract,
+      publication_type,
+      mesh_terms,
+      citation_count,
+      influential_citation_count,
+      is_open_access,
+      open_access_url,
       congresses (
         name,
         specialty
@@ -68,27 +108,82 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   if (error) {
     console.error("Error cargando biblioteca:", error)
-    return { error: "No se pudo cargar la biblioteca de referencias" }
+    return { error: "No se pudo cargar la biblioteca." }
   }
 
   const rows = (data ?? []) as unknown as ReferenceCandidateRow[]
+  
+  // 2. Motor de Deduplicación Top Mundial (In-Memory)
+  // Agrupamos por DOI o PMID para consolidar estudios idénticos
+  const libraryMap = new Map<string, LibraryReference>()
 
-  const formatted: LibraryReference[] = rows.map((row) => ({
-    id: row.id,
-    congress_id: row.congress_id,
-    congress_name: row.congresses?.name ?? "Desconocido",
-    image_id: row.image_id,
-    raw_text: row.raw_reference_text ?? "",
-    detected_title: row.detected_title,
-    detected_authors: row.detected_authors,
-    detected_year: row.detected_year,
-    detected_journal: row.detected_journal,
-    detected_doi: row.detected_doi,
-    verification_status: row.verification_status,
-    confidence_score: row.confidence_score,
-    created_at: row.created_at,
-    specialty: row.congresses?.specialty ?? null,
-  }))
+  rows.forEach((row) => {
+    // Generar una clave única: DOI > PMID > Título normalizado
+    const doi = row.detected_doi?.toLowerCase().trim()
+    const pmid = row.detected_pmid
+    const normalizedTitle = row.detected_title?.toLowerCase().trim().replace(/[^a-z0-9]/g, "")
+    
+    const key = doi || pmid || normalizedTitle || row.id
 
-  return { data: formatted }
+    const existing = libraryMap.get(key)
+
+    const current: LibraryReference = {
+      id: row.id,
+      congress_id: row.congress_id,
+      congress_name: row.congresses?.name ?? "Desconocido",
+      image_id: row.image_id,
+      raw_text: row.raw_reference_text ?? "",
+      detected_title: row.detected_title,
+      detected_authors: row.detected_authors,
+      detected_year: row.detected_year,
+      detected_journal: row.detected_journal,
+      detected_doi: row.detected_doi,
+      detected_pmid: row.detected_pmid,
+      verification_status: row.verification_status,
+      confidence_score: row.confidence_score,
+      created_at: row.created_at,
+      specialty: row.congresses?.specialty ?? null,
+      official_title: (row as any).official_title ?? row.detected_title,
+      official_authors: (row as any).official_authors ?? row.detected_authors,
+      official_year: (row as any).official_year ?? row.detected_year,
+      official_journal: (row as any).official_journal ?? row.detected_journal,
+      abstract: (row as any).abstract ?? null,
+      publication_type: (row as any).publication_type ?? null,
+      mesh_terms: (row as any).mesh_terms ?? null,
+      detection_count: 1,
+      citation_count: (row as any).citation_count ?? null,
+      influential_citation_count: (row as any).influential_citation_count ?? null,
+      is_open_access: (row as any).is_open_access ?? false,
+      open_access_url: (row as any).open_access_url ?? null,
+    }
+
+    if (!existing) {
+      libraryMap.set(key, current)
+    } else {
+      // Consolidación inteligente:
+      // 1. Aumentar contador de detecciones
+      existing.detection_count += 1
+      
+      // 2. Acumular nombres de congresos (si son distintos)
+      if (!existing.congress_name.includes(current.congress_name)) {
+        existing.congress_name += `, ${current.congress_name}`
+      }
+
+      // 3. Priorizar la entrada con mejor estatus de verificación o metadatos
+      const statusPriority = { retracted: 4, verified: 3, partially_verified: 2, ambiguous: 1, not_verified: 0 }
+      const currentPrio = statusPriority[current.verification_status as keyof typeof statusPriority] || 0
+      const existingPrio = statusPriority[existing.verification_status as keyof typeof statusPriority] || 0
+
+      if (currentPrio > existingPrio || (!existing.official_title && current.official_title)) {
+        // Transferir metadatos superiores pero mantener el contador y congresos acumulados
+        const savedCount = existing.detection_count
+        const savedCongresses = existing.congress_name
+        Object.assign(existing, current)
+        existing.detection_count = savedCount
+        existing.congress_name = savedCongresses
+      }
+    }
+  })
+
+  return { data: Array.from(libraryMap.values()) }
 }

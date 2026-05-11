@@ -255,6 +255,7 @@ async function renderVariant(
   context.imageSmoothingEnabled = true
   context.imageSmoothingQuality = "high"
 
+  // Aplicar rotación/orientación si es necesario
   if (decoded.kind === "element" && decoded.orientation !== 1) {
     const swap = decoded.orientation >= 5 && decoded.orientation <= 8
     const sourceWidth = swap ? decoded.height : decoded.width
@@ -262,43 +263,59 @@ async function renderVariant(
 
     context.save()
     switch (decoded.orientation) {
-      case 2:
-        context.translate(targetWidth, 0)
-        context.scale(-1, 1)
-        break
-      case 3:
-        context.translate(targetWidth, targetHeight)
-        context.rotate(Math.PI)
-        break
-      case 4:
-        context.translate(0, targetHeight)
-        context.scale(1, -1)
-        break
-      case 5:
-        context.rotate(0.5 * Math.PI)
-        context.scale(1, -1)
-        context.translate(0, -targetHeight)
-        break
-      case 6:
-        context.rotate(0.5 * Math.PI)
-        context.translate(0, -targetHeight)
-        break
-      case 7:
-        context.rotate(0.5 * Math.PI)
-        context.translate(targetWidth, -targetHeight)
-        context.scale(-1, 1)
-        break
-      case 8:
-        context.rotate(-0.5 * Math.PI)
-        context.translate(-targetWidth, 0)
-        break
-      default:
-        break
+      case 2: context.translate(targetWidth, 0); context.scale(-1, 1); break
+      case 3: context.translate(targetWidth, targetHeight); context.rotate(Math.PI); break
+      case 4: context.translate(0, targetHeight); context.scale(1, -1); break
+      case 5: context.rotate(0.5 * Math.PI); context.scale(1, -1); context.translate(0, -targetHeight); break
+      case 6: context.rotate(0.5 * Math.PI); context.translate(0, -targetHeight); break
+      case 7: context.rotate(0.5 * Math.PI); context.translate(targetWidth, -targetHeight); context.scale(-1, 1); break
+      case 8: context.rotate(-0.5 * Math.PI); context.translate(-targetWidth, 0); break
     }
     context.drawImage(decoded.source, 0, 0, sourceWidth, sourceHeight, 0, 0, targetWidth, targetHeight)
     context.restore()
   } else {
     context.drawImage(decoded.source, 0, 0, targetWidth, targetHeight)
+  }
+
+  // --- Mejoras automáticas para diapositivas médicas ---
+  // 1. Contraste y Brillo (vía Canvas Filter)
+  // Ajuste ligero: contrast 1.1 para resaltar texto sobre fondos claros/oscuros.
+  if (targetWidth > 500) { // Solo para optimizadas, no para thumbnails pequeños
+    context.filter = "contrast(1.1) brightness(1.02) saturate(1.05)"
+    context.drawImage(canvas, 0, 0)
+    context.filter = "none"
+
+    // 2. Sharpening (Afilado) - Algoritmo de convolución 3x3
+    // Resalta los bordes de las letras para mejorar el OCR y la legibilidad humana.
+    try {
+      const imageData = context.getImageData(0, 0, targetWidth, targetHeight)
+      const data = imageData.data
+      const weights = [0, -0.5, 0, -0.5, 3, -0.5, 0, -0.5, 0] // Sharpen matrix
+      const side = Math.round(Math.sqrt(weights.length))
+      const halfSide = Math.floor(side / 2)
+      const output = context.createImageData(targetWidth, targetHeight)
+      const dst = output.data
+
+      for (let y = 0; y < targetHeight; y++) {
+        for (let x = 0; x < targetWidth; x++) {
+          const sy = y; const sx = x; const dstOff = (y * targetWidth + x) * 4
+          let r = 0; let g = 0; let b = 0
+          for (let cy = 0; cy < side; cy++) {
+            for (let cx = 0; cx < side; cx++) {
+              const scy = sy + cy - halfSide; const scx = sx + cx - halfSide
+              if (scy >= 0 && scy < targetHeight && scx >= 0 && scx < targetWidth) {
+                const srcOff = (scy * targetWidth + scx) * 4; const wt = weights[cy * side + cx]
+                r += data[srcOff] * wt; g += data[srcOff + 1] * wt; b += data[srcOff + 2] * wt
+              }
+            }
+          }
+          dst[dstOff] = r; dst[dstOff + 1] = g; dst[dstOff + 2] = b; dst[dstOff + 3] = data[dstOff + 3]
+        }
+      }
+      context.putImageData(output, 0, 0)
+    } catch (e) {
+      console.warn("Fallo en filtro de nitidez:", e)
+    }
   }
 
   const blob = await canvasToBlob(canvas, mimeType, quality)

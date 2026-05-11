@@ -49,7 +49,7 @@ export type ActionResult<T> =
   | { success: false; error: string }
 
 export function withAction(config: ActionConfig) {
-  return function wrap<TInput, TOutput extends Record<string, unknown>>(
+  return function wrap<TInput, TOutput extends object>(
     handler: (ctx: ActionContext, input: TInput) => Promise<TOutput>
   ): (input: TInput) => Promise<ActionResult<TOutput>> {
     return async (input: TInput) => {
