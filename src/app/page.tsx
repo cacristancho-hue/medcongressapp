@@ -84,49 +84,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Sustento Tecnológico de Élite - Explicación de Utilidad */}
-      <section className="bg-slate-900 py-20 px-6 overflow-hidden relative">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
-        <div className="max-w-5xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-sm font-bold text-blue-400 uppercase tracking-[0.3em] mb-4">Arquitectura de Inteligencia Triple</h2>
-            <p className="text-2xl md:text-3xl font-bold text-white tracking-tight">Sustentado por los líderes mundiales en IA</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <OpenAIIcon />
-                <span className="text-white font-bold">OpenAI</span>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                <strong className="text-slate-200">Precisión Clínica:</strong> Motor principal para la auditoría de integridad y validación de datos médicos complejos.
-              </p>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <GeminiIcon />
-                <span className="text-white font-bold">Google Gemini</span>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                <strong className="text-slate-200">Visión de Vanguardia:</strong> Especializado en la captura masiva de diapositivas y detección instantánea de referencias.
-              </p>
-            </div>
-
-            <div className="bg-white/5 backdrop-blur-sm p-8 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <ClaudeIcon />
-                <span className="text-white font-bold">Anthropic Claude</span>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                <strong className="text-slate-200">Síntesis Académica:</strong> Responsable de redactar guiones de ponencia con un tono médico de postgrado impecable.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Características de Élite */}
       <section className="max-w-5xl mx-auto px-6 py-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
