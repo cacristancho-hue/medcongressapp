@@ -1,114 +1,85 @@
 "use client"
 
-export default function Logo({ className = "h-10 w-10" }: { className?: string }) {
+export default function Logo({ className = "h-12 w-auto", showText = false }: { className?: string, showText?: boolean }) {
   return (
-    <div className={`group relative flex items-center justify-center ${className}`}>
-      {/* Halo de luz trasera - Brillo ambiental de alta gama */}
-      <div className="absolute inset-0 bg-blue-600/10 blur-3xl rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-all duration-1000"></div>
-      
-      {/* Símbolo Principal: The MD Elite Slide */}
-      <div className="relative z-10 w-full h-full">
-        <svg viewBox="0 0 130 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-          <defs>
-            {/* Gradiente del cuerpo: Pizarra profunda a Azul Real */}
-            <linearGradient id="monolith-refined" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#0F172A" />
-              <stop offset="100%" stopColor="#1E40AF" />
-            </linearGradient>
-            
-            {/* Efecto de Biselado de Cristal */}
-            <linearGradient id="glass-bevel" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="white" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </linearGradient>
-
-            {/* Brillo Láser IA */}
-            <filter id="laser-glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-              <feComponentTransfer>
-                <feFuncA type="linear" slope="2" />
-              </feComponentTransfer>
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* Cuerpo de la Diapositiva (El "Monolito") */}
-          <rect 
-            x="5" y="15" width="120" height="70" rx="16" 
-            fill="url(#monolith-refined)" 
-            className="stroke-white/5 shadow-2xl"
-            strokeWidth="0.5"
-          />
+    <div className={`group relative flex items-center gap-3 ${className}`}>
+      {/* Símbolo MD + CONGRESS Integrado */}
+      <svg viewBox="0 0 320 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-auto drop-shadow-2xl">
+        <defs>
+          <linearGradient id="brand-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#0F172A" />
+            <stop offset="100%" stopColor="#1E40AF" />
+          </linearGradient>
           
-          {/* Capa de Biselado (Glass Effect) */}
-          <rect 
-            x="5" y="15" width="120" height="35" rx="16" 
-            fill="url(#glass-bevel)" 
+          {/* Brillo de barrido muy lento y elegante */}
+          <linearGradient id="scan-shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="white" stopOpacity="0" />
+            <stop offset="50%" stopColor="white" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </linearGradient>
+
+          <filter id="soft-glow">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1" />
+          </filter>
+        </defs>
+
+        {/* Marco de Diapositiva Unificado (16:9 feel extendido) */}
+        <rect 
+          x="5" y="10" width="310" height="80" rx="16" 
+          fill="url(#brand-grad)" 
+          className="stroke-white/10"
+          strokeWidth="1"
+        />
+
+        {/* Efecto de Reflejo Superior (Glassmorphism) */}
+        <path 
+          d="M20 10 Q5 10 5 25 V45 L315 25 V10 Z" 
+          fill="white" 
+          className="opacity-5"
+        />
+
+        {/* Monograma MD (Lado Izquierdo) */}
+        <g transform="translate(25, 30) scale(0.85)">
+          <path 
+            d="M0 40 V5 L20 25 L40 5 V40" 
+            stroke="white" 
+            strokeWidth="10" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
           />
+          <path 
+            d="M55 5 V40 C55 40 85 40 85 22.5 C85 5 55 5 55 5" 
+            stroke="white" 
+            strokeWidth="10" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+          />
+        </g>
 
-          {/* Guías de Enfoque (Viewfinder) - Estilo Leica/Sony */}
-          <g stroke="#60A5FA" strokeWidth="1.5" strokeLinecap="round" className="opacity-60">
-            <path d="M12 25 V18 H22" />
-            <path d="M108 25 V18 H118" />
-            <path d="M12 75 V82 H22" />
-            <path d="M108 75 V82 H118" />
-          </g>
+        {/* Palabra CONGRESS (Lado Derecho - Integrada) */}
+        <text 
+          x="135" y="65" 
+          fill="white" 
+          className="font-black text-4xl" 
+          style={{ fontFamily: 'var(--font-plex-mono), monospace', letterSpacing: '0.15em' }}
+        >
+          CONGRESS
+        </text>
 
-          {/* Monograma MD (Geometría Pura) */}
-          <g transform="translate(35, 38) scale(0.75)">
-            <path 
-              d="M0 40 V5 L20 25 L40 5 V40" 
-              stroke="white" 
-              strokeWidth="10" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              className="drop-shadow-md"
-            />
-            <path 
-              d="M55 5 V40 C55 40 85 40 85 22.5 C85 5 55 5 55 5" 
-              stroke="white" 
-              strokeWidth="10" 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              className="drop-shadow-md"
-            />
-          </g>
+        {/* Línea de Escaneo IA (Sutil y Lenta) */}
+        <rect x="5" y="10" width="40" height="80" fill="url(#scan-shimmer)" className="opacity-20">
+          <animate 
+            attributeName="x" 
+            values="-50;320;-50" 
+            dur="8s" 
+            repeatCount="indefinite" 
+          />
+        </rect>
 
-          {/* Línea de Escaneo Láser (Inteligencia Activa) */}
-          <g filter="url(#laser-glow)">
-            <line 
-              x1="8" y1="45" x2="122" y2="45" 
-              stroke="#34D399" 
-              strokeWidth="1.5" 
-              strokeLinecap="round"
-              className="opacity-80"
-            >
-              <animate 
-                attributeName="y1" 
-                values="22;78;22" 
-                dur="3s" 
-                repeatCount="indefinite" 
-              />
-              <animate 
-                attributeName="y2" 
-                values="22;78;22" 
-                dur="3s" 
-                repeatCount="indefinite" 
-              />
-            </line>
-            {/* Destello en los bordes del láser */}
-            <circle cx="8" cy="45" r="2" fill="#34D399">
-              <animate attributeName="cy" values="22;78;22" dur="3s" repeatCount="indefinite" />
-            </circle>
-            <circle cx="122" cy="45" r="2" fill="#34D399">
-              <animate attributeName="cy" values="22;78;22" dur="3s" repeatCount="indefinite" />
-            </circle>
-          </g>
-        </svg>
-      </div>
+        {/* Indicador de Foco / Lente */}
+        <circle cx="295" cy="25" r="4" fill="#34D399" className="animate-pulse" />
+        <path d="M285 20 H305 M295 10 V30" stroke="white" strokeOpacity="0.2" strokeWidth="1" />
+      </svg>
     </div>
   )
 }
