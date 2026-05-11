@@ -31,9 +31,14 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section Élite */}
-      <section className="relative px-6 py-24 md:py-32 overflow-hidden bg-white">
+      <section className="relative px-6 py-20 md:py-28 overflow-hidden bg-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
+          {/* Logo Central de Gran Formato */}
+          <div className="flex justify-center mb-10 transform hover:scale-105 transition-transform duration-700 cursor-none">
+            <Logo className="h-24 w-24 md:h-28 md:w-28 drop-shadow-[0_20px_50px_rgba(37,99,235,0.3)] animate-fade-in-up" />
+          </div>
+
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-8 border border-blue-100">
             <Globe className="h-3 w-3" />
             Tecnología Médica de Vanguardia
