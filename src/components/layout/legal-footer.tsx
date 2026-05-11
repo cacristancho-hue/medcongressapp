@@ -1,50 +1,68 @@
 "use client"
 
 import { ShieldCheck, Info } from "lucide-react"
+import Logo from "@/components/ui/md-logo"
+import { OpenAIIcon, GeminiIcon, ClaudeIcon } from "@/components/ui/ai-icons"
 
 export default function LegalFooter() {
   return (
-    <footer className="mt-auto border-t border-slate-100 bg-slate-50/50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between gap-8">
-          {/* Sello de Potencia IA */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-              <ShieldCheck className="h-3 w-3" />
-              MDCONGRESS Intelligence
-            </h4>
-            <div className="flex flex-wrap gap-4 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-              <span className="text-xs font-bold text-slate-600">Powered by OpenAI</span>
-              <span className="text-xs font-bold text-slate-600">Google Gemini</span>
-              <span className="text-xs font-bold text-slate-600">Anthropic Claude</span>
+    <footer className="mt-auto border-t border-slate-100 bg-white py-12 px-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+          {/* Identidad y Potencia */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Logo className="h-10 w-10" />
+              <span className="font-extrabold text-slate-900 text-xl tracking-tighter uppercase">MDCONGRESS</span>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium">
-              Triangulación de evidencia Multi-LLM v2026.
-            </p>
+            
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
+                Soporte Tecnológico Global
+              </p>
+              <div className="flex flex-wrap gap-8 items-center">
+                <div className="flex items-center gap-2 group cursor-default">
+                  <OpenAIIcon />
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">GPT-4o</span>
+                </div>
+                <div className="flex items-center gap-2 group cursor-default">
+                  <GeminiIcon />
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Gemini</span>
+                </div>
+                <div className="flex items-center gap-2 group cursor-default">
+                  <ClaudeIcon />
+                  <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">Claude</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Blindaje Legal */}
-          <div className="md:max-w-md space-y-2">
-            <div className="flex items-center gap-1.5 text-slate-500">
-              <Info className="h-3 w-3" />
-              <span className="text-[10px] font-bold uppercase tracking-tight">Aviso Legal y Académico</span>
+          <div className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-2 text-slate-700">
+              <Info className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-tight">Aviso de Responsabilidad Académica</span>
             </div>
-            <p className="text-[10px] leading-relaxed text-slate-400">
-              MDCONGRESS es una herramienta de soporte exclusivamente para fines educativos y de investigación bibliográfica. 
-              La información generada por IA no constituye consejo médico, diagnóstico ni tratamiento. 
-              Es responsabilidad inalienable del profesional de la salud validar la evidencia clínica 
-              proporcionada antes de cualquier aplicación en la práctica médica.
+            <p className="text-xs leading-relaxed text-slate-500">
+              MDCONGRESS es una herramienta de soporte académico personal para especialistas médicos. 
+              La síntesis generada por inteligencia artificial no constituye diagnóstico ni consejo médico. 
+              Es responsabilidad del profesional validar la evidencia clínica antes de su aplicación.
             </p>
-            <div className="flex gap-4 pt-1">
-              <a href="/terms" className="text-[10px] font-bold text-blue-500/70 hover:text-blue-600 transition-colors">Términos de Uso</a>
-              <a href="/privacy" className="text-[10px] font-bold text-blue-500/70 hover:text-blue-600 transition-colors">Privacidad de Datos</a>
+            <div className="flex gap-6 pt-2 border-t border-slate-200">
+              <a href="/terms" className="text-[11px] font-bold text-blue-600 hover:underline">Términos de Servicio</a>
+              <a href="/privacy" className="text-[11px] font-bold text-blue-600 hover:underline">Privacidad y Seguridad</a>
             </div>
           </div>
         </div>
         
-        <div className="mt-8 pt-4 border-t border-slate-100 flex justify-between items-center">
-          <p className="text-[10px] text-slate-400">© 2026 MDCONGRESS. All rights reserved.</p>
-          <span className="text-[9px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full border border-slate-200">v1.0.4-elite</span>
+        <div className="mt-12 pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] text-slate-400 font-medium">
+          <p>© 2026 MDCONGRESS. Tecnología de Élite para la comunidad médica internacional.</p>
+          <div className="flex items-center gap-3">
+            <span className="bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full border border-slate-200 uppercase tracking-tighter">v1.1.0-stable</span>
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            System Online
+          </div>
         </div>
       </div>
     </footer>

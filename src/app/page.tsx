@@ -59,32 +59,11 @@ export default function LandingPage() {
               Explorar demo
             </Link>
           </div>
-
-          {/* Sección Potenciado Por - Élite Visual */}
-          <div className="pt-12 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-10">
-              Potenciado simultáneamente por las tecnologías líderes
-            </p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-20">
-              <div className="flex items-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500 group cursor-default">
-                <OpenAIIcon />
-                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">OpenAI GPT-4o</span>
-              </div>
-              <div className="flex items-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500 group cursor-default">
-                <GeminiIcon />
-                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">Google Gemini</span>
-              </div>
-              <div className="flex items-center gap-3 grayscale opacity-60 hover:grayscale-0 hover:opacity-100 transition-all duration-500 group cursor-default">
-                <ClaudeIcon />
-                <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900">Anthropic Claude</span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* Características de Élite */}
-      <section className="max-w-5xl mx-auto px-6 py-20 mb-12">
+      <section className="max-w-5xl mx-auto px-6 py-20 mb-24">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             {
