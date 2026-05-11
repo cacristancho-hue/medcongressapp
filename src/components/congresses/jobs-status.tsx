@@ -8,7 +8,7 @@ import { clsx } from "clsx"
 interface JobRow {
   id: string
   job_type: string
-  status: "pending" | "processing" | "succeeded" | "failed" | "cancelled"
+  status: "pending" | "processing" | "completed" | "failed" | "cancelled"
   attempt_count: number
   error_message: string | null
   created_at: string
@@ -86,13 +86,13 @@ export default function JobsStatus({ congressId, initialJobs = [] }: Props) {
 
   const pending = jobs.filter((j) => j.status === "pending").length
   const processing = jobs.filter((j) => j.status === "processing").length
-  const succeeded = jobs.filter((j) => j.status === "succeeded").length
+  const completed = jobs.filter((j) => j.status === "completed").length
   const failed = jobs.filter((j) => j.status === "failed").length
 
   if (jobs.length === 0) return null
 
   const total = jobs.length
-  const done = succeeded + failed
+  const done = completed + failed
   const percent = total === 0 ? 0 : Math.round((done / total) * 100)
 
   return (
@@ -123,7 +123,7 @@ export default function JobsStatus({ congressId, initialJobs = [] }: Props) {
           tone="text-blue-600"
           spin
         />
-        <Stat icon={CheckCircle2} value={succeeded} label="OK" tone="text-emerald-600" />
+        <Stat icon={CheckCircle2} value={completed} label="OK" tone="text-emerald-600" />
         <Stat icon={XCircle} value={failed} label="Fallidos" tone="text-red-600" />
       </div>
 

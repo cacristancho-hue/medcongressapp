@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import AiAssistantButton from "@/components/congresses/ai-assistant-button"
+import JobsStatus from "@/components/congresses/jobs-status"
 
 export const dynamic = "force-dynamic"
 
@@ -238,6 +239,11 @@ export default async function ResumenPage({ params }: Props) {
           )}
         </div>
       </header>
+
+      {/* Jobs progress (realtime) */}
+      <div className="mb-8">
+        <JobsStatus congressId={id} />
+      </div>
 
       {/* Stats */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">

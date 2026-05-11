@@ -38,6 +38,7 @@ interface ReferenceCandidateRow {
   id: string
   congress_id: string
   image_id: string | null
+  master_id: string | null
   raw_reference_text: string | null
   detected_title: string | null
   detected_authors: string | null
@@ -78,6 +79,7 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       id,
       congress_id,
       image_id,
+      master_id,
       raw_reference_text,
       detected_title,
       detected_authors,
@@ -113,17 +115,25 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   const rows = (data ?? []) as unknown as ReferenceCandidateRow[]
   
-  // 2. Motor de Deduplicación Top Mundial (In-Memory)
-  // Agrupamos por DOI o PMID para consolidar estudios idénticos
+  // 2. Motor de Deduplicación Top Mundial (In-Memory + Master Linkage)
   const libraryMap = new Map<string, LibraryReference>()
 
   rows.forEach((row) => {
-    // Generar una clave única: DOI > PMID > Título normalizado
+    // Generar una clave única: Master ID > DOI > PMID > Título normalizado
+    const masterId = row.master_id
     const doi = row.detected_doi?.toLowerCase().trim()
     const pmid = row.detected_pmid
-    const normalizedTitle = row.detected_title?.toLowerCase().trim().replace(/[^a-z0-9]/g, "")
     
-    const key = doi || pmid || normalizedTitle || row.id
+    // Normalización de título mejorada (fuzzy)
+    const normalizedTitle = row.detected_title
+      ?.toLowerCase()
+      .trim()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
+      .replace(/[^a-z0-9]/g, "") // Solo alfanumérico
+      .slice(0, 100) // Limitar longitud para evitar colisiones raras
+    
+    const key = masterId || doi || pmid || normalizedTitle || row.id
 
     const existing = libraryMap.get(key)
 

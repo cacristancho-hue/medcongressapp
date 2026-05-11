@@ -93,3 +93,29 @@ export const enqueueTopicsExtraction = withAction({
   if (error || !id) throw new Error(error ?? "No se pudo encolar la extracción")
   return { jobId: id }
 })
+
+export const enqueueReferenceVerification = withAction({
+  name: "ai.reference_verification",
+  rateLimit: "report_generation",
+})(async ({ user, supabase }, congressId: string) => {
+  const { data: congress } = await supabase
+    .from("congresses")
+    .select("id, organization_id")
+    .eq("id", congressId)
+    .eq("user_id", user.id)
+    .single()
+
+  if (!congress) throw new Error("Congreso no encontrado")
+
+  const { id, error } = await enqueueJob({
+    userId: user.id,
+    organizationId: congress.organization_id ?? null,
+    jobType: "reference_verification",
+    payload: {},
+    congressId,
+    priority: 75,
+  })
+
+  if (error || !id) throw new Error(error ?? "No se pudo encolar la verificación")
+  return { jobId: id }
+})

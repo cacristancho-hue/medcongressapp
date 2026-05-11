@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Sparkles, Loader2, CheckCircle2, XCircle, Minus } from "lucide-react"
+import { Sparkles, Loader2, CheckCircle2, XCircle, Minus, Clock } from "lucide-react"
 import { runMedicalAssistant, type AssistantStep } from "@/lib/actions/assistant"
 
 interface Props {
@@ -29,15 +29,18 @@ export default function AiAssistantButton({ congressId, language = "es" }: Props
         return
       }
       setSteps(result.steps)
-      const ok = result.steps.filter((s) => s.status === "success").length
+      const queued = result.steps.filter((s) => s.status === "queued").length
       const skipped = result.steps.filter((s) => s.status === "skipped").length
       const failed = result.steps.filter((s) => s.status === "error").length
+      
       if (failed > 0) {
         toast.warning(
-          `Asistente terminó con avisos: ${ok} OK, ${skipped} omitidas, ${failed} con error.`
+          `Asistente terminó con avisos: ${queued} en cola, ${skipped} omitidas, ${failed} con error.`
         )
+      } else if (queued > 0) {
+        toast.success(`Asistente activado: ${queued} tareas en cola. El progreso aparecerá en el dashboard.`)
       } else {
-        toast.success(`Asistente completado: ${ok} OK, ${skipped} omitidas.`)
+        toast.info(`Asistente: Todas las fases ya estaban completadas.`)
       }
       router.refresh()
     })
@@ -53,7 +56,7 @@ export default function AiAssistantButton({ congressId, language = "es" }: Props
         {isPending ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Procesando con IA…
+            Activando asistente…
           </>
         ) : (
           <>
@@ -65,8 +68,7 @@ export default function AiAssistantButton({ congressId, language = "es" }: Props
 
       {isPending && (
         <p className="text-xs text-slate-500">
-          Esto puede tardar entre 1 y 5 minutos según la cantidad de fotos.
-          No cierres esta ventana.
+          Encolando tareas de procesamiento en segundo plano...
         </p>
       )}
 
@@ -74,17 +76,21 @@ export default function AiAssistantButton({ congressId, language = "es" }: Props
         <ul className="space-y-1.5 pt-2 border-t border-slate-100">
           {steps.map((step) => {
             const Icon =
-              step.status === "success"
-                ? CheckCircle2
-                : step.status === "error"
-                  ? XCircle
-                  : Minus
+              step.status === "queued"
+                ? Clock
+                : step.status === "success" || step.status === "skipped"
+                  ? CheckCircle2
+                  : step.status === "error"
+                    ? XCircle
+                    : Minus
             const tone =
-              step.status === "success"
-                ? "text-emerald-600"
-                : step.status === "error"
-                  ? "text-red-600"
-                  : "text-slate-400"
+              step.status === "queued"
+                ? "text-blue-500"
+                : step.status === "success" || step.status === "skipped"
+                  ? "text-emerald-600"
+                  : step.status === "error"
+                    ? "text-red-600"
+                    : "text-slate-400"
             return (
               <li
                 key={step.key}
