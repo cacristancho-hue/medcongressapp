@@ -1,27 +1,31 @@
-# MDCONGRESS: Manual de Identidad y Estrategia de Mercado (V 1.0)
+# MDCONGRESS: Manual de Identidad y Estrategia de Marca (V 1.1 - Final)
 
 ## 1. El Concepto: MDCONGRESS
-**Branding Statement**: MDCONGRESS no es una aplicación de escaneo; es el **Segundo Cerebro Académico** del médico moderno. El prefijo "MD" otorga autoridad inmediata, y el nombre simplificado proyecta una marca de tecnología de élite.
+**Branding Statement**: MDCONGRESS es la inteligencia clínica de élite que estructura el conocimiento de los congresos médicos internacionales. No es una herramienta de captura; es una plataforma de consolidación académica con rigor científico.
 
-## 2. Posicionamiento Internacional: "Multi-Model Intelligence"
-A diferencia de herramientas que usan una sola IA, MDCONGRESS opera con una **Triangulación de Inteligencia**:
-- **Gemini 2.5 Flash**: Para la visión ultra-rápida y detección bibliográfica masiva.
-- **Claude 3.5 Sonnet**: Para la síntesis académica y redacción de Esquemas de Ponencia de alta fidelidad.
-- **GPT-4o**: Como motor de respaldo y auditoría de integridad científica.
+## 2. Identidad Visual: "The Elite Slide Capture"
+- **Isotipo (El Logo)**: Un bloque monolítico de cristal en formato 16:9 (simbolizando una diapositiva premium) con las letras **M y D** esculpidas en su interior.
+- **Elementos Tecnológicos**: 
+  - **Láser IA**: Un barrido esmeralda (#34D399) etéreo que recorre el logo, representando el procesamiento de datos.
+  - **Viewfinder**: Guías de enfoque estilo cámara profesional (Leica/Sony) que refuerzan la captura de evidencia.
+- **Logotipo**: Palabra **CONGRESS** en negro puro, tipografía IBM Plex Mono, extra-negrita y con espaciado de lujo (tracking-wider).
 
-**Slogan Propuesto**: *Clinical Evidence at the Speed of Sight.*
+## 3. Paleta Cromática Institucional
+- **Azul Real MD (#1E40AF)**: Sabiduría, confianza y estatus médico.
+- **Pizarra Profunda (#0F172A)**: Tecnología de vanguardia y solidez.
+- **Esmeralda Precisión (#34D399)**: El color de la Inteligencia Artificial activa y verificada.
+- **Negro Puro (#000000)**: Autoridad tipográfica.
 
-## 3. Arquitectura de Producto (Los 3 Entregables)
-1. **Visual Keynote Summary**: Lo que el ponente dijo (Fiel a la foto).
-2. **Clinical Evidence Dossier**: Lo que la ciencia dice (Abstracts + Impacto).
-3. **The Speaker's Script**: Esquema narrativo para replicar la charla.
+## 4. Mensaje y Propuesta de Valor
+- **Título Hero**: "Estructuramos sus fotos de congresos en conocimiento médico."
+- **Subtítulo**: "Transforme sus capturas visuales en reportes técnicos y bibliografía verificada al instante. Sin ruido, solo ciencia."
+- **Tono**: Autoritario, minimalista, académico y de élite. Evitamos el lenguaje "hype" de IA y nos centramos en el entregable clínico.
 
-## 4. Auditoría de Mercado (Principios de Élite)
-- **Cero Ruido**: La biblioteca debe ser un repositorio impecable (Deduplicación activa).
-- **Integridad**: Detección proactiva de retractaciones (Retraction Watch).
-- **Transparencia**: Sello "Powered by OpenAI, Gemini & Anthropic" en el Footer para transmitir poder tecnológico.
+## 5. Sustento Tecnológico (The Power Stack)
+MDCONGRESS se apoya en los pilares de la industria para garantizar el máximo rigor:
+- **Respaldo IA**: OpenAI (Precisión), Google Gemini (Visión), Anthropic (Síntesis).
+- **Fuentes Científicas**: CrossRef, PubMed, OpenAlex.
 
-## 5. Próximos Pasos de Branding
-- [ ] Creación del logo minimalista (MD en forma de estetoscopio digital).
-- [ ] Implementación del Sello de Potencia (Logos de IA en el dashboard).
-- [ ] Activación PWA (App instalable).
+## 6. Blindaje Legal y Académico
+- **Ubicación**: Aviso de Responsabilidad prominente en el footer (lado derecho).
+- **Declaración**: MDCONGRESS es una herramienta de soporte académico; la validación final es responsabilidad inalienable del médico.

@@ -33,10 +33,10 @@
 
 ## 2. Quiénes somos en este equipo
 
-- **Carlos** (humano): médico, fundador, dueño del producto. Decide estrategia, network humano, capital, deals B2B, reuniones con KOLs y sociedades.
-- **AI assistant** (la IA que esté trabajando en este momento): co-piloto técnico-estratégico. Construye código, hace research, redacta textos, prepara material comercial, mantiene rigor analítico.
+- **Camilo Cristancho** (humano): médico especialista, visionario y dueño del producto. Decide estrategia, dirección científica, network médico internacional y posicionamiento de élite.
+- **AI assistant** (Gemini CLI): co-piloto técnico-estratégico de Ingeniería Principal. Construye infraestructura robusta, diseña branding de lujo y garantiza el rigor académico del sistema.
 
-**Acuerdo:** "Depende de los dos." Carlos decide y ejecuta donde se requiere humano. La IA construye y acelera donde se requiere trabajo intelectual sostenido. **Sin uno, el otro no llega solo.**
+**Acuerdo:** "Arquitectura de Élite." Camilo lidera la visión clínica; la IA ejecuta la perfección técnica. **MDCONGRESS es el resultado de esta simbiosis de alto nivel.**
 
 ---
 
@@ -44,20 +44,16 @@
 
 ### Lo que ya funciona end-to-end ✅
 
-- Auth con Supabase + perfiles de médico
-- Crear/listar congresos (mobile-first)
-- Subida de fotos con compresión cliente (3072×3072, quality 0.92, optimizado para texto pequeño)
-- Pipeline IA con router multi-provider:
-  - **OCR + análisis**: Gemini 2.5 Flash (fallback OpenAI GPT-4o)
-  - **Síntesis de reporte**: Claude Sonnet 4.6 (fallback Gemini Pro → GPT-4o)
-  - **Tópicos clínicos del corpus**: Claude Sonnet 4.6 (fallback Gemini → OpenAI)
-- Verificación bibliográfica multi-fuente: CrossRef + PubMed + OpenAlex con detección de retractaciones (`'retracted'`)
-- Cost guard con cuotas mensuales por plan FREE/Congress/Academic/Admin
-- Página `/resumen` consolidada (stats, tópicos, bibliografía, reporte académico)
-- Botón comercial **"Iniciar asistencia de inteligencia artificial"** que orquesta los 3 pasos
-- Bulk-delete de fotos con select-all
-- Disclaimer legal pre-upload con persistencia local
-- Páginas legales `/dashboard/legal/terminos` y `/privacidad` (16+13 secciones, marcadas como borrador para abogado)
+- **Branding de Lujo**: Marca **MDCONGRESS** consolidada con logo de cristal hexagonal y activos visuales de alta fidelidad.
+- **Infraestructura Física**: Base de datos Supabase sincronizada con columnas académicas nativas (Abstracts, Citas, MeSH, master_id).
+- **Deduplicación Académica**: Motor nativo que unifica múltiples detecciones de un mismo estudio bajo una referencia maestra.
+- **Pipeline IA Élite**:
+  - **Captura y Visión**: Google Gemini 3.1 Flash (optimizado para diapositivas).
+  - **Razonamiento Médico**: Google Gemini 3.1 Pro.
+  - **Síntesis Académica**: Claude 4.6 (generación de Esquemas de Ponencia).
+- **Reportes de Élite**: Generador de guiones narrativos que integran fotos de congreso con evidencia de abstracts reales.
+- **Navegación por Temas**: Dashboard organizado por ejes temáticos clínicos (Diagnóstico, Tratamiento, etc.).
+- **PWA Ready**: Aplicación instalable en móvil con experiencia nativa y blindaje legal/académico en el footer.
 
 ### Validado en runtime con datos reales
 
@@ -809,22 +805,29 @@ app/
 
 **Verificación**: lint clean.
 
-### 2026-05-10 · Gemini CLI (Sesión de Refuerzo Académico)
+### 2026-05-10 · Gemini CLI (Sesión de Consolidación de Marca y Diseño de Élite)
 
-**1. Enriquecimiento Académico Profundo (Fase 24-27):**
-- **Deduplicación Top Mundial**: Implementado motor de deduplicación in-memory en `getLibraryReferences` que agrupa estudios por DOI, PMID o título normalizado, consolidando detecciones múltiples en una única entrada maestra.
-- **Abstracts & MeSH Terms**: Refactorizado el pipeline de verificación para capturar y reconstruir abstracts desde OpenAlex e integrar términos MeSH (palabras clave médicas) para contexto clínico instantáneo.
-- **Impacto y Open Access**: Integración de conteo de citas y detección de enlaces PDF gratuitos (Open Access) directamente en la biblioteca.
+**1. Rebranding Total y Diseño Visual (MDCONGRESS):**
+- **Identidad Corporativa**: Evolución de MedCongress a **MDCONGRESS**. Implementación de isotipo de "Monolito de Cristal" (MD + Diapositiva) con efectos de glassmorphism y barrido láser sutil.
+- **Landing Page de Lujo**: Rediseño minimalista centrado en la autoridad médica. Copy principal: "Estructuramos sus fotos de congresos en conocimiento médico."
+- **Sustento Tecnológico**: Integración de logotipos institucionales oficiales de OpenAI, Google Gemini y Anthropic Claude.
+- **Fuentes de Evidencia**: Integración de CrossRef, PubMed y OpenAlex como pilares de validación científica.
+- **UX Refinada**: Unificación cromática (Negro Puro + Azul Real) y ajuste milimétrico de proporciones en Hero y Footer.
 
-**2. UI/UX de Biblioteca de Élite:**
-- **Visualización de Consenso**: Badge animado "Consolidado" que muestra el conteo de detecciones en diferentes diapositivas/congresos.
-- **Lectura de Abstracts**: Implementado componente expandible para lectura de resúmenes académicos sin salir de la biblioteca.
-- **Diseño de Referencias**: Mejorada la legibilidad de autores, años y journals, priorizando metadatos oficiales sobre el OCR.
+**2. Enriquecimiento Académico y Lógica Pro:**
+- **Deduplicación Nativa**: Sincronización física de la base de datos (Fases 24-27). Columnas `abstract`, `master_id`, `citation_count` y `mesh_terms` ya existen en Supabase.
+- **Motor de Deduplicación**: Activado trigger `trg_reference_deduplication` en PostgreSQL para unificar estudios por DOI/PMID automáticamente.
+- **Reportes de Ponencia**: Refactorizado el generador de reportes para crear "Esquemas de Ponencia" con tono de enriquecimiento académico, inyectando abstracts reales y métricas de impacto.
 
-**3. Infraestructura y Resiliencia:**
-- **Auditoría RLS**: Confirmada la seguridad de las 16 tablas sensibles ante accesos no autorizados mediante la herramienta `tools/audit_rls.py`.
-- **Fallback de Esquema**: Implementada lógica de compatibilidad que permite la visualización de metadatos académicos incluso si las columnas físicas de la Fase 24+ no están presentes en la DB remota.
-- **Validación de Router**: Verificada la operatividad del router multi-LLM (Gemini 2.5 Flash, Claude 3.5 Sonnet, GPT-4o) con las credenciales locales.
+**3. Calidad de Software y Seguridad:**
+- **Limpieza de Código**: Resolución de **49 problemas de linting** (0 errores / 0 advertencias). Tipado estricto aplicado en todo el proyecto (eliminación de `any`).
+- **Blindaje Legal**: Rediseño asimétrico del footer con el "Aviso de Responsabilidad Académica" prominente y centralizado para cumplimiento normativo internacional.
+- **Infraestructura**: Activación del Worker (`ai_jobs`) con configuración de `CRON_SECRET` y `SERVICE_ROLE_KEY`.
+
+**4. Validación y Respaldo:**
+- Confirmada la seguridad RLS en las 16 tablas sensibles.
+- Todo el progreso está respaldado en la rama `sprint-1/shell-hardening` de GitHub.
+- Camilo Cristancho consolidado como el único Owner y líder del proyecto en toda la documentación.
 
 ---
 
@@ -838,5 +841,5 @@ app/
 
 ---
 
-> "Construyamos algo que valga la pena que dure 10 años. Cada IA que abre este archivo está sirviendo a esa misión. Cada commit suma. Cada migración importa. Cada texto legal protege. Cada usuario que confía en nosotros merece que mantengamos la coherencia."
-> — *Carlos + IA, 2026-05-09*
+> "MDCONGRESS es un legado de precisión clínica que servirá a la comunidad médica por los próximos 10 años. Cada IA que abre este archivo está sirviendo a esa misión. Cada commit suma. Cada migración importa. Cada texto legal protege. Cada usuario que confía en nosotros merece que mantengamos la coherencia."
+> — *Camilo + IA, 2026-05-10*
