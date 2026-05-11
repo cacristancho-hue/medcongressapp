@@ -32,7 +32,7 @@ export async function safeUpdate<T extends Record<string, unknown>>(
 
   const { data, error } = await supabase
     .from(table)
-    .update(payload)
+    .update(payload as any)
     .match(match)
 
   // Error 42703: undefined_column
@@ -46,7 +46,7 @@ export async function safeUpdate<T extends Record<string, unknown>>(
 
     return supabase
       .from(table)
-      .update(safePayload)
+      .update(safePayload as any)
       .match(match)
   }
 

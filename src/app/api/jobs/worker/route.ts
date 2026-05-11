@@ -61,7 +61,7 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
     .eq("id", job.image_id)
     .single()
 
-  if (imgError || !image) throw new Error(`Imagen no encontrada: ${imgErr?.message}`)
+  if (imgErr || !image) throw new Error(`Imagen no encontrada: ${imgErr?.message}`)
 
   log("info", "starting robust image analysis", { imageId: job.image_id })
 

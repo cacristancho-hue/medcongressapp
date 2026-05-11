@@ -40,6 +40,7 @@ export const generateAcademicReport = withAction({
   const { data: references } = await supabase
     .from("reference_candidates")
     .select(`
+      id,
       image_id, 
       detected_title, 
       detected_authors, 

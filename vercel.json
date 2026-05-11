@@ -1,8 +1,5 @@
 {
-  "crons": [
-    {
-      "path": "/api/jobs/worker",
-      "schedule": "* * * * *"
-    }
-  ]
+  "github": {
+    "silent": true
+  }
 }

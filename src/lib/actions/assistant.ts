@@ -7,7 +7,7 @@ import { enqueueTopicsExtraction, enqueueReportGeneration, enqueueReferenceVerif
 export interface AssistantStep {
   key: "topics" | "references" | "report"
   label: string
-  status: "queued" | "skipped" | "error"
+  status: "queued" | "skipped" | "error" | "success"
   detail?: string
 }
 

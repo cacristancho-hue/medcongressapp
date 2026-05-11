@@ -95,7 +95,7 @@ export const enqueueTopicsExtraction = withAction({
 })
 
 export const enqueueReferenceVerification = withAction({
-  name: "ai.reference_verification",
+  name: "reference.verify",
   rateLimit: "report_generation",
 })(async ({ user, supabase }, congressId: string) => {
   const { data: congress } = await supabase
