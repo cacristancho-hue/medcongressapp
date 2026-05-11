@@ -5,12 +5,13 @@ import Logo from "@/components/ui/md-logo"
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header Premium */}
+      {/* Header Premium - Minimalista para no competir con el Hero */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 group cursor-pointer">
-            <Logo className="h-10 w-10" />
-            <span className="font-bold text-slate-900 text-xl tracking-tighter uppercase font-plex-mono group-hover:text-blue-600 transition-colors">MDCONGRESS</span>
+          <div className="group cursor-pointer">
+            <span className="font-black text-slate-900 text-xl tracking-tighter uppercase font-plex-mono group-hover:text-blue-600 transition-colors">
+              MDCONGRESS
+            </span>
           </div>
           <div className="flex items-center gap-6">
             <Link
@@ -30,18 +31,18 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section Élite */}
-      <section className="relative px-6 py-12 md:py-20 overflow-hidden bg-white">
+      <section className="relative px-6 py-12 md:py-16 overflow-hidden bg-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          {/* Logotipo Central: Isotipo MD + CONGRESS de Élite */}
-          <div className="flex flex-col items-center mb-10 group cursor-default">
-            <div className="transform hover:scale-105 transition-transform duration-700">
-              <Logo className="h-20 w-20 md:h-24 md:w-24" />
+          {/* Logotipo Central Monumental: Isotipo MD + CONGRESS */}
+          <div className="flex flex-col items-center mb-12 group cursor-default">
+            <div className="transform hover:scale-110 transition-transform duration-700">
+              <Logo className="h-32 w-32 md:h-40 md:w-40 drop-shadow-[0_35px_60px_-15px_rgba(37,99,235,0.3)]" />
             </div>
             
-            <div className="mt-2 relative overflow-hidden">
-              {/* Palabra CONGRESS en Negro Puro y Extra Negrita - Más compacto */}
-              <h2 className="text-2xl md:text-4xl font-black tracking-[0.5em] text-black uppercase font-plex-mono leading-none py-1">
+            <div className="mt-0 relative overflow-hidden">
+              {/* Palabra CONGRESS - Integración Máxima */}
+              <h2 className="text-3xl md:text-5xl font-black tracking-[0.5em] text-black uppercase font-plex-mono leading-none py-1">
                 CONGRESS
               </h2>
               
@@ -49,8 +50,8 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_10s_infinite] skew-x-[-20deg]"></div>
             </div>
             
-            {/* Línea de Soporte Visual Minimalista */}
-            <div className="w-10 h-0.5 bg-blue-600 mt-2 rounded-full opacity-20 group-hover:w-20 transition-all duration-1000"></div>
+            {/* Línea de Soporte Visual - Unificadora */}
+            <div className="w-16 h-1 bg-blue-600 mt-1 rounded-full opacity-30 group-hover:w-32 transition-all duration-1000"></div>
           </div>
 
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-6 border border-blue-100">
