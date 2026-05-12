@@ -59,6 +59,7 @@ export default function RegisterPage() {
 
     const supabase = createClient()
 
+    const age = parseInt(formData.age)
     const { error: signUpError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
@@ -67,7 +68,7 @@ export default function RegisterPage() {
           full_name: formData.full_name,
           role: formData.role,
           specialty: formData.specialty,
-          age: parseInt(formData.age),
+          age: isNaN(age) ? null : age,
           gender: formData.gender,
           workplace_type: formData.workplace_type,
         },
