@@ -10,17 +10,22 @@ export default function Logo({ className = "h-10 w-10" }: { className?: string }
       <div className="relative z-10 w-full h-full">
         <svg viewBox="0 0 130 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <defs>
-            {/* Gradiente del cuerpo: Pizarra profunda a Azul Real */}
+            {/* Gradiente del cuerpo: Pizarra profunda a Azul Real - Oscurecido para contraste */}
             <linearGradient id="monolith-refined" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#0F172A" />
+              <stop offset="0%" stopColor="#020617" />
               <stop offset="100%" stopColor="#1E40AF" />
             </linearGradient>
             
-            {/* Efecto de Biselado de Cristal */}
+            {/* Efecto de Biselado de Cristal - Opacidad reducida */}
             <linearGradient id="glass-bevel" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="white" stopOpacity="0.2" />
+              <stop offset="0%" stopColor="white" stopOpacity="0.15" />
               <stop offset="100%" stopColor="white" stopOpacity="0" />
             </linearGradient>
+
+            {/* Sombra de seguridad para las letras MD */}
+            <filter id="text-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="black" floodOpacity="0.5" />
+            </filter>
 
             {/* Brillo Láser IA */}
             <filter id="laser-glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -39,7 +44,7 @@ export default function Logo({ className = "h-10 w-10" }: { className?: string }
           <rect 
             x="5" y="15" width="120" height="70" rx="16" 
             fill="url(#monolith-refined)" 
-            className="stroke-white/5 shadow-2xl"
+            stroke="rgba(255,255,255,0.05)"
             strokeWidth="0.5"
           />
           
@@ -58,14 +63,13 @@ export default function Logo({ className = "h-10 w-10" }: { className?: string }
           </g>
 
           {/* Monograma MD (Geometría Pura) */}
-          <g transform="translate(35, 38) scale(0.75)">
+          <g transform="translate(35, 38) scale(0.75)" filter="url(#text-shadow)">
             <path 
               d="M0 40 V5 L20 25 L40 5 V40" 
               stroke="white" 
               strokeWidth="10" 
               strokeLinecap="round" 
               strokeLinejoin="round" 
-              className="drop-shadow-md"
             />
             <path 
               d="M55 5 V40 C55 40 85 40 85 22.5 C85 5 55 5 55 5" 
@@ -73,7 +77,6 @@ export default function Logo({ className = "h-10 w-10" }: { className?: string }
               strokeWidth="10" 
               strokeLinecap="round" 
               strokeLinejoin="round" 
-              className="drop-shadow-md"
             />
           </g>
 
