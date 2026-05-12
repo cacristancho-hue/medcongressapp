@@ -9,10 +9,11 @@ export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 export async function GET() {
-  const checks: Record<string, "ok" | "fail" | "skipped"> = {
+  const checks: Record<string, string> = {
     env: "ok",
     db: "skipped",
     ai_flag: process.env.MEDCONGRESS_AI_ENABLED === "true" ? "ok" : "skipped",
+    version: "2026.05.12.v3"
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
