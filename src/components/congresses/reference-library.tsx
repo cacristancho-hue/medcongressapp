@@ -362,7 +362,7 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
                 className={clsx(
                   "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border w-fit transition-all flex items-center gap-1 hover:brightness-95",
                   ref.verification_status === "verified" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600" :
-                  ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-600 animate-pulse" :
+                  ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-600" :
                   ref.verification_status === "ambiguous" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
                   ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-600" :
                   "border-slate-300 bg-slate-100 text-slate-500"
@@ -384,7 +384,7 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
 
               {ref.verification_status === "not_verified" && (!ref.detected_title || !ref.detected_doi) && (
                 <span className="text-[9px] text-amber-600 font-medium flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
-                  <span className="h-1 w-1 bg-amber-500 rounded-full animate-pulse" />
+                  <span className="h-1 w-1 bg-amber-500 rounded-full" />
                   Detección incompleta
                 </span>
               )}
@@ -408,7 +408,6 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
               {ref.detection_count > 1 && (
                 <span className="text-[9px] text-teal-600 font-bold bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-100 flex items-center gap-1">
                   <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
                   </span>
                   Consolidado ({ref.detection_count})

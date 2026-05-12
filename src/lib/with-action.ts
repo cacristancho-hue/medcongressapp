@@ -62,8 +62,8 @@ export function withAction(config: ActionConfig) {
         return { success: false, error: "No autorizado" }
       }
 
-      if (config.requiresAi && process.env.MEDCONGRESS_AI_ENABLED !== "true") {
-        return { success: false, error: "La IA está desactivada en este entorno." }
+      if (config.requiresAi && process.env.MEDCONGRESS_AI_ENABLED === "false") {
+        return { success: false, error: "La IA está temporalmente desactivada." }
       }
 
       if (config.rateLimit) {
