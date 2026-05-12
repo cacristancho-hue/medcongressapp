@@ -411,7 +411,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                             <span className={clsx(
                               "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border",
                               ref.verification_status === "verified" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400" :
-                              ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-500 animate-pulse" :
+                              ref.verification_status === "retracted" ? "border-red-500/40 bg-red-500/10 text-red-500" :
                               ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-400" :
                               "border-slate-700 bg-slate-800 text-slate-500"
                             )}>

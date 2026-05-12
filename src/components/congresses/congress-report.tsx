@@ -316,8 +316,7 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
                                   {parts.map((part, i) => {
                                     if (part === "**⚠️ ALERTA: ESTUDIO RETRACTADO**") {
                                       return (
-                                        <span key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold animate-pulse">
-                                          ⚠️ ALERTA: ESTUDIO RETRACTADO
+                                        <span key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold">                                          ⚠️ ALERTA: ESTUDIO RETRACTADO
                                         </span>
                                       );
                                     }
