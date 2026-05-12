@@ -125,9 +125,12 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   // Filtrar en memoria las referencias cuyas imágenes asociadas estén borradas
   const activeRows = (data ?? []).filter((row: any) => {
-    // RESTRICCIÓN ESTRICTA: Solo mostrar si la referencia proviene de una imagen activa.
-    // Esto limpia "fantasmas" de congresos cuyas imágenes fueron borradas físicamente.
-    return row.image_id && row.congress_images && row.congress_images.deleted_at === null
+    // RESTRICCIÓN TOTAL: Si no hay imagen activa vinculada, no se muestra.
+    // Esto limpia referencias que se quedaron huérfanas (image_id: null) tras un borrado masivo.
+    if (!row.image_id || !row.congress_images || row.congress_images.deleted_at !== null) {
+      return false
+    }
+    return true
   })
 
   const rows = activeRows as unknown as any[]
