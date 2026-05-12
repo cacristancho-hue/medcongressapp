@@ -7,7 +7,7 @@ import { fontInter, fontPlexMono } from "@/lib/fonts"
 
 export const metadata: Metadata = {
   title: {
-    default: "MDCONGRESS - Elite Academic Companion",
+    default: "MDCONGRESS - Inteligencia Académica",
     template: "%s · MDCONGRESS",
   },
   description:

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type { UserRole } from "@/types/database"
 
-const VALID_ROLES = new Set<UserRole>(["resident", "fellow", "specialist", "professor"])
+const VALID_ROLES = new Set<UserRole>(["student", "resident", "fellow", "specialist", "professor"])
 
 function optionalText(value: FormDataEntryValue | null) {
   const text = typeof value === "string" ? value.trim() : ""
@@ -19,7 +19,10 @@ export async function updateProfile(formData: FormData) {
   if (!user) redirect("/login")
 
   const roleValue = optionalText(formData.get("role"))
-  const role = roleValue && VALID_ROLES.has(roleValue as UserRole) ? roleValue : null
+  const role = roleValue && (VALID_ROLES as any).has(roleValue) ? (roleValue as UserRole) : null
+  
+  const ageValue = formData.get("age")
+  const age = ageValue ? parseInt(ageValue.toString()) : null
 
   const { error } = await supabase
     .from("profiles")
@@ -29,6 +32,9 @@ export async function updateProfile(formData: FormData) {
       role,
       specialty: optionalText(formData.get("specialty")),
       country: optionalText(formData.get("country")),
+      age: isNaN(age!) ? null : age,
+      gender: optionalText(formData.get("gender")),
+      workplace_type: optionalText(formData.get("workplace_type")),
     }, { onConflict: "user_id" })
 
   if (error) {

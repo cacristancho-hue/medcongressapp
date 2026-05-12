@@ -1,4 +1,4 @@
-export type UserRole = "resident" | "fellow" | "specialist" | "professor"
+export type UserRole = "student" | "resident" | "fellow" | "specialist" | "professor"
 
 export type CongressStatus = "active" | "archived"
 
@@ -38,6 +38,9 @@ export interface Profile {
   role: UserRole | null
   specialty: string | null
   country: string | null
+  age: number | null
+  gender: string | null
+  workplace_type: string | null
   created_at: string
 }
 

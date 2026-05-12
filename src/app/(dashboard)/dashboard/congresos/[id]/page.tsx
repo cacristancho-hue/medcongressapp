@@ -86,7 +86,7 @@ export default async function CongresoDetailPage({ params }: Props) {
         <div className="flex items-center justify-between gap-3 mb-1">
           <div className="flex items-center gap-3">
             <h2 className="text-2xl font-bold text-slate-900">{congress.name}</h2>
-            <DeleteCongressButton congressId={id} congressName={congress.name} />
+            <DeleteCongressButton congressId={id} congressName={congress.name} showText />
           </div>
           <CongressPresence
             congressId={id}

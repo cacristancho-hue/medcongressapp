@@ -2,7 +2,7 @@ import { type MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "MDCONGRESS - Elite Academic Companion",
+    name: "MDCONGRESS - Inteligencia Académica",
     short_name: "MDCONGRESS",
     description: "Multi-Model AI for Clinical Evidence and Medical Congresses",
     start_url: "/dashboard",

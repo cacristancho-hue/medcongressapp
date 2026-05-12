@@ -11,20 +11,26 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Logo from "@/components/ui/md-logo"
 import { ShieldCheck } from "lucide-react"
 
-const SPECIALTIES = [
-  "Alergología",
-  "Dermatología",
-  "Neumología",
-  "Pediatría",
-  "Medicina interna",
-  "Otra",
-]
+import { MEDICAL_SPECIALTIES_RETHUS } from "@/lib/constants/medical-specialties"
 
 const ROLES = [
+  { value: "student", label: "Estudiante de Medicina" },
   { value: "resident", label: "Residente" },
   { value: "fellow", label: "Fellow" },
   { value: "specialist", label: "Especialista" },
   { value: "professor", label: "Profesor clínico" },
+]
+
+const GENDERS = [
+  { value: "M", label: "Masculino" },
+  { value: "F", label: "Femenino" },
+  { value: "O", label: "Otro" },
+]
+
+const WORKPLACE_TYPES = [
+  { value: "private", label: "Clínica Privada" },
+  { value: "public", label: "Hospital Público" },
+  { value: "both", label: "Ambos (Público y Privado)" },
 ]
 
 export default function RegisterPage() {
@@ -35,6 +41,9 @@ export default function RegisterPage() {
     password: "",
     role: "",
     specialty: "",
+    age: "",
+    gender: "",
+    workplace_type: "",
   })
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -58,6 +67,9 @@ export default function RegisterPage() {
           full_name: formData.full_name,
           role: formData.role,
           specialty: formData.specialty,
+          age: parseInt(formData.age),
+          gender: formData.gender,
+          workplace_type: formData.workplace_type,
         },
       },
     })
@@ -74,11 +86,9 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden px-4 py-12">
-      {/* Elementos decorativos de fondo */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
       
-      <div className="w-full max-w-md relative z-10">
-        {/* Bloque de Marca Unificado - Idéntico al Hero */}
+      <div className="w-full max-w-lg relative z-10">
         <div className="flex flex-col items-center mb-10 group cursor-default">
           <div className="transform hover:scale-105 transition-transform duration-700">
             <Logo className="h-20 w-20" />
@@ -109,57 +119,60 @@ export default function RegisterPage() {
                 </div>
               )}
               
-              <div className="space-y-2">
-                <Label htmlFor="full_name" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nombre completo</Label>
-                <Input
-                  id="full_name"
-                  name="full_name"
-                  placeholder="Ej. Dr. Camilo Cristancho"
-                  className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correo institucional</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="medico@ejemplo.com"
-                  className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password" university-tag="true" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contraseña segura</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Mínimo 8 caracteres"
-                  className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength={8}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nivel</Label>
+                  <Label htmlFor="full_name" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nombre completo</Label>
+                  <Input
+                    id="full_name"
+                    name="full_name"
+                    placeholder="Ej. Dr. Camilo Cristancho"
+                    className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
+                    value={formData.full_name}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correo electrónico</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="medico@ejemplo.com"
+                    className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password" university-tag="true" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contraseña segura</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Mínimo 8 caracteres"
+                    className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    minLength={8}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-slate-400">NIVEL</Label>
                   <select
                     id="role"
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
+                    required
                   >
                     <option value="">Seleccionar</option>
                     {ROLES.map((r) => (
@@ -167,18 +180,70 @@ export default function RegisterPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="specialty" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Especialidad (Escriba para filtrar)</Label>
+                <input
+                  list="specialties-list"
+                  id="specialty"
+                  name="specialty"
+                  value={formData.specialty}
+                  onChange={handleChange}
+                  placeholder="Ej. Medicina Interna"
+                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
+                  required
+                />
+                <datalist id="specialties-list">
+                  {MEDICAL_SPECIALTIES_RETHUS.map((s) => (
+                    <option key={s} value={s} />
+                  ))}
+                </datalist>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="specialty" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Especialidad</Label>
+                  <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Edad</Label>
+                  <Input
+                    id="age"
+                    name="age"
+                    type="number"
+                    placeholder="Años"
+                    className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
+                    value={formData.age}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sexo</Label>
                   <select
-                    id="specialty"
-                    name="specialty"
-                    value={formData.specialty}
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
                     onChange={handleChange}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
+                    required
                   >
                     <option value="">Seleccionar</option>
-                    {SPECIALTIES.map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                    {GENDERS.map((g) => (
+                      <option key={g.value} value={g.value}>{g.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="workplace_type" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lugar de Trabajo</Label>
+                  <select
+                    id="workplace_type"
+                    name="workplace_type"
+                    value={formData.workplace_type}
+                    onChange={handleChange}
+                    className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
+                    required
+                  >
+                    <option value="">Seleccionar</option>
+                    {WORKPLACE_TYPES.map((w) => (
+                      <option key={w.value} value={w.value}>{w.label}</option>
                     ))}
                   </select>
                 </div>
