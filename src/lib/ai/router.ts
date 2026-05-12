@@ -150,7 +150,9 @@ function pickModel(provider: ProviderId, role: "fast" | "vision" | "reasoning") 
     case "openai":
       return role === "fast" ? "gpt-4o-mini" : "gpt-4o"
     case "google":
-      return role === "reasoning" ? "gemini-3.1-pro" : "gemini-3.1-flash"
+      // May 2026: gemini-2.0-flash is extremely stable and cost-effective for vision/fast tasks.
+      // Using gemini-1.5-pro for reasoning as it remains the standard for complex clinical analysis.
+      return role === "reasoning" ? "gemini-1.5-pro" : "gemini-2.0-flash"
     case "anthropic":
       return role === "reasoning" ? "claude-sonnet-4.6" : "claude-haiku-4.5"
   }
