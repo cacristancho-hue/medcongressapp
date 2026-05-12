@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react"
 import { LibraryReference } from "@/lib/actions/library"
-import { Search, BookOpen, ExternalLink, Filter, ChevronRight, Trash2, CheckCircle2, AlertCircle } from "lucide-react"
-import { updateReferenceCandidate, softDeleteReference } from "@/lib/actions/references"
+import { Search, BookOpen, ExternalLink, Filter, ChevronRight, Trash2, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react"
+import { updateReferenceCandidate, softDeleteReference, verifySingleReference } from "@/lib/actions/references"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -250,17 +250,40 @@ function ReferenceCard({ reference: ref }: { reference: LibraryReference }) {
               {ref.congress_name} <ChevronRight className="h-2.5 w-2.5" />
             </Link>
           </div>
-          <h4 className={clsx(
-            "text-sm font-bold leading-tight group-hover:text-teal-600 transition-colors line-clamp-2",
-            (!ref.official_title && !ref.detected_title) ? "text-slate-400 italic font-normal" : "text-slate-900"
-          )}>
-            {ref.official_title || ref.detected_title || (ref.raw_text.length > 100 ? ref.raw_text.substring(0, 100) + "..." : ref.raw_text) || "Sin título detectado"}
-          </h4>
+          <a 
+            href={ref.detected_doi ? `https://doi.org/${ref.detected_doi}` : ref.detected_pmid ? `https://pubmed.ncbi.nlm.nih.gov/${ref.detected_pmid}` : `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(ref.official_title || ref.detected_title || ref.raw_text)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block group/title"
+          >
+            <h4 className={clsx(
+              "text-sm font-bold leading-tight group-hover/title:text-teal-600 transition-colors line-clamp-2 underline-offset-2 hover:underline",
+              (!ref.official_title && !ref.detected_title) ? "text-slate-400 italic font-normal" : "text-slate-900"
+            )}>
+              {ref.official_title || ref.detected_title || (ref.raw_text.length > 100 ? ref.raw_text.substring(0, 100) + "..." : ref.raw_text) || "Sin título detectado"}
+            </h4>
+          </a>
           <p className="text-xs text-slate-500 mt-1 truncate">
             {ref.official_authors || ref.detected_authors || "Autores no detectados"} {ref.official_year || ref.detected_year ? `· ${ref.official_year || ref.detected_year}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {(ref.verification_status === 'not_verified' || ref.verification_status === 'ambiguous') && (
+            <button
+              onClick={async () => {
+                toast.promise(verifySingleReference({ referenceId: ref.id, congressId: ref.congress_id }), {
+                  loading: 'Buscando en bases de datos científicas...',
+                  success: 'Verificación completada',
+                  error: 'No se pudo verificar en este momento'
+                })
+              }}
+              className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-all border border-teal-100 flex items-center gap-1 text-[10px] font-bold"
+              title="Re-verificar ahora"
+            >
+              <RefreshCw className="h-3 w-3" />
+              RE-VERIFICAR
+            </button>
+          )}
           <button
             onClick={async () => {
               const ok = confirm("¿Eliminar esta referencia de la biblioteca?")

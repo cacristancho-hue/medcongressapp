@@ -113,7 +113,6 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
         storage_path_thumbnail
       )
     `)
-    .is("deleted_at", null)
     .is("congresses.deleted_at", null)
     .order("created_at", { ascending: false })
 
@@ -129,7 +128,8 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     // Si no tiene imagen_id (ej. agregada manualmente), es válida
     if (!row.image_id) return true
     // Si tiene imagen, debe no estar borrada
-    return row.congress_images === null || row.congress_images.deleted_at === null
+    // Nota: congress_images puede ser null si se borró físicamente o si la relación falló
+    return !row.congress_images || row.congress_images.deleted_at === null
   })
 
   const rows = activeRows as unknown as any[]
@@ -144,8 +144,9 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     const pmid = row.detected_pmid
     
     // Normalización de título mejorada (fuzzy)
-    const normalizedTitle = row.detected_title
-      ?.toLowerCase()
+    const title = row.official_title || row.detected_title || ""
+    const normalizedTitle = title
+      .toLowerCase()
       .trim()
       .normalize("NFKD")
       .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
@@ -153,6 +154,7 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       .slice(0, 100) // Limitar longitud para evitar colisiones raras
     
     const key = masterId || doi || pmid || normalizedTitle || row.id
+    const existing = libraryMap.get(key)
 
     // --- MOTOR DE DEPURACIÓN ÉLITE (AJUSTADO) ---
     // 1. Filtrar ruido extremo: Solo si no hay título, no hay DOI, y la confianza es casi nula (< 0.20)
