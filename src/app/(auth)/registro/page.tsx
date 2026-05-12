@@ -204,7 +204,7 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Edad</Label>
+                  <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Edad (Opcional)</Label>
                   <Input
                     id="age"
                     name="age"
@@ -213,18 +213,16 @@ export default function RegisterPage() {
                     className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
                     value={formData.age}
                     onChange={handleChange}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sexo</Label>
+                  <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sexo (Opcional)</Label>
                   <select
                     id="gender"
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
-                    required
                   >
                     <option value="">Seleccionar</option>
                     {GENDERS.map((g) => (
@@ -233,14 +231,13 @@ export default function RegisterPage() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="workplace_type" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lugar de Trabajo</Label>
+                  <Label htmlFor="workplace_type" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lugar de Trabajo (Opcional)</Label>
                   <select
                     id="workplace_type"
                     name="workplace_type"
                     value={formData.workplace_type}
                     onChange={handleChange}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
-                    required
                   >
                     <option value="">Seleccionar</option>
                     {WORKPLACE_TYPES.map((w) => (
