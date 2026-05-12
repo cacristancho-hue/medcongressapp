@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
+import DeleteCongressButton from "./[id]/delete-congress-button"
 
 export default async function CongresosPage() {
   const supabase = await createClient()
@@ -10,6 +11,7 @@ export default async function CongresosPage() {
     .from("congresses")
     .select("*")
     .eq("user_id", user!.id)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
 
   return (
@@ -48,40 +50,45 @@ export default async function CongresosPage() {
       ) : (
         <div className="space-y-3">
           {congresses.map((congress) => (
-            <Link key={congress.id} href={`/dashboard/congresos/${congress.id}`}>
-              <Card className="hover:border-slate-300 transition-colors cursor-pointer">
-                <CardContent className="py-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-900 truncate">{congress.name}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-                        {congress.specialty && (
-                          <span className="text-xs text-slate-500">{congress.specialty}</span>
-                        )}
-                        {congress.location && (
-                          <span className="text-xs text-slate-500">📍 {congress.location}</span>
-                        )}
-                        {congress.start_date && (
-                          <span className="text-xs text-slate-500">
-                            📅 {new Date(congress.start_date).toLocaleDateString("es-CO", {
-                              year: "numeric", month: "short", day: "numeric"
-                            })}
-                          </span>
+            <div key={congress.id} className="group relative">
+              <Link href={`/dashboard/congresos/${congress.id}`}>
+                <Card className="hover:border-slate-300 transition-colors cursor-pointer">
+                  <CardContent className="py-4 pr-12">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-900 truncate">{congress.name}</p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                          {congress.specialty && (
+                            <span className="text-xs text-slate-500">{congress.specialty}</span>
+                          )}
+                          {congress.location && (
+                            <span className="text-xs text-slate-500">📍 {congress.location}</span>
+                          )}
+                          {congress.start_date && (
+                            <span className="text-xs text-slate-500">
+                              📅 {new Date(congress.start_date).toLocaleDateString("es-CO", {
+                                year: "numeric", month: "short", day: "numeric"
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        {congress.notes && (
+                          <p className="text-xs text-slate-400 mt-1.5 truncate">{congress.notes}</p>
                         )}
                       </div>
-                      {congress.notes && (
-                        <p className="text-xs text-slate-400 mt-1.5 truncate">{congress.notes}</p>
-                      )}
+                      <span className="text-xs text-slate-400 whitespace-nowrap">
+                        {new Date(congress.created_at).toLocaleDateString("es-CO", {
+                          month: "short", day: "numeric"
+                        })}
+                      </span>
                     </div>
-                    <span className="text-xs text-slate-400 whitespace-nowrap">
-                      {new Date(congress.created_at).toLocaleDateString("es-CO", {
-                        month: "short", day: "numeric"
-                      })}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+                  </CardContent>
+                </Card>
+              </Link>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DeleteCongressButton congressId={congress.id} congressName={congress.name} />
+              </div>
+            </div>
           ))}
         </div>
       )}
