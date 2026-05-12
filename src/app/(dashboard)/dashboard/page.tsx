@@ -61,21 +61,31 @@ export default async function DashboardPage() {
   return (
     <div className="max-w-5xl">
       {/* HEADER */}
-      <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.18em] text-teal-700 font-medium mb-1">
-          {greeting}
-        </p>
-        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-          Hola, <span className="font-plex-mono">{firstName}</span>.
-        </h1>
-        {specialty && (
-          <p className="text-teal-700 font-medium text-sm mt-1">
-            {specialty} {role ? `· ${role}` : ""}
+      <header className="mb-8 flex justify-between items-start">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-teal-700 font-medium mb-1">
+            {greeting}
           </p>
-        )}
-        <p className="text-slate-600 mt-2 text-base max-w-xl">
-          Convierte cada foto de congreso en conocimiento académico verificado.
-        </p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
+            Hola, <span className="font-plex-mono">{firstName}</span>.
+          </h1>
+          {specialty && (
+            <p className="text-teal-700 font-medium text-sm mt-1">
+              {specialty} {role ? `· ${role}` : ""}
+            </p>
+          )}
+          <p className="text-slate-600 mt-2 text-base max-w-xl">
+            Convierte cada foto de congreso en conocimiento académico verificado.
+          </p>
+        </div>
+        
+        <Link 
+          href="/dashboard/tutorial" 
+          className="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+        >
+          <Sparkles className="h-3 w-3" />
+          ¿CÓMO FUNCIONA?
+        </Link>
       </header>
 
       {/* SEARCH (only when there's content to search) */}

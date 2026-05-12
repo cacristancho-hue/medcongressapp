@@ -14,7 +14,10 @@ interface Props {
 export default function DeleteCongressButton({ congressId, congressName }: Props) {
   const [isDeleting, setIsDeleting] = useState(false)
 
-  async function handleDelete() {
+  async function handleDelete(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    
     if (!confirm(`¿Estás seguro de que quieres eliminar el congreso "${congressName}"? Esta acción lo moverá a la papelera.`)) {
       return
     }
@@ -24,11 +27,11 @@ export default function DeleteCongressButton({ congressId, congressName }: Props
       const result = await softDeleteCongress(congressId)
       if (result.success) {
         toast.success("Congreso eliminado correctamente")
-        // No redirigimos aquí, revalidatePath se encarga si estuviéramos en la lista,
-        // pero como estamos en el detalle que acaba de ser soft-deleted, 
-        // el middleware o el propio servidor al revalidar debería sacarnos.
-        // Por seguridad, forzamos redirección manual.
-        window.location.href = "/dashboard/congresos"
+        // No redirigimos aquí si estamos en la lista, revalidatePath se encarga.
+        // Pero si estamos en el detalle, forzamos redirección manual.
+        if (window.location.pathname.includes(congressId)) {
+          window.location.href = "/dashboard/congresos"
+        }
       } else {
         toast.error(result.error || "Error al eliminar el congreso")
         setIsDeleting(false)
