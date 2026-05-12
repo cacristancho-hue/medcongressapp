@@ -31,15 +31,15 @@ export interface ImageAnalysisResult {
   medical_summary: string
   topics: Array<{
     name: string
-    category?: string
-    description?: string
+    category: string
+    description: string
   }>
   references: Array<{
-    detected_title?: string
-    detected_authors?: string
-    detected_year?: string
-    detected_journal?: string
-    detected_doi?: string
+    detected_title: string | null
+    detected_authors: string | null
+    detected_year: string | null
+    detected_journal: string | null
+    detected_doi: string | null
   }>
 }
 
@@ -63,14 +63,8 @@ const IMAGE_ANALYSIS_SCHEMA = z.object({
     .array(
       z.object({
         name: z.string().describe("Nombre técnico del tema."),
-        category: z
-          .string()
-          .describe(
-            "Categoría amplia: 'Diagnóstico', 'Tratamiento', 'Epidemiología', 'Fisiopatología', 'Metodología', etc."
-          ),
-        description: z
-          .string()
-          .describe("Frase corta que aclara el tema."),
+        category: z.string().describe("Categoría amplia: 'Diagnóstico', 'Tratamiento', 'Epidemiología', 'Fisiopatología', 'Metodología', etc."),
+        description: z.string().describe("Frase corta que aclara el tema."),
       })
     )
     .max(5)
@@ -78,11 +72,11 @@ const IMAGE_ANALYSIS_SCHEMA = z.object({
   references: z
     .array(
       z.object({
-        detected_title: z.string().describe("Título del estudio."),
-        detected_authors: z.string().describe("Autores (si están disponibles)."),
-        detected_year: z.string().describe("Año de publicación."),
-        detected_journal: z.string().describe("Nombre de la revista médica."),
-        detected_doi: z.string().describe("DOI si es visible."),
+        detected_title: z.string().nullable().describe("Título del estudio."),
+        detected_authors: z.string().nullable().describe("Autores (si están disponibles)."),
+        detected_year: z.string().nullable().describe("Año de publicación."),
+        detected_journal: z.string().nullable().describe("Nombre de la revista médica."),
+        detected_doi: z.string().nullable().describe("DOI si es visible."),
       })
     )
     .describe("Referencias bibliográficas detectadas."),
