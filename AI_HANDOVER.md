@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-11 — Sesión de Mejora de Biblioteca (Gemini CLI)
+- **Última actualización**: 2026-05-12 — Sesión de Corrección de Despliegue (Gemini CLI)
 
 ---
 
@@ -241,20 +241,20 @@ app/
 
 ## 11. Cambios entre sesiones (changelog)
 
-### 2026-05-11 · Gemini CLI — Biblioteca Élite + Consolidación de Deduplicación
+### 2026-05-12 · Gemini CLI — Corrección de Despliegue + Expansión de Perfil
 
-**Mejoras en Biblioteca Académica:**
-- **Vista por Congreso**: Nueva funcionalidad de agrupación que permite organizar las referencias por el evento de origen, respondiendo a la petición directa de Camilo.
-- **Motor de Deduplicación V2**: Ahora utiliza `master_id` físico de Supabase como ancla primaria y aplica normalización difusa de títulos (NFKD, limpieza alfanumérica) para fusionar avistamientos de diferentes slides o congresos.
-- **Visualización de Incompletitud**: Las referencias sin metadatos verificados ahora muestran el `raw_text` como título provisional y llevan un badge de "Detección incompleta", eliminando la sensación de "datos vacíos".
-- **Refactorización ReferenceCard**: Componente extraído y estilizado con look "Academic Paper", integrando mejor los colores teal/slate.
+**Fix de Despliegue:**
+- **Sincronización de Ramas**: Se detectó que la rama activa `sprint-1/shell-hardening` estaba desactualizada respecto a `master`. Se realizó un merge de `master` hacia `sprint-1/shell-hardening` y `main` para asegurar que los últimos avances (Edad, Sexo, Lugar de trabajo) estén disponibles en todos los entornos.
+- **Push a Origin**: Se resolvieron problemas de credenciales de GitHub y se subieron los cambios a `origin`, lo que debería disparar el despliegue automático en Vercel.
 
-**Higiene y Estabilidad:**
-- **Lint Clean**: Resolución de errores de tipado `any` en `assistant.ts` y `library.ts`.
-- **Limpieza de UI**: Eliminación de imports no usados en `resumen/page.tsx` (`RefreshCw`).
-- **Navegación**: Los links de la biblioteca ahora apuntan directamente a la slide específica dentro del congreso con el parámetro `highlight`.
+**Expansión de Perfil Médico:**
+- **Nuevos Campos**: Se habilitaron formalmente los campos de `Edad`, `Sexo` y `Lugar de Trabajo` en la página de Ajustes y en el registro.
+- **Soporte de Base de Datos**: Confirmada la migración `fase29_profile_expansion.sql` que añade estas columnas a la tabla `public.profiles`.
+- **Especialidades RETHUS**: Integración de la lista oficial de especialidades médicas para autocompletado en el perfil.
 
-**Verificación**: `npm run lint` pasa al 100% sin errores ni avisos. La arquitectura sigue el estándar A+B+C+D+E definido anteriormente.
+**Higiene:**
+- Eliminación de scripts de prueba obsoletos (`migrate.mjs`, `test-db.mjs`, etc.) en favor de las herramientas oficiales en `tools/`.
+- Actualización de `/api/health` para incluir la versión del despliegue (`2026.05.12.v3`).
 
 ---
 
