@@ -125,11 +125,12 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   // Filtrar en memoria las referencias cuyas imágenes asociadas estén borradas
   const activeRows = (data ?? []).filter((row: any) => {
-    // Si no tiene imagen_id (ej. agregada manualmente), es válida
-    if (!row.image_id) return true
-    // Si tiene imagen, debe no estar borrada
-    // Nota: congress_images puede ser null si se borró físicamente o si la relación falló
-    return !row.congress_images || row.congress_images.deleted_at === null
+    // Si la referencia tiene un image_id, verificamos que la imagen exista y no esté borrada
+    if (row.image_id) {
+      return row.congress_images && row.congress_images.deleted_at === null
+    }
+    // Si no tiene image_id (ej. agregada manualmente), es válida
+    return true
   })
 
   const rows = activeRows as unknown as any[]
