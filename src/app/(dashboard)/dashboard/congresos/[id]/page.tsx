@@ -7,7 +7,6 @@ import CongressReport from "@/components/congresses/congress-report"
 import JobsStatus from "@/components/congresses/jobs-status"
 import CongressPresence from "@/components/congresses/congress-presence"
 
-import { softDeleteCongress } from "@/lib/actions/congresses"
 import DeleteCongressButton from "./delete-congress-button"
 
 interface Props {
