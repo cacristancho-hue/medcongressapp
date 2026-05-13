@@ -70,7 +70,7 @@ export default function LegalFooter() {
             
             <div className="pt-8 flex flex-col md:items-end gap-2 text-[10px] text-slate-400 font-medium">
               <div className="flex items-center gap-3">
-                <span className="bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full border border-slate-200 uppercase tracking-tighter">v1.2.0-stable</span>
+                <span className="bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full border border-slate-200 uppercase tracking-tighter">v1.2.1-hotfix-ai</span>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>
                 System Online
               </div>

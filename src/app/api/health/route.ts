@@ -13,7 +13,7 @@ export async function GET() {
     env: "ok",
     db: "skipped",
     ai_flag: process.env.MEDCONGRESS_AI_ENABLED === "true" ? "ok" : "skipped",
-    version: "2026.05.12.v3"
+    version: "2026.05.13.v2-force-ai"
   }
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {

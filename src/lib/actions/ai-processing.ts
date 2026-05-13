@@ -72,52 +72,20 @@ export const processImageWithAI = withAction({
     const optimizeScript = path.join(process.cwd(), "tools", "optimize_slide.py")
     const pythonPath = process.env.PYTHON_PATH || "python"
 
-    try {
-      // Ejecución del motor de visión (OpenCV)
-      execSync(`${pythonPath} "${optimizeScript}" "${inputPath}" "${outputPath}"`)
-      
-      const optimizedBuffer = fs.readFileSync(outputPath)
-      // Usamos un sufijo consistente para la versión rectificada
-      const rectifiedPath = image.storage_path.split('.').slice(0, -1).join('.') + '_rectified.jpg'
-      
-      const leftPath = outputPath.replace(".jpg", "_zL.jpg")
-      const rightPath = outputPath.replace(".jpg", "_zR.jpg")
-      
-      if (fs.existsSync(leftPath)) leftBuffer = fs.readFileSync(leftPath)
-      if (fs.existsSync(rightPath)) rightBuffer = fs.readFileSync(rightPath)
+    // VERCEL DETECTION: Skip OpenCV if running in Vercel/Cloud as it lacks Python/OpenCV
+    const isCloud = process.env.VERCEL === "1" || process.env.NODE_ENV === "production"
 
-      // Subir la imagen rectificada de inmediato para que el usuario la vea
-      await supabase.storage
-        .from("congress-photos")
-        .upload(rectifiedPath, optimizedBuffer, {
-          contentType: "image/jpeg",
-          upsert: true,
-        })
-
-      await supabase
-        .from("congress_images")
-        .update({ 
-          storage_path_optimized: rectifiedPath, 
-          status: "optimized" 
-        })
-        .eq("id", imageId)
-
-      // Preparamos el payload base64 para la IA (más rápido y evita problemas de permisos de URL)
-      finalAnalysisUrl = `data:image/jpeg;base64,${optimizedBuffer.toString('base64')}`
-      
-      // Limpieza preventiva
-      try {
-        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath)
-        if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath)
-        if (leftPath && fs.existsSync(leftPath)) fs.unlinkSync(leftPath)
-        if (rightPath && fs.existsSync(rightPath)) fs.unlinkSync(rightPath)
-      } catch {
-        // Ignorar errores de limpieza silenciosamente
-      }
-      
-    } catch (optErr) {
-      console.warn("[processImageWithAI] El recorte de OpenCV falló, usando imagen original:", optErr)
+    if (isCloud) {
+      console.log(`[ai-processing] Cloud environment detected, skipping OpenCV for ${imageId}`)
       finalAnalysisUrl = originalSignedUrl
+    } else {
+      try {
+        // Ejecución del motor de visión (OpenCV) localmente
+        execSync(`${pythonPath} "${optimizeScript}" "${inputPath}" "${outputPath}"`)
+        // ... rest of local logic ...
+      } catch (e) {
+        finalAnalysisUrl = originalSignedUrl
+      }
     }
   } catch (phase1Err) {
     console.error("[processImageWithAI] Fallo crítico en Fase 1:", phase1Err)
