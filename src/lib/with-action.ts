@@ -63,7 +63,7 @@ export function withAction(config: ActionConfig) {
       }
 
       if (config.requiresAi && process.env.MEDCONGRESS_AI_ENABLED === "false") {
-        return { success: false, error: "La IA está temporalmente desactivada." }
+        return { success: false, error: "La IA está temporalmente desactivada por mantenimiento." }
       }
 
       if (config.rateLimit) {

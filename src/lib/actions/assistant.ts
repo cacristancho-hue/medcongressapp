@@ -1,8 +1,8 @@
-"use server"
-
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { enqueueTopicsExtraction, enqueueReportGeneration, enqueueReferenceVerification } from "@/lib/actions/queue"
+import { extractCongressTopics } from "@/lib/actions/ai-processing"
+import { generateAcademicReport } from "@/lib/actions/polyglot-reports"
 
 export interface AssistantStep {
   key: "topics" | "references" | "report"
@@ -18,7 +18,7 @@ export interface AssistantResult {
 
 /**
  * Smart orchestrator for the medical AI assistant.
- * Enqueues missing phases as background jobs to avoid timeouts.
+ * Optimized for Vercel: Runs immediately for small data, enqueues for large.
  */
 export async function runMedicalAssistant(
   congressId: string,
@@ -55,17 +55,26 @@ export async function runMedicalAssistant(
   const isReportActive = activeJobs?.some(j => j.job_type === "report_generation")
   const isRefsActive = activeJobs?.some(j => j.job_type === "reference_verification")
 
-  // 2. Enqueue Topics if missing and not already running
+  // DECISIÓN ESTRATÉGICA: Si hay menos de 10 imágenes, procesamos TODO en caliente (Hot Path)
+  // para evitar la cola de Vercel que no tiene worker activo.
+  const isSmallCongress = (ocrCount ?? 0) <= 12
+
+  // 2. Topics
   if ((topicCount ?? 0) === 0 && (ocrCount ?? 0) > 0) {
-    if (isTopicsActive) {
-      steps.push({ key: "topics", label: "Tópicos clínicos", status: "queued", detail: "Procesamiento ya en curso" })
-    } else {
+    if (isSmallCongress) {
       try {
+        await extractCongressTopics(congressId)
+        steps.push({ key: "topics", label: "Tópicos clínicos", status: "success", detail: "Procesado al instante" })
+      } catch (e) {
+        steps.push({ key: "topics", label: "Tópicos clínicos", status: "error", detail: "Fallo inmediato, reintentando vía cola" })
+        await enqueueTopicsExtraction(congressId)
+      }
+    } else {
+      if (isTopicsActive) {
+        steps.push({ key: "topics", label: "Tópicos clínicos", status: "queued", detail: "Procesamiento ya en curso" })
+      } else {
         await enqueueTopicsExtraction(congressId)
         steps.push({ key: "topics", label: "Tópicos clínicos", status: "queued", detail: "Enviado a cola" })
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Error desconocido"
-        steps.push({ key: "topics", label: "Tópicos clínicos", status: "error", detail: msg })
       }
     }
   } else {
@@ -77,7 +86,7 @@ export async function runMedicalAssistant(
     })
   }
 
-  // 3. Enqueue References if pending and not already running
+  // 3. References (Siempre a cola porque son muchas llamadas API y tardan)
   if ((pendingRefsCount ?? 0) > 0) {
     if (isRefsActive) {
       steps.push({ key: "references", label: "Verificación bibliográfica", status: "queued", detail: "Procesamiento ya en curso" })
@@ -86,8 +95,7 @@ export async function runMedicalAssistant(
         await enqueueReferenceVerification(congressId)
         steps.push({ key: "references", label: "Verificación bibliográfica", status: "queued", detail: "Enviado a cola" })
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "Error desconocido"
-        steps.push({ key: "references", label: "Verificación bibliográfica", status: "error", detail: msg })
+        steps.push({ key: "references", label: "Verificación bibliográfica", status: "error", detail: "Error al encolar" })
       }
     }
   } else {
@@ -99,17 +107,22 @@ export async function runMedicalAssistant(
     })
   }
 
-  // 4. Enqueue Report if missing and not already running
+  // 4. Report
   if ((reportsCount ?? 0) === 0 && (ocrCount ?? 0) > 0) {
-    if (isReportActive) {
-      steps.push({ key: "report", label: "Reporte académico", status: "queued", detail: "Generación ya en curso" })
-    } else {
+    if (isSmallCongress) {
       try {
+        await generateAcademicReport({ congressId, language })
+        steps.push({ key: "report", label: "Reporte académico", status: "success", detail: "Generado al instante" })
+      } catch (e) {
+        steps.push({ key: "report", label: "Reporte académico", status: "error", detail: "Fallo inmediato, usando cola" })
+        await enqueueReportGeneration({ congressId, language })
+      }
+    } else {
+      if (isReportActive) {
+        steps.push({ key: "report", label: "Reporte académico", status: "queued", detail: "Generación ya en curso" })
+      } else {
         await enqueueReportGeneration({ congressId, language })
         steps.push({ key: "report", label: "Reporte académico", status: "queued", detail: "Enviado a cola" })
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Error desconocido"
-        steps.push({ key: "report", label: "Reporte académico", status: "error", detail: msg })
       }
     }
   } else {

@@ -170,7 +170,7 @@ export default async function CongresoDetailPage({ params }: Props) {
           congressId={id}
           userId={user.id}
           currentCount={currentCount}
-          aiEnabled={process.env.MEDCONGRESS_AI_ENABLED === "true"}
+          aiEnabled={process.env.MEDCONGRESS_AI_ENABLED !== "false"}
         />
       </div>
 
