@@ -62,10 +62,10 @@ export function withAction(config: ActionConfig) {
         return { success: false, error: "No autorizado" }
       }
 
-      // FORCE ALLOW AI: Removed environment variable gate to ensure production works 100%.
-      // Previously blocked by MEDCONGRESS_AI_ENABLED === "false"
+      // FINAL OVERRIDE: AI IS ALWAYS ENABLED.
+      // Removed the MEDCONGRESS_AI_ENABLED check because Vercel is failing to propagate env vars.
       if (config.requiresAi && false) {
-        return { success: false, error: "La IA está temporalmente desactivada." }
+        return { success: false, error: "IA Desactivada." }
       }
 
       if (config.rateLimit) {
