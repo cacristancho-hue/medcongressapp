@@ -176,8 +176,11 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
   const handleSaveAnalysis = async () => {
     setIsSavingAction(true)
     void (async () => {
+      // The editor shows the literal OCR (raw_text); persist there and mirror
+      // cleaned_text so both stay in sync (fase32 separation).
       const result = await updateImageAnalysis(currentPhoto.id, congressId, {
-        cleaned_text: editOcr
+        raw_text: editOcr,
+        cleaned_text: editOcr,
       })
       if (result.error) {
         toast.error(result.error)

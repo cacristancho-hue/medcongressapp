@@ -103,7 +103,7 @@ export default function GlobalSearch() {
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mb-2 truncate italic">
-                        &quot;...{res.cleaned_text.substring(0, 120)}...&quot;
+                        &quot;...{res.ocr_text.substring(0, 120)}...&quot;
                       </p>
                       <div className="flex items-center gap-3 text-[10px] text-slate-400">
                         <span className="flex items-center gap-1">

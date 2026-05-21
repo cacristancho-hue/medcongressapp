@@ -33,7 +33,7 @@ export async function getImageAnalysis(imageId: string) {
   const [ocrResponse, referencesResponse, topicsJoinResponse] = await Promise.all([
     supabase
       .from("ocr_results")
-      .select("cleaned_text")
+      .select("raw_text, cleaned_text, medical_summary")
       .eq("image_id", imageId)
       .single(),
     supabase
@@ -74,8 +74,11 @@ export async function getImageAnalysis(imageId: string) {
       verification_notes: ref.verification_notes,
     })) ?? []
 
+  // ocr = literal extracted text (raw_text); summary = AI inference, kept
+  // separate so the UI can label provenance honestly. Legacy fallback.
   return {
-    ocr: ocrResponse.data?.cleaned_text ?? null,
+    ocr: ocrResponse.data?.raw_text ?? ocrResponse.data?.cleaned_text ?? null,
+    summary: ocrResponse.data?.medical_summary ?? null,
     topics,
     references,
     optimizedSignedUrl: signed?.signedUrl ?? null,

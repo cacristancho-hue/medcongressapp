@@ -27,6 +27,7 @@ interface Props {
 }
 
 interface OcrSnippet {
+  raw_text: string | null
   cleaned_text: string | null
 }
 
@@ -160,7 +161,7 @@ export default async function ResumenPage({ params }: Props) {
       .eq("congress_id", id),
     supabase
       .from("ocr_results")
-      .select("cleaned_text, congress_images!inner(congress_id)")
+      .select("raw_text, cleaned_text, congress_images!inner(congress_id)")
       .eq("congress_images.congress_id", id),
     supabase
       .from("topics")
@@ -195,8 +196,9 @@ export default async function ResumenPage({ params }: Props) {
   ).length
 
   const ocrSnippets = (ocrTextsRes.data ?? []) as unknown as OcrSnippet[]
+  // Count literal OCR characters (raw_text), not the AI summary. Legacy fallback.
   const ocrCharacters = ocrSnippets.reduce(
-    (sum, row) => sum + (row.cleaned_text?.length ?? 0),
+    (sum, row) => sum + ((row.raw_text ?? row.cleaned_text)?.length ?? 0),
     0
   )
 

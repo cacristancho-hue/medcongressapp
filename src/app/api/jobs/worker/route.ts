@@ -249,8 +249,11 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
 
     const { error: ocrErr } = await supabase.from("ocr_results").upsert({
       image_id: job.image_id,
+      // raw_text = literal OCR; cleaned_text mirrors it for now. medical_summary
+      // holds the AI inference, kept separate from extracted text (fase32).
       raw_text: result.raw_text,
-      cleaned_text: result.medical_summary,
+      cleaned_text: result.raw_text,
+      medical_summary: result.medical_summary,
     }, { onConflict: "image_id" })
     if (ocrErr) log("error", "failed to save ocr_results", { error: ocrErr })
 
@@ -500,19 +503,20 @@ async function runTopicsExtraction(supabase: SupabaseClient, job: AiJobRow) {
 
   const { data: rows, error: fetchErr } = await supabase
     .from("congress_images")
-    .select("id, ocr_results(cleaned_text)")
+    .select("id, ocr_results(raw_text, cleaned_text)")
     .eq("congress_id", job.congress_id)
     .order("created_at", { ascending: true })
 
   if (fetchErr) throw new Error(`Fetch error: ${fetchErr.message}`)
 
+  // Topics from literal OCR (raw_text), not the AI summary. Legacy fallback.
   const documents = (rows ?? [])
     .map((r, idx) => {
-      const row = r as unknown as { id: string; ocr_results: Array<{ cleaned_text: string | null }> | null }
+      const row = r as unknown as { id: string; ocr_results: Array<{ raw_text: string | null; cleaned_text: string | null }> | null }
       return {
         index: idx,
         imageId: row.id,
-        text: row.ocr_results?.[0]?.cleaned_text ?? "",
+        text: row.ocr_results?.[0]?.raw_text ?? row.ocr_results?.[0]?.cleaned_text ?? "",
       }
     })
     .filter((d) => d.text.trim().length > 0)
@@ -625,7 +629,7 @@ async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
   // 2. Fetch OCR results
   const { data: ocrResults } = await supabase
     .from("ocr_results")
-    .select("image_id, cleaned_text")
+    .select("image_id, raw_text, cleaned_text, medical_summary")
     .in("image_id", images?.map((img) => img.id) || [])
 
   // 3. Fetch references
@@ -664,7 +668,10 @@ async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
   // 4. Build fullText
   const fullText = (images || [])
     .map((img, idx) => {
-      const ocr = ocrResults.find((o) => o.image_id === img.id)?.cleaned_text
+      const ocrRow = ocrResults.find((o) => o.image_id === img.id)
+      // Hybrid: literal OCR is ground truth; AI summary labeled as inference.
+      const ocr = ocrRow?.raw_text ?? ocrRow?.cleaned_text
+      const aiSummary = ocrRow?.medical_summary
       if (!ocr) return null
 
       const imgRefs = (references || [])
@@ -683,7 +690,10 @@ async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
         })
         .join("\n")
 
-      return `=== FOTO_${idx + 1} ===\nTEXTO DETECTADO EN DIAPOSITIVA:\n${ocr}\n${imgRefs ? `\nREFERENCIAS Y EVIDENCIA CIENTÍFICA ASOCIADA:\n${imgRefs}` : ""}`
+      const aiBlock = aiSummary
+        ? `\nSÍNTESIS IA (INFERENCIA, no es texto literal — usar solo como apoyo):\n${aiSummary}`
+        : ""
+      return `=== FOTO_${idx + 1} ===\nTEXTO DETECTADO EN DIAPOSITIVA (OCR literal):\n${ocr}${aiBlock}\n${imgRefs ? `\nREFERENCIAS Y EVIDENCIA CIENTÍFICA ASOCIADA:\n${imgRefs}` : ""}`
     })
     .filter(Boolean)
     .join("\n\n---\n\n")

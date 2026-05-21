@@ -110,8 +110,12 @@ export const processImageWithAI = withAction({
       .from("ocr_results")
       .upsert({
         image_id: imageId,
+        // raw_text = literal OCR; cleaned_text mirrors it until a real cleanup
+        // stage exists. medical_summary holds the AI inference, kept separate
+        // so downstream never confuses "extracted" with "inferred".
         raw_text: result.raw_text,
-        cleaned_text: result.medical_summary,
+        cleaned_text: result.raw_text,
+        medical_summary: result.medical_summary,
       }, { onConflict: "image_id" })
 
     // Procesar Tópicos
@@ -266,19 +270,21 @@ export const extractCongressTopics = withAction({
 
   const { data: rows, error: fetchErr } = await supabase
     .from("congress_images")
-    .select("id, ocr_results(cleaned_text)")
+    .select("id, ocr_results(raw_text, cleaned_text)")
     .eq("congress_id", congressId)
     .eq("user_id", user.id)
     .order("created_at", { ascending: true })
 
   if (fetchErr) throw new Error("No se pudieron cargar las fotos analizadas.")
 
-  type Row = { id: string; ocr_results: Array<{ cleaned_text: string | null }> | null }
+  // Topics must come from literal OCR (raw_text), not the AI summary, to avoid
+  // inference-on-inference. Fall back to cleaned_text for legacy rows.
+  type Row = { id: string; ocr_results: Array<{ raw_text: string | null; cleaned_text: string | null }> | null }
   const documents = ((rows ?? []) as Row[])
     .map((r, idx) => ({
       index: idx,
       imageId: r.id,
-      text: r.ocr_results?.[0]?.cleaned_text ?? "",
+      text: r.ocr_results?.[0]?.raw_text ?? r.ocr_results?.[0]?.cleaned_text ?? "",
     }))
     .filter((d) => d.text.trim().length > 0)
 

@@ -34,7 +34,7 @@ export const generateAcademicReport = withAction({
 
   const { data: ocrResults } = await supabase
     .from("ocr_results")
-    .select("image_id, cleaned_text")
+    .select("image_id, raw_text, cleaned_text, medical_summary")
     .in("image_id", images?.map((img) => img.id) || [])
 
   const { data: references } = await supabase
@@ -62,7 +62,11 @@ export const generateAcademicReport = withAction({
   // Construir contexto enriquecido para la IA
   const fullText = (images || [])
     .map((img, idx) => {
-      const ocr = ocrResults.find((o) => o.image_id === img.id)?.cleaned_text
+      const ocrRow = ocrResults.find((o) => o.image_id === img.id)
+      // Hybrid: literal OCR is the ground truth; the AI summary is offered
+      // separately and explicitly labeled as inference (never as fact).
+      const ocr = ocrRow?.raw_text ?? ocrRow?.cleaned_text
+      const aiSummary = ocrRow?.medical_summary
       if (!ocr) return null
 
       const imgRefs = (references || [])
@@ -90,7 +94,10 @@ export const generateAcademicReport = withAction({
         })
         .join("\n")
 
-      return `=== FOTO_${idx + 1} ===\nTEXTO DETECTADO EN DIAPOSITIVA:\n${ocr}\n${imgRefs ? `\nREFERENCIAS Y EVIDENCIA CIENTÍFICA ASOCIADA:\n${imgRefs}` : ""}`
+      const aiBlock = aiSummary
+        ? `\nSÍNTESIS IA (INFERENCIA, no es texto literal — usar solo como apoyo):\n${aiSummary}`
+        : ""
+      return `=== FOTO_${idx + 1} ===\nTEXTO DETECTADO EN DIAPOSITIVA (OCR literal):\n${ocr}${aiBlock}\n${imgRefs ? `\nREFERENCIAS Y EVIDENCIA CIENTÍFICA ASOCIADA:\n${imgRefs}` : ""}`
     })
     .filter(Boolean)
     .join("\n\n---\n\n")

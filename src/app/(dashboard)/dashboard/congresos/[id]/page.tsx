@@ -285,7 +285,7 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
       ai_status,
       ocr_status,
       created_at,
-      ocr_results(cleaned_text),
+      ocr_results(raw_text, cleaned_text),
       image_topics(topic_id)
     `)
     .eq("congress_id", congressId)
@@ -307,13 +307,13 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
   ])
 
   const initialImages = images.map((img, idx) => {
-    const ocrData = img.ocr_results as unknown as { cleaned_text: string }[] | undefined
+    const ocrData = img.ocr_results as unknown as { raw_text: string | null; cleaned_text: string | null }[] | undefined
     const topicRelations = (img.image_topics as unknown as Array<{ topic_id: string }>) || []
     const topicIds = topicRelations.map(it => it.topic_id)
     return {
       ...img,
       topic_ids: topicIds,
-      ocr_text: ocrData?.[0]?.cleaned_text || null,
+      ocr_text: ocrData?.[0]?.raw_text || ocrData?.[0]?.cleaned_text || null,
       signedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,
       optimizedSignedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,
       thumbSignedUrl: thumbSignedUrls?.[idx]?.signedUrl ?? null,

@@ -192,8 +192,10 @@ export const exportCongress = withAction({
       }
     }
     const ocr = ocrByImage.get(img.id)
-    if (ocr?.cleaned_text) {
-      ocrFolder.file(filename.replace(/\.[^.]+$/, ".txt"), ocr.cleaned_text)
+    // Export the literal OCR (raw_text); fall back to cleaned_text for legacy rows.
+    const ocrText = ocr?.raw_text ?? ocr?.cleaned_text
+    if (ocrText) {
+      ocrFolder.file(filename.replace(/\.[^.]+$/, ".txt"), ocrText)
     }
   }
 

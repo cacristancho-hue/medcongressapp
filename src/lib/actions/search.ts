@@ -7,7 +7,7 @@ export interface SearchResult {
   original_filename: string
   congress_id: string
   congress_name: string
-  cleaned_text: string
+  ocr_text: string
   storage_path_thumbnail: string
   specialty: string | null
   rank: number
@@ -15,7 +15,7 @@ export interface SearchResult {
 
 interface RpcRow {
   image_id: string
-  cleaned_text: string
+  ocr_text: string
   rank: number
 }
 
@@ -74,7 +74,7 @@ export async function searchGlobalOCR(
       if (!img) return null
       return {
         image_id: r.image_id,
-        cleaned_text: r.cleaned_text,
+        ocr_text: r.ocr_text,
         rank: r.rank,
         original_filename: img.original_filename,
         congress_id: img.congress_id,

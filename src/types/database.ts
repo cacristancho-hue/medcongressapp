@@ -111,8 +111,12 @@ export type OutputType =
 export interface OcrResult {
   id: string
   image_id: string
+  /** Literal extracted text (OCR). Source of truth for search/topics. */
   raw_text: string | null
+  /** Cleaned OCR. Legacy rows (<= fase31) may hold the AI summary instead. */
   cleaned_text: string | null
+  /** AI-generated medical synthesis (INFERENCE). Not literal text. */
+  medical_summary: string | null
   confidence_score: number | null
   created_at: string
 }
