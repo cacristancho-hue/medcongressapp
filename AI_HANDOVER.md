@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-21 — Trazabilidad OCR vs síntesis IA (fase32) (Claude Opus 4.7)
+- **Última actualización**: 2026-05-21 — Trazabilidad OCR (fase32) + zooms de citas en prod (Claude Opus 4.7)
 
 ---
 
@@ -255,8 +255,12 @@ app/
 - Lectores actualizados: tópicos/búsqueda/export/métricas/vista congreso usan `raw_text`; reportes (`polyglot-reports.ts` + worker) usan OCR + síntesis etiquetada como inferencia; `getImageAnalysis` expone `ocr`=raw_text y `summary` aparte; edición manual de OCR persiste en `raw_text`.
 - Commit `a18f63c`. Verificación: tsc limpio + 6/6 tests + build verde.
 
+**Brecha #2 corregida — zooms de citas muertos en prod (commit c02a3a3):**
+- `ai-processing.ts` (camino síncrono: subida/re-análisis de foto) preparaba la imagen con OpenCV/Python vía `execSync`, pero se saltaba cuando `VERCEL||production` → los zooms del pie de página (`zoomLeftUrl/zoomRightUrl`) nunca se generaban en prod, pese a que el prompt de visión los pide para leer citas.
+- Fix: nuevo helper `src/lib/server-image.ts` (sharp, corre en Vercel) con `renderPreparedDerivative` + `extractFooterZooms` (banda inferior 42%, mitad izq/der). `ai-processing.ts` ahora usa sharp en vez de Python. El worker (que ya usaba sharp inline con la misma lógica) se refactorizó para usar el mismo helper y no divergir. `sharp` declarado en package.json (estaba solo transitivo).
+- `tools/optimize_slide.py` queda legacy/sin uso por la app web (lo puede seguir usando `local_worker.py`).
+
 **Brechas pendientes de la auditoría (no abordadas aún):**
-- **#2 (alta):** OpenCV/zoom de citas está MUERTO en producción — `ai-processing.ts` salta OpenCV cuando `VERCEL||production`, así que `zoomLeftUrl/zoomRightUrl` nunca se generan en prod pese a que el prompt de visión los pide. Decidir: mover crops a server-side o quitar la promesa del prompt.
 - **#3:** falta `congress_sessions` (jerarquía Congreso→Sesión→Imagen) para vender a sociedades/organizadores.
 - **#4:** verificación de referencias es síncrona dentro del request (riesgo timeout); debería ir a la cola `ai_jobs`.
 - **#5:** falta `knowledge_items` (biblioteca transversal con tags clínicos).
