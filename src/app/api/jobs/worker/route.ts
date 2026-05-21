@@ -13,55 +13,12 @@ import { recordAiUsage } from "@/lib/ai-usage"
 import { verifyReference } from "@/lib/reference-verification"
 import { revalidatePath } from "next/cache"
 import { NextResponse } from "next/server"
-import sharp from "sharp"
+import { renderPreparedDerivative, extractFooterZooms } from "@/lib/server-image"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60 // 60s max for image vision processing
 const MAX_JOBS_PER_RUN = 4
 const STALE_PROCESSING_MINUTES = 20
-const SLIDE_TRIM_OPTIONS = {
-  background: { r: 255, g: 255, b: 255, alpha: 1 },
-  threshold: 24,
-} as const
-
-function buildSlidePipeline(buffer: Buffer, trim = true) {
-  let pipeline = sharp(buffer).rotate()
-  if (trim) {
-    pipeline = pipeline.trim(SLIDE_TRIM_OPTIONS)
-  }
-  return pipeline
-    .modulate({ brightness: 1.04, saturation: 1.06, lightness: 1.01 })
-    .sharpen(1.1)
-}
-
-async function renderPreparedDerivative(
-  buffer: Buffer,
-  width: number,
-  height: number,
-  format: "jpeg" | "webp",
-  quality: number
-) {
-  const render = async (trim: boolean) => {
-    const pipeline = buildSlidePipeline(buffer, trim).resize({
-      width,
-      height,
-      fit: "inside",
-      withoutEnlargement: true,
-    })
-
-    if (format === "jpeg") {
-      return pipeline.jpeg({ quality, mozjpeg: true }).toBuffer({ resolveWithObject: true })
-    }
-
-    return pipeline.webp({ quality }).toBuffer({ resolveWithObject: true })
-  }
-
-  try {
-    return await render(true)
-  } catch {
-    return await render(false)
-  }
-}
 
 // =============================================================================
 // TYPES & LOGGING
@@ -168,22 +125,9 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
     const previewBuffer = previewResult.data
     const rectifiedPath = image.storage_path.replace(/\.[^.]+$/, "") + "_rectified.jpg"
 
-    const meta = await sharp(optimizedBuffer).metadata()
-    const width = meta.width ?? 0
-    const height = meta.height ?? 0
-    if (width > 0 && height > 0) {
-      const halfWidth = Math.max(1, Math.floor(width / 2))
-      const cropHeight = Math.max(1, Math.floor(height * 0.42))
-      const cropTop = Math.max(0, height - cropHeight)
-      leftBuffer = await sharp(optimizedBuffer)
-        .extract({ left: 0, top: cropTop, width: halfWidth, height: cropHeight })
-        .jpeg({ quality: 92, mozjpeg: true })
-        .toBuffer()
-      rightBuffer = await sharp(optimizedBuffer)
-        .extract({ left: halfWidth, top: cropTop, width: Math.max(1, width - halfWidth), height: cropHeight })
-        .jpeg({ quality: 92, mozjpeg: true })
-        .toBuffer()
-    }
+    const zooms = await extractFooterZooms(optimizedBuffer)
+    leftBuffer = zooms.left
+    rightBuffer = zooms.right
 
     const { error: uploadErr } = await supabase.storage
       .from("congress-photos")

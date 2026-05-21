@@ -5,10 +5,7 @@ import { recordAiUsage } from "@/lib/ai-usage"
 import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
 import { withAction } from "@/lib/with-action"
 import { verifyReference } from "@/lib/reference-verification"
-import { execSync } from "child_process"
-import path from "path"
-import fs from "fs"
-import os from "os"
+import { renderPreparedDerivative, extractFooterZooms } from "@/lib/server-image"
 
 interface AIReference {
   detected_title?: string | null
@@ -45,11 +42,13 @@ export const processImageWithAI = withAction({
     .update({ ai_status: "ai_pending", ocr_status: "ocr_pending" })
     .eq("id", imageId)
 
-  // --- FASE 1: OPTIMIZACIÓN Y RECTIFICACIÓN (PERSISTENTE) ---
+  // --- FASE 1: OPTIMIZACIÓN + ZOOMS DE CITAS (sharp, corre en Vercel) ---
+  // Antes esto usaba OpenCV/Python y se saltaba por completo en la nube, así que
+  // los zooms del pie de página (clave para leer citas) nunca se generaban en
+  // producción. Ahora usa el mismo pipeline sharp que el worker (server-image.ts).
   let finalAnalysisUrl: string | null = null
   let leftBuffer: Buffer | undefined
   let rightBuffer: Buffer | undefined
-  let originalSignedUrl: string | null = null
 
   try {
     // Siempre partimos de la original para evitar degradación acumulativa
@@ -60,33 +59,18 @@ export const processImageWithAI = withAction({
     if (urlError || !signedUrlData?.signedUrl) {
       throw new Error("No se pudo generar el acceso temporal para la optimización")
     }
-    originalSignedUrl = signedUrlData.signedUrl
 
-    const inputPath = path.join(os.tmpdir(), `input_sa_${imageId}.jpg`)
-    const outputPath = path.join(os.tmpdir(), `optimized_sa_${imageId}.jpg`)
+    const response = await fetch(signedUrlData.signedUrl)
+    const sourceBuffer = Buffer.from(await response.arrayBuffer())
 
-    const response = await fetch(originalSignedUrl)
-    const buffer = Buffer.from(await response.arrayBuffer())
-    fs.writeFileSync(inputPath, buffer)
+    const optimized = await renderPreparedDerivative(sourceBuffer, 3072, 3072, "jpeg", 90)
+    const optimizedBuffer = optimized.data
 
-    const optimizeScript = path.join(process.cwd(), "tools", "optimize_slide.py")
-    const pythonPath = process.env.PYTHON_PATH || "python"
+    const zooms = await extractFooterZooms(optimizedBuffer)
+    leftBuffer = zooms.left
+    rightBuffer = zooms.right
 
-    // VERCEL DETECTION: Skip OpenCV if running in Vercel/Cloud as it lacks Python/OpenCV
-    const isCloud = process.env.VERCEL === "1" || process.env.NODE_ENV === "production"
-
-    if (isCloud) {
-      console.log(`[ai-processing] Cloud environment detected, skipping OpenCV for ${imageId}`)
-      finalAnalysisUrl = originalSignedUrl
-    } else {
-      try {
-        // Ejecución del motor de visión (OpenCV) localmente
-        execSync(`${pythonPath} "${optimizeScript}" "${inputPath}" "${outputPath}"`)
-        // ... rest of local logic ...
-      } catch (e) {
-        finalAnalysisUrl = originalSignedUrl
-      }
-    }
+    finalAnalysisUrl = `data:image/jpeg;base64,${optimizedBuffer.toString("base64")}`
   } catch (phase1Err) {
     console.error("[processImageWithAI] Fallo crítico en Fase 1:", phase1Err)
     throw new Error("No se pudo preparar la imagen para el análisis.")
