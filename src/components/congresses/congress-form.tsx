@@ -1,5 +1,6 @@
 "use client"
 
+import { MEDICAL_SPECIALTIES_RETHUS } from "@/lib/constants/medical-specialties"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -8,14 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
-const SPECIALTIES = [
-  "Alergología",
-  "Dermatología",
-  "Neumología",
-  "Pediatría",
-  "Medicina interna",
-  "Otra",
-]
+const SPECIALTIES = [...MEDICAL_SPECIALTIES_RETHUS, "Otra"]
 
 export default function CongressForm() {
   const router = useRouter()

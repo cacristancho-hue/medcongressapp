@@ -1,7 +1,9 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { generateAcademicReport } from "@/lib/actions/polyglot-reports"
+import { enqueueReportGeneration } from "@/lib/actions/queue"
 import { updateReportContent, updateReportTitle, deleteReport } from "@/lib/actions/edits"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +11,7 @@ import { Sparkles, Calendar, ChevronDown, ChevronUp, Loader2, Save, Edit3, Trash
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
 
 interface Report {
   id: string
@@ -24,10 +27,9 @@ interface CongressReportProps {
 }
 
 export default function CongressReport({ congressId, reports }: CongressReportProps) {
+  const router = useRouter()
   const [isGenerating, startGenerating] = useTransition()
-  const [expandedReportId, setExpandedReportId] = useState<string | null>(
-    reports.length > 0 ? reports[0].id : null
-  )
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [isRenaming, setIsRenaming] = useState<string | null>(null)
   const [tempContent, setTempContent] = useState("")
@@ -35,14 +37,45 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
   const [isSaving, startSaving] = useTransition()
   const [isDeleting, startDeleting] = useTransition()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`reports:${congressId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reports", filter: `congress_id=eq.${congressId}` },
+        () => {
+          if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
+          refreshTimerRef.current = setTimeout(() => {
+            router.refresh()
+          }, 250)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current)
+      supabase.removeChannel(channel)
+    }
+  }, [congressId, router])
 
   const handleGenerate = () => {
     startGenerating(async () => {
       try {
-        await generateAcademicReport({ congressId, language: "es" })
-        toast.success("Esquema académico generado con éxito")
+        const result = await enqueueReportGeneration({ congressId, language: "es" })
+        if (!result.success) {
+          toast.error(result.error)
+          return
+        }
+        if ("message" in result && result.message) {
+          toast.info(result.message)
+        } else {
+          toast.success("Solicitud enviada. El resumen aparecerá cuando la cola termine de procesarlo.")
+        }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Error al generar el esquema")
+        toast.error(error instanceof Error ? error.message : "Error al encolar el esquema")
       }
     })
   }
@@ -115,7 +148,7 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              Generar Presentación
+              Generar Resumen
             </>
           )}
         </Button>
@@ -137,7 +170,7 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
           {reports.map((report) => (
             <Card key={report.id} className="overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex flex-col">
-                <CardHeader 
+                <CardHeader
                   className="cursor-pointer hover:bg-slate-50 transition-colors py-4"
                   onClick={() => !isRenaming && setExpandedReportId(expandedReportId === report.id ? null : report.id)}
                 >
@@ -182,22 +215,22 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
                         </CardDescription>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
                       {expandedReportId === report.id && !isEditing && (
                         <>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50"
                             onClick={() => handleStartRename(report)}
                             title="Renombrar"
                           >
                             <Edit3 className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50"
                             onClick={() => setConfirmDelete(report.id)}
                             title="Eliminar"
@@ -215,25 +248,24 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
                   </div>
                 </CardHeader>
 
-                {/* Confirmación de eliminación */}
                 {confirmDelete === report.id && (
                   <div className="bg-red-50 border-y border-red-100 px-6 py-3 flex items-center justify-between animate-in slide-in-from-top duration-200">
                     <p className="text-xs font-medium text-red-700 flex items-center gap-2">
-                       <Trash2 className="h-3.5 w-3.5" />
-                       ¿Seguro que quieres eliminar este reporte?
+                      <Trash2 className="h-3.5 w-3.5" />
+                      ¿Seguro que quieres eliminar este reporte?
                     </p>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-7 text-xs text-slate-500 hover:bg-red-100/50"
                         onClick={() => setConfirmDelete(null)}
                       >
                         Cancelar
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         className="h-7 text-xs bg-red-600 hover:bg-red-700"
                         onClick={() => handleDeleteReport(report.id)}
                         disabled={isDeleting}
@@ -250,16 +282,16 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
                   <div className="flex justify-end mb-4 pt-4">
                     {isEditing === report.id ? (
                       <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setIsEditing(null)}
                           className="text-slate-500"
                         >
                           Cancelar
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => handleSaveEdit(report.id)}
                           disabled={isSaving}
                           className="bg-emerald-600 hover:bg-emerald-700"
@@ -269,9 +301,9 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
                         </Button>
                       </div>
                     ) : (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleStartEdit(report)}
                         className="text-slate-600 hover:bg-slate-50"
                       >
@@ -290,7 +322,7 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
                     />
                   ) : (
                     <div className="prose prose-slate prose-sm max-w-none">
-                      <ReactMarkdown 
+                      <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           h1: ({ children }) => <h1 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">{children}</h1>,
@@ -310,50 +342,51 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
                           ),
                           p: ({ children }) => {
                             if (typeof children === "string") {
-                              const parts = children.split(/(\[foto:\d+\]|\[ref:[^\]]+\]|\*\*⚠️ ALERTA: ESTUDIO RETRACTADO\*\*)/g);
+                              const parts = children.split(/(\[foto:\d+\]|\[ref:[^\]]+\]|\*\*⚠️ ALERTA: ESTUDIO RETRACTADO\*\*)/g)
                               return (
                                 <p className="leading-relaxed mb-4 last:mb-0">
                                   {parts.map((part, i) => {
                                     if (part === "**⚠️ ALERTA: ESTUDIO RETRACTADO**") {
                                       return (
-                                        <span key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold">                                          ⚠️ ALERTA: ESTUDIO RETRACTADO
+                                        <span key={i} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-100 text-red-700 border border-red-200 text-[10px] font-bold">
+                                          ⚠️ ALERTA: ESTUDIO RETRACTADO
                                         </span>
-                                      );
+                                      )
                                     }
 
-                                    const fotoMatch = part.match(/\[foto:(\d+)\]/);
+                                    const fotoMatch = part.match(/\[foto:(\d+)\]/)
                                     if (fotoMatch) {
-                                      const num = fotoMatch[1];
+                                      const num = fotoMatch[1]
                                       return (
                                         <button
                                           key={i}
                                           onClick={() => {
-                                            const element = document.getElementById(`photo-${num}`);
-                                            if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                            const element = document.getElementById(`photo-${num}`)
+                                            if (element) element.scrollIntoView({ behavior: "smooth", block: "center" })
                                           }}
                                           className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 text-[10px] font-bold hover:bg-blue-100 transition-colors mx-0.5"
                                         >
                                           FOTO {num}
                                         </button>
-                                      );
+                                      )
                                     }
 
-                                    const refMatch = part.match(/\[ref:([^\]]+)\]/);
+                                    const refMatch = part.match(/\[ref:([^\]]+)\]/)
                                     if (refMatch) {
-                                      const refTitle = refMatch[1];
+                                      const refTitle = refMatch[1]
                                       return (
                                         <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-medium italic mx-0.5">
                                           {refTitle}
                                         </span>
-                                      );
+                                      )
                                     }
 
-                                    return part;
+                                    return part
                                   })}
                                 </p>
-                              );
+                              )
                             }
-                            return <p className="leading-relaxed mb-4 last:mb-0">{children}</p>;
+                            return <p className="leading-relaxed mb-4 last:mb-0">{children}</p>
                           }
                         }}
                       >

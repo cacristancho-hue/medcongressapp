@@ -72,7 +72,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
         <div className="mb-4">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
             <ShieldCheck className="h-3 w-3 text-blue-500" />
-            Perfil Verificado
+            Perfil verificado
           </p>
           <p className="text-sm font-black text-slate-900 truncate tracking-tight">{displayName}</p>
           {profile?.specialty && (

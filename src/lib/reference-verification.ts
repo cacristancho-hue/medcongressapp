@@ -112,6 +112,43 @@ function normalizeDoi(value: string | null | undefined): string | null {
     .toLowerCase()
 }
 
+function extractDoiFromText(value: string | null | undefined): string | null {
+  if (!value) return null
+  const match = value.match(/\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+/i)
+  return normalizeDoi(match?.[0] ?? null)
+}
+
+function extractPmidFromText(value: string | null | undefined): string | null {
+  if (!value) return null
+  const match = value.match(/\bPMID[:\s]*([0-9]{6,9})\b/i)
+  if (match?.[1]) return match[1]
+  const bare = value.match(/\b([0-9]{6,9})\b/)
+  return bare?.[1] ?? null
+}
+
+function deriveTitleFallback(input: ReferenceInput): string | null {
+  if (input.detected_title?.trim()) return input.detected_title.trim()
+
+  const raw = input.raw_text?.trim()
+  if (!raw) return null
+
+  const cleaned = raw
+    .replace(/\s+/g, " ")
+    .replace(/\s*[\[\]{}()]+/g, " ")
+    .trim()
+
+  if (cleaned.length < 20) return null
+
+  const doiIndex = cleaned.search(/\b10\.\d{4,9}\//i)
+  const pmidIndex = cleaned.search(/\bPMID[:\s]*[0-9]{6,9}\b/i)
+  const cutIndex = [doiIndex, pmidIndex].filter((idx) => idx > 0).sort((a, b) => a - b)[0]
+  const base = cutIndex ? cleaned.slice(0, cutIndex) : cleaned
+  const candidate = base.split(/[.;]\s+/)[0]?.trim() ?? base.trim()
+
+  if (candidate.length < 15) return null
+  return candidate.slice(0, 220)
+}
+
 function joinAuthors(parts: Array<string | null | undefined>): string | null {
   const cleaned = parts.filter((x): x is string => Boolean(x && x.trim()))
   if (cleaned.length === 0) return null
@@ -502,11 +539,14 @@ function mapStatus(input: {
 
 export async function verifyReference(input: ReferenceInput): Promise<VerifiedReference> {
   const detectedTitle = input.detected_title?.trim() || null
-  const detectedDoi = normalizeDoi(input.detected_doi)
+  const rawText = input.raw_text?.trim() || null
+  const detectedDoi = normalizeDoi(input.detected_doi) ?? extractDoiFromText(rawText)
+  const detectedPmid = extractPmidFromText(rawText)
+  const titleFallback = deriveTitleFallback(input)
   const detectedYear = extractYear(input.detected_year)
   const sourcesChecked: VerificationSource[] = []
 
-  if (!detectedTitle && !detectedDoi) {
+  if (!detectedTitle && !detectedDoi && !titleFallback && !detectedPmid) {
     return {
       status: "not_verified",
       confidenceScore: 0,
@@ -524,28 +564,33 @@ export async function verifyReference(input: ReferenceInput): Promise<VerifiedRe
   }
 
   const candidates: ExternalCandidate[] = []
+  const searchTitle = detectedTitle ?? titleFallback
 
   // 1. CrossRef — most authoritative, also surfaces retractions via update-to.
   if (detectedDoi) {
     sourcesChecked.push("crossref")
     const cr = await queryCrossRefByDoi(detectedDoi)
     if (cr) candidates.push(cr)
-  } else if (detectedTitle) {
+  } else if (searchTitle) {
     sourcesChecked.push("crossref")
-    const crList = await queryCrossRefByTitle(detectedTitle, detectedYear)
+    const crList = await queryCrossRefByTitle(searchTitle, detectedYear)
     candidates.push(...crList)
   }
 
   // 2. PubMed — biomedical gold standard. Also flags retractions via pubtype.
-  if (detectedTitle) {
+  if (detectedPmid) {
     sourcesChecked.push("pubmed")
-    const pm = await queryPubMedByTitle(detectedTitle, detectedYear)
+    const pmById = await queryPubMedByPmid(detectedPmid)
+    if (pmById) candidates.push(pmById)
+  } else if (searchTitle) {
+    sourcesChecked.push("pubmed")
+    const pm = await queryPubMedByTitle(searchTitle, detectedYear)
     if (pm) candidates.push(pm)
   }
 
   // 3. OpenAlex — broad coverage fallback.
   sourcesChecked.push("openalex")
-  const oa = await queryOpenAlex(detectedTitle, detectedDoi)
+  const oa = await queryOpenAlex(searchTitle, detectedDoi)
   candidates.push(...oa)
 
   if (candidates.length === 0) {
@@ -595,9 +640,10 @@ export async function verifyReference(input: ReferenceInput): Promise<VerifiedRe
 
   // PMID enrichment: if best lacks PMID, try to fetch it from PubMed by DOI.
   let matchedPmid = best?.candidate.pmid ?? null
-  if (!matchedPmid && best?.candidate.doi) {
-    const pmByDoi = await queryPubMedByTitle(best.candidate.title ?? "", best.candidate.year)
-    if (pmByDoi?.doi === best.candidate.doi && pmByDoi.pmid) {
+  const pmidLookup = detectedPmid ?? best?.candidate.pmid ?? null
+  if (!matchedPmid && pmidLookup) {
+    const pmByDoi = await queryPubMedByPmid(pmidLookup)
+    if (pmByDoi?.pmid) {
       matchedPmid = pmByDoi.pmid
     }
   }

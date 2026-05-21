@@ -19,6 +19,8 @@ interface Photo {
   original_filename: string
   file_size: number | null
   status: string
+  ai_status?: string | null
+  ocr_status?: string | null
   created_at: string
   signedUrl: string | null
   thumbSignedUrl?: string | null
@@ -203,7 +205,6 @@ export default function PhotoGrid({ congressId, initialImages }: Props) {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
           {filteredImages.map((photo) => {
             const idx = images.findIndex(img => img.id === photo.id)
-            const isProcessing = photo.status === "processing" || photo.status === "ai_pending"
             const isSelected = selectedIds.has(photo.id)
             const isHighlighted = highlightId === photo.id
 
@@ -211,10 +212,9 @@ export default function PhotoGrid({ congressId, initialImages }: Props) {
               <div 
                 key={photo.id} 
                 id={`photo-index-${idx}`}
-                onClick={() => isSelectionMode ? toggleSelect(photo.id) : (!isProcessing && setViewerIndex(idx))} 
+                onClick={() => isSelectionMode ? toggleSelect(photo.id) : setViewerIndex(idx)} 
                 className={clsx(
                   "relative cursor-pointer transition-all duration-200 rounded-lg overflow-hidden",
-                  isProcessing && "cursor-wait",
                   isSelected ? "ring-4 ring-blue-500 ring-offset-2 scale-95" : 
                   isHighlighted ? "ring-4 ring-amber-400 ring-offset-2 scale-105 z-10 shadow-xl" : "hover:scale-[1.02]"
                 )}

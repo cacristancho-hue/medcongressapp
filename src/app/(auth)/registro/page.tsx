@@ -18,7 +18,7 @@ const ROLES = [
   { value: "resident", label: "Residente" },
   { value: "fellow", label: "Fellow" },
   { value: "specialist", label: "Especialista" },
-  { value: "professor", label: "Profesor clínico" },
+  { value: "professor", label: "Profesor clinico" },
 ]
 
 const GENDERS = [
@@ -28,9 +28,9 @@ const GENDERS = [
 ]
 
 const WORKPLACE_TYPES = [
-  { value: "private", label: "Clínica Privada" },
-  { value: "public", label: "Hospital Público" },
-  { value: "both", label: "Ambos (Público y Privado)" },
+  { value: "private", label: "Clinica Privada" },
+  { value: "public", label: "Hospital Publico" },
+  { value: "both", label: "Ambos (Publico y Privado)" },
 ]
 
 export default function RegisterPage() {
@@ -60,10 +60,11 @@ export default function RegisterPage() {
     const supabase = createClient()
 
     const age = parseInt(formData.age)
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/login`,
         data: {
           full_name: formData.full_name,
           role: formData.role,
@@ -81,14 +82,21 @@ export default function RegisterPage() {
       return
     }
 
-    router.push("/dashboard")
+    if (data.session) {
+      router.push("/dashboard")
+      router.refresh()
+      return
+    }
+
+    const email = encodeURIComponent(formData.email)
+    router.push(`/login?registered=1&email=${email}`)
     router.refresh()
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden px-4 py-12">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#f1f5f9_0%,_transparent_50%)]"></div>
-      
+
       <div className="w-full max-w-lg relative z-10">
         <div className="flex flex-col items-center mb-10 group cursor-default">
           <div className="transform hover:scale-105 transition-transform duration-700">
@@ -107,10 +115,10 @@ export default function RegisterPage() {
           <CardHeader className="bg-slate-50/50 border-b border-slate-50 pb-8 pt-10 px-8 text-center">
             <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">Crear cuenta</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Estructurando conocimiento médico.
+              Estructurando conocimiento medico.
             </CardDescription>
           </CardHeader>
-          
+
           <form onSubmit={handleRegister}>
             <CardContent className="space-y-5 p-8">
               {error && (
@@ -119,7 +127,7 @@ export default function RegisterPage() {
                   {error}
                 </div>
               )}
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="full_name" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nombre completo</Label>
@@ -133,9 +141,9 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correo electrónico</Label>
+                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correo electronico</Label>
                   <Input
                     id="email"
                     name="email"
@@ -148,15 +156,15 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password" university-tag="true" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contraseña segura</Label>
+                  <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contrasena segura</Label>
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="Minimo 8 caracteres"
                     className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
                     value={formData.password}
                     onChange={handleChange}
@@ -209,7 +217,7 @@ export default function RegisterPage() {
                     id="age"
                     name="age"
                     type="number"
-                    placeholder="Años"
+                    placeholder="Anos"
                     className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
                     value={formData.age}
                     onChange={handleChange}
@@ -249,19 +257,19 @@ export default function RegisterPage() {
             </CardContent>
 
             <CardFooter className="flex flex-col gap-6 p-8 bg-slate-50/30 border-t border-slate-50">
-              <Button 
-                type="submit" 
-                className="w-full h-12 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95" 
+              <Button
+                type="submit"
+                className="w-full h-12 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95"
                 loading={loading}
               >
                 Registrarme ahora
               </Button>
-              
+
               <div className="flex flex-col items-center gap-4">
                 <p className="text-xs text-slate-500 font-medium">
-                  ¿Ya es parte de MDCONGRESS?{" "}
+                  {"¿Ya es parte de MDCONGRESS?"}{" "}
                   <Link href="/login" className="text-blue-600 font-black hover:underline uppercase tracking-tighter">
-                    Iniciar Sesión
+                    Iniciar Sesion
                   </Link>
                 </p>
                 <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
@@ -272,9 +280,9 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
-        
+
         <p className="mt-8 text-center text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-          Al registrarse, usted acepta nuestros <Link href="/terms" className="underline">Términos</Link> y <Link href="/privacy" className="underline">Política de Privacidad</Link>.
+          Al registrarse, usted acepta nuestros <Link href="/terms" className="underline">Terminos</Link> y <Link href="/privacy" className="underline">Politica de Privacidad</Link>.
         </p>
       </div>
     </div>

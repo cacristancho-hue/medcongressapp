@@ -8,6 +8,7 @@ import { log } from "@/lib/logger"
 
 export type JobType =
   | "image_analysis"
+  | "image_derivation"
   | "topics_extraction"
   | "report_generation"
   | "reference_verification"

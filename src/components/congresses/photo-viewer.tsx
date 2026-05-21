@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback, useTransition } from "react"
-import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2, Trash2, BrainCircuit, Loader2, FileText, Tags, BookOpen, Stethoscope, Edit3, Save, ExternalLink } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2, Trash2, BrainCircuit, Loader2, FileText, Tags, BookOpen, Stethoscope, Edit3, Save, ExternalLink, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { getImageAnalysis } from "@/lib/actions/ai"
-import { verifyCongressReferences } from "@/lib/actions/references"
+import { verifyCongressReferences, updateReferenceCandidate, verifySingleReference } from "@/lib/actions/references"
 import { updateImageAnalysis } from "@/lib/actions/edits"
 import Image from "next/image"
 import { clsx } from "clsx"
@@ -17,6 +18,8 @@ interface Photo {
   signedUrl: string | null
   optimizedSignedUrl?: string | null
   status: string
+  ai_status?: string | null
+  ocr_status?: string | null
 }
 
 interface PhotoViewerProps {
@@ -31,6 +34,7 @@ interface AnalysisData {
   ocr: string | null;
   topics: { name: string; category: string }[];
   references: {
+    id: string
     raw_text: string
     detected_title: string | null
     detected_authors: string | null
@@ -55,19 +59,38 @@ interface AnalysisData {
 }
 
 export default function PhotoViewer({ photos, congressId, initialIndex, onClose, onDelete }: PhotoViewerProps) {
+  const router = useRouter()
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [isZoomed, setIsZoomed] = useState(false)
-  const [isAnalyzing, startAnalysis] = useTransition()
+  const [isAnalyzingAction, setIsAnalyzingAction] = useState(false)
+  const [isSavingAction, setIsSavingAction] = useState(false)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false)
   const [showMetadata, setShowMetadata] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editOcr, setEditOcr] = useState("")
+  const [selectedReferenceIndex, setSelectedReferenceIndex] = useState<number | null>(null)
+  const [referenceDraft, setReferenceDraft] = useState({
+    official_title: "",
+    official_authors: "",
+    official_year: "",
+    official_journal: "",
+    detected_doi: "",
+    detected_pmid: "",
+    verification_status: "not_verified",
+    verification_notes: "",
+  })
+  const [isSavingReference, setIsSavingReference] = useState(false)
 
   const currentPhoto = photos[currentIndex]
 
-  const isProcessed = currentPhoto.status === "analyzed" || currentPhoto.status === "ocr_done"
-  const isProcessing = currentPhoto.status === "processing" || currentPhoto.status === "ai_pending" || isAnalyzing
+  const isProcessed =
+    currentPhoto.ai_status === "ai_done" ||
+    currentPhoto.ocr_status === "ocr_done" ||
+    currentPhoto.status === "analyzed" ||
+    currentPhoto.status === "ocr_done"
+  const isQueued = currentPhoto.ai_status === "ai_pending" || currentPhoto.ocr_status === "ocr_pending"
+  const isProcessing = currentPhoto.status === "processing" || isAnalyzingAction || isSavingAction
 
   // Load analysis data when photo changes
   useEffect(() => {
@@ -95,6 +118,16 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
     return () => { mounted = false }
   }, [currentPhoto?.id, isProcessed, analysisData])
 
+  useEffect(() => {
+    if (!analysisData?.references?.length) {
+      setSelectedReferenceIndex(null)
+      return
+    }
+    if (selectedReferenceIndex !== null && selectedReferenceIndex >= analysisData.references.length) {
+      setSelectedReferenceIndex(null)
+    }
+  }, [analysisData, selectedReferenceIndex])
+
   const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % photos.length)
     setIsZoomed(false)
@@ -111,24 +144,38 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
     setIsEditing(false)
   }, [photos.length])
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!(currentPhoto?.optimizedSignedUrl ?? currentPhoto?.signedUrl)) return
-    toast.promise(
-      async () => {
-        const result = await processImageWithAI(currentPhoto.id)
-        if (!result.success) throw new Error(result.error)
-        return result
-      },
-      {
-        loading: 'IA analizando imagen y bibliografía...',
-        success: 'Análisis completado con éxito',
-        error: (err) => err.message,
-      }
-    )
+    setIsAnalyzingAction(true)
+
+    const analysisPromise = (async () => {
+      const result = await processImageWithAI(currentPhoto.id)
+      if (!result.success) throw new Error(result.error)
+      const refreshed = await getImageAnalysis(currentPhoto.id)
+      setAnalysisData(refreshed as unknown as AnalysisData)
+      setShowMetadata(true)
+      router.refresh()
+      return result
+    })()
+
+    toast.promise(analysisPromise, {
+      loading: "IA analizando imagen y bibliografía...",
+      success: "Análisis completado con éxito",
+      error: (err) => err.message,
+    })
+
+    try {
+      await analysisPromise
+    } catch {
+      // toast.promise already surfaces the error to the user.
+    } finally {
+      setIsAnalyzingAction(false)
+    }
   }
 
   const handleSaveAnalysis = async () => {
-    startAnalysis(async () => {
+    setIsSavingAction(true)
+    void (async () => {
       const result = await updateImageAnalysis(currentPhoto.id, congressId, {
         cleaned_text: editOcr
       })
@@ -139,12 +186,106 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
         setAnalysisData(prev => prev ? { ...prev, ocr: editOcr } : null)
         setIsEditing(false)
       }
+    })().finally(() => {
+      setIsSavingAction(false)
     })
   }
 
   const startEditing = () => {
     setEditOcr(analysisData?.ocr || "")
     setIsEditing(true)
+  }
+
+  const openReferenceDetail = (index: number) => {
+    const ref = analysisData?.references?.[index]
+    if (!ref) return
+    setSelectedReferenceIndex(index)
+    setReferenceDraft({
+      official_title: ref.official_title || ref.detected_title || "",
+      official_authors: ref.official_authors || ref.detected_authors || "",
+      official_year: ref.official_year || ref.detected_year || "",
+      official_journal: ref.official_journal || ref.detected_journal || "",
+      detected_doi: ref.detected_doi || "",
+      detected_pmid: ref.detected_pmid || "",
+      verification_status: ref.verification_status || "not_verified",
+      verification_notes: ref.verification_notes || "",
+    })
+  }
+
+  const saveReferenceDetail = async () => {
+    const ref = selectedReferenceIndex !== null ? analysisData?.references?.[selectedReferenceIndex] : null
+    if (!ref) return
+    setIsSavingReference(true)
+    try {
+      const result = await updateReferenceCandidate({
+        id: ref.id,
+        congressId,
+        updates: {
+          official_title: referenceDraft.official_title.trim() || null,
+          official_authors: referenceDraft.official_authors.trim() || null,
+          official_year: referenceDraft.official_year.trim() || null,
+          official_journal: referenceDraft.official_journal.trim() || null,
+          detected_doi: referenceDraft.detected_doi.trim() || null,
+          detected_pmid: referenceDraft.detected_pmid.trim() || null,
+          verification_status: referenceDraft.verification_status,
+          verification_notes: referenceDraft.verification_notes.trim() || null,
+        },
+      })
+      if (!result.success) throw new Error(result.error)
+      toast.success("Referencia guardada")
+      setAnalysisData((prev) =>
+        prev
+          ? {
+              ...prev,
+              references: prev.references.map((item, idx) =>
+                idx === selectedReferenceIndex
+                  ? {
+                      ...item,
+                      official_title: referenceDraft.official_title.trim() || null,
+                      official_authors: referenceDraft.official_authors.trim() || null,
+                      official_year: referenceDraft.official_year.trim() || null,
+                      official_journal: referenceDraft.official_journal.trim() || null,
+                      detected_doi: referenceDraft.detected_doi.trim() || null,
+                      detected_pmid: referenceDraft.detected_pmid.trim() || null,
+                      verification_status: referenceDraft.verification_status,
+                      verification_notes: referenceDraft.verification_notes.trim() || null,
+                    }
+                  : item
+              ),
+            }
+          : prev
+      )
+      router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar la referencia")
+    } finally {
+      setIsSavingReference(false)
+    }
+  }
+
+  const reverifySelectedReference = async () => {
+    const ref = selectedReferenceIndex !== null ? analysisData?.references?.[selectedReferenceIndex] : null
+    if (!ref) return
+    try {
+      const result = await verifySingleReference({ referenceId: ref.id, congressId })
+      if (!result.success) throw new Error(result.error)
+      toast.success("Referencia re-verificada")
+      setReferenceDraft((prev) => ({ ...prev, verification_status: result.data.status }))
+      setAnalysisData((prev) =>
+        prev
+          ? {
+              ...prev,
+              references: prev.references.map((item, idx) =>
+                idx === selectedReferenceIndex
+                  ? { ...item, verification_status: result.data.status }
+                  : item
+              ),
+            }
+          : prev
+      )
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo re-verificar")
+    }
   }
 
   const handleVerifyReferences = () => {
@@ -157,7 +298,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
         return result
       },
       {
-        loading: 'Verificando bibliografía en OpenAlex...',
+        loading: "Verificando bibliografía en OpenAlex...",
         success: 'Referencias validadas',
         error: (err) => err.message,
       }
@@ -272,7 +413,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 variant={isProcessed ? "outline" : "default"}
                 size="sm"
                 onClick={handleAnalyze}
-                disabled={isProcessing}
+                disabled={isProcessing || isQueued}
                 className={clsx(
                   "flex items-center justify-center gap-2 w-full",
                   isProcessed 
@@ -282,13 +423,21 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
               >
                 {isProcessing ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isQueued ? (
+                  <span className="h-4 w-4 rounded-full border border-blue-400/50" />
                 ) : (
                   <BrainCircuit className="h-4 w-4" />
                 )}
-                {isProcessing ? "Procesando..." : isProcessed ? "Volver a Analizar" : "Analizar con IA"}
+                {isProcessing ? "Procesando..." : isQueued ? "En cola" : isProcessed ? "Volver a Analizar" : "Analizar con IA"}
               </Button>
               
-              {isProcessed && !isProcessing && (
+              {isQueued && (
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">
+                  La IA continúa en segundo plano.
+                </p>
+              )}
+
+              {isProcessed && !isProcessing && !isQueued && (
                 <Button
                   variant="ghost"
                   size="sm"

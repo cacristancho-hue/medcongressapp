@@ -56,7 +56,7 @@ export const generateAcademicReport = withAction({
     .eq("congress_id", congressId)
 
   if (!ocrResults || ocrResults.length === 0) {
-    throw new Error("No hay datos analizados. Analiza algunas fotos primero.")
+    throw new Error("[report_generation/context] No hay datos analizados. Analiza algunas fotos primero.")
   }
 
   // Construir contexto enriquecido para la IA
@@ -97,15 +97,16 @@ export const generateAcademicReport = withAction({
     .slice(0, 100_000)
 
   const { content, usage } = await generateReport({ fullText, language })
-  if (!content) throw new Error("IA no generó contenido")
+  if (!content) throw new Error("[report_generation/llm] IA no generó contenido")
 
-  await supabase.from("reports").insert({
+  const { error: insertErr } = await supabase.from("reports").insert({
     congress_id: congressId,
     user_id: user.id,
     title: `Esquema Académico (${language.toUpperCase()})`,
     content,
     report_type: "academic_outline",
   })
+  if (insertErr) throw new Error(`[report_generation/save] Error guardando reporte: ${insertErr.message}`)
 
   await recordAiUsage({
     userId: user.id,

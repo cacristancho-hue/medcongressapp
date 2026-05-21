@@ -9,13 +9,12 @@ export default function LegalFooter() {
     <footer className="mt-auto border-t border-slate-100 bg-white py-12 px-6">
       <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-start">
-          {/* Lado Izquierdo: Identidad y Soporte */}
           <div className="space-y-10">
             <div className="flex items-center gap-3">
               <Logo className="h-10 w-10" />
               <span className="font-extrabold text-slate-900 text-xl tracking-tighter uppercase font-plex-mono">MDCONGRESS</span>
             </div>
-            
+
             <div className="space-y-6">
               <div className="space-y-4">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -52,23 +51,33 @@ export default function LegalFooter() {
             </div>
           </div>
 
-          {/* Lado Derecho: Aviso de Responsabilidad y Legal */}
           <div className="space-y-6 md:text-right flex flex-col md:items-end">
             <div className="flex items-center gap-2 text-slate-900 md:justify-end">
               <Info className="h-4 w-4 text-blue-600" />
               <span className="text-xs font-black uppercase tracking-widest">Aviso de Responsabilidad Académica</span>
             </div>
             <p className="text-xs leading-relaxed text-slate-500 font-medium max-w-md">
-              MDCONGRESS es una herramienta de soporte académico para especialistas médicos. 
-              La síntesis de información no constituye diagnóstico ni recomendación clínica. 
+              MDCONGRESS es una herramienta de soporte académico para especialistas médicos.
+              La síntesis de información no constituye diagnóstico ni recomendación clínica.
               Es responsabilidad exclusiva del profesional validar toda la bibliografía antes de su aplicación.
             </p>
+
             <div className="flex flex-wrap gap-6 pt-2 md:justify-end">
               <a href="/terms" className="text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider">Términos de Servicio</a>
               <a href="/privacy" className="text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider">Privacidad y Seguridad</a>
             </div>
-            
-            <div className="pt-8 flex flex-col md:items-end gap-2 text-[10px] text-slate-400 font-medium">
+
+            <div className="flex flex-col md:items-end gap-2 text-[10px] text-slate-400 font-medium pt-2">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Contáctenos</p>
+              <a href="mailto:cacristanchoo@gmail.com" className="font-semibold text-slate-600 hover:text-blue-600 transition-colors">
+                cacristanchoo@gmail.com
+              </a>
+              <a href="tel:+573057972216" className="font-semibold text-slate-600 hover:text-blue-600 transition-colors">
+                +57 305 797 2216
+              </a>
+            </div>
+
+            <div className="pt-6 flex flex-col md:items-end gap-2 text-[10px] text-slate-400 font-medium">
               <div className="flex items-center gap-3">
                 <span className="bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full border border-slate-200 uppercase tracking-tighter">v1.2.1-hotfix-ai</span>
                 <span className="flex h-2 w-2 rounded-full bg-emerald-500"></span>

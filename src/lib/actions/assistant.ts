@@ -1,3 +1,5 @@
+"use server"
+
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { enqueueTopicsExtraction, enqueueReportGeneration, enqueueReferenceVerification } from "@/lib/actions/queue"
@@ -14,6 +16,25 @@ export interface AssistantStep {
 export interface AssistantResult {
   steps: AssistantStep[]
   error?: string
+}
+
+const STALE_PROCESSING_MINUTES = 20
+
+type ActiveJobRow = {
+  job_type: "topics_extraction" | "report_generation" | "reference_verification"
+  status: "pending" | "processing"
+  started_at: string | null
+}
+
+function hasLiveActiveJobs(jobs: ActiveJobRow[] | null | undefined) {
+  if (!jobs?.length) return false
+  const staleCutoff = Date.now() - STALE_PROCESSING_MINUTES * 60 * 1000
+  return jobs.some((job) => {
+    if (job.status === "pending") return true
+    if (job.status !== "processing") return false
+    if (!job.started_at) return true
+    return new Date(job.started_at).getTime() >= staleCutoff
+  })
 }
 
 /**
@@ -45,15 +66,15 @@ export async function runMedicalAssistant(
       .neq("verification_status", "verified")
       .neq("verification_status", "retracted"),
     supabase.from("ai_jobs")
-      .select("job_type, status")
+      .select("job_type, status, started_at")
       .eq("congress_id", congressId)
       .in("status", ["pending", "processing"]),
   ])
 
   const steps: AssistantStep[] = []
-  const isTopicsActive = activeJobs?.some(j => j.job_type === "topics_extraction")
-  const isReportActive = activeJobs?.some(j => j.job_type === "report_generation")
-  const isRefsActive = activeJobs?.some(j => j.job_type === "reference_verification")
+  const isTopicsActive = hasLiveActiveJobs(activeJobs?.filter((j) => j.job_type === "topics_extraction") as ActiveJobRow[] | null | undefined)
+  const isReportActive = hasLiveActiveJobs(activeJobs?.filter((j) => j.job_type === "report_generation") as ActiveJobRow[] | null | undefined)
+  const isRefsActive = hasLiveActiveJobs(activeJobs?.filter((j) => j.job_type === "reference_verification") as ActiveJobRow[] | null | undefined)
 
   // DECISIÓN ESTRATÉGICA: Si hay menos de 10 imágenes, procesamos TODO en caliente (Hot Path)
   // para evitar la cola de Vercel que no tiene worker activo.

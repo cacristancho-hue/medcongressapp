@@ -13,7 +13,7 @@ create table if not exists public.ai_usage_limits (
   user_id                 uuid primary key references auth.users(id) on delete cascade,
   plan                    text not null default 'free' check (plan in ('free','congress','academic','admin')),
   monthly_image_quota     integer not null default 15,
-  monthly_report_quota    integer not null default 1,
+  monthly_report_quota    integer not null default 2,
   monthly_cost_cap_usd    numeric(8,2) not null default 1.50,
   updated_at              timestamptz not null default now()
 );

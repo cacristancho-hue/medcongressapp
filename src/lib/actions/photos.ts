@@ -121,22 +121,22 @@ export async function registerImage(payload: {
   congress_id: string
   user_id: string
   storage_path: string
-  storage_path_optimized: string
-  storage_path_thumbnail: string
-  width_original: number
-  height_original: number
-  width_optimized: number
-  height_optimized: number
-  width_thumbnail: number
-  height_thumbnail: number
-  size_original_bytes: number
-  size_optimized_bytes: number
-  size_thumbnail_bytes: number
-  compression_quality: number
-  compression_ratio: number
+  storage_path_optimized: string | null
+  storage_path_thumbnail: string | null
+  width_original: number | null
+  height_original: number | null
+  width_optimized: number | null
+  height_optimized: number | null
+  width_thumbnail: number | null
+  height_thumbnail: number | null
+  size_original_bytes: number | null
+  size_optimized_bytes: number | null
+  size_thumbnail_bytes: number | null
+  compression_quality: number | null
+  compression_ratio: number | null
   mime_type_original: string
-  mime_type_optimized: string
-  mime_type_thumbnail: string
+  mime_type_optimized: string | null
+  mime_type_thumbnail: string | null
   upload_status: string
   external_sync_status: string
   ocr_status: string
@@ -207,8 +207,8 @@ export async function registerImage(payload: {
     upload_error: payload.upload_error ?? null,
     image_order: 0,
     status: "uploaded",
-    file_size: payload.size_optimized_bytes,
-    mime_type: payload.mime_type_optimized,
+    file_size: payload.size_original_bytes,
+    mime_type: payload.mime_type_original,
     original_filename: payload.original_filename,
     file_hash: payload.file_hash,
   })

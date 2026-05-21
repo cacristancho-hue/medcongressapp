@@ -39,7 +39,7 @@ export async function getImageAnalysis(imageId: string) {
     supabase
       .from("reference_candidates")
       .select(
-        "raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, verification_status, confidence_score, detected_doi, detected_pmid, is_open_access, open_access_url, citation_count, official_title, official_authors, official_year, official_journal"
+        "id, raw_reference_text, detected_title, detected_authors, detected_year, detected_journal, verification_status, confidence_score, detected_doi, detected_pmid, is_open_access, open_access_url, citation_count, official_title, official_authors, official_year, official_journal, verification_notes"
       )
       .eq("image_id", imageId),
     supabase
@@ -71,6 +71,7 @@ export async function getImageAnalysis(imageId: string) {
       official_authors: ref.official_authors,
       official_year: ref.official_year,
       official_journal: ref.official_journal,
+      verification_notes: ref.verification_notes,
     })) ?? []
 
   return {

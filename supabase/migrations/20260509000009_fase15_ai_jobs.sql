@@ -18,6 +18,7 @@ create table if not exists public.ai_jobs (
   job_type        text not null
                   check (job_type in (
                     'image_analysis',
+                    'image_derivation',
                     'topics_extraction',
                     'report_generation',
                     'reference_verification'

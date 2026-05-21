@@ -19,7 +19,6 @@ export interface LibraryReference {
   confidence_score: number | null
   created_at: string
   specialty: string | null
-  // Nuevos campos
   official_title: string | null
   official_authors: string | null
   official_year: string | null
@@ -27,12 +26,13 @@ export interface LibraryReference {
   abstract: string | null
   publication_type: string | null
   mesh_terms: string[] | null
+  verification_notes: string | null
   detection_count: number
-  // Métricas de impacto
   citation_count: number | null
   influential_citation_count: number | null
   is_open_access: boolean
   open_access_url: string | null
+  image_full_url: string | null
 }
 
 interface ReferenceCandidateRow {
@@ -57,6 +57,7 @@ interface ReferenceCandidateRow {
   abstract: string | null
   publication_type: string | null
   mesh_terms: string[] | null
+  verification_notes: string | null
   citation_count: number | null
   influential_citation_count: number | null
   is_open_access: boolean
@@ -64,6 +65,11 @@ interface ReferenceCandidateRow {
   congresses: {
     name: string
     specialty: string | null
+  } | null
+  congress_images: {
+    deleted_at: string | null
+    storage_path: string | null
+    storage_path_thumbnail: string | null
   } | null
 }
 
@@ -73,8 +79,6 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   if (!user) return { error: "No autorizado" }
 
-  // 1. Obtener todas las referencias activas del usuario
-  // Filtramos por congresses activos y congress_images activas
   const { data, error } = await supabase
     .from("reference_candidates")
     .select(`
@@ -99,6 +103,7 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       abstract,
       publication_type,
       mesh_terms,
+      verification_notes,
       citation_count,
       influential_citation_count,
       is_open_access,
@@ -110,6 +115,7 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       ),
       congress_images (
         deleted_at,
+        storage_path,
         storage_path_thumbnail
       )
     `)
@@ -123,62 +129,35 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
-  // Filtrar en memoria las referencias cuyas imágenes asociadas estén borradas
   const activeRows = (data ?? []).filter((row: any) => {
-    // RESTRICCIÓN TOTAL: Si no hay imagen activa vinculada, no se muestra.
-    // Esto limpia referencias que se quedaron huérfanas (image_id: null) tras un borrado masivo.
     if (!row.image_id || !row.congress_images || row.congress_images.deleted_at !== null) {
       return false
     }
     return true
   })
 
-  const rows = activeRows as unknown as any[]
-  
-  // 2. Motor de Deduplicación Top Mundial (In-Memory + Master Linkage)
-  const libraryMap = new Map<string, LibraryReference>()
+  const libraryRows: LibraryReference[] = []
 
-  rows.forEach((row) => {
-    // Generar una clave única: Master ID > DOI > PMID > Título normalizado
-    const masterId = row.master_id
-    const doi = row.detected_doi?.toLowerCase().trim()
-    const pmid = row.detected_pmid
-    
-    // Normalización de título mejorada (fuzzy)
-    const title = row.official_title || row.detected_title || ""
-    const normalizedTitle = title
-      .toLowerCase()
-      .trim()
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "") // Eliminar acentos
-      .replace(/[^a-z0-9]/g, "") // Solo alfanumérico
-      .slice(0, 100) // Limitar longitud para evitar colisiones raras
-    
-    const key = masterId || doi || pmid || normalizedTitle || row.id
-    const existing = libraryMap.get(key)
-
-    // --- MOTOR DE DEPURACIÓN ÉLITE (AJUSTADO) ---
-    // 1. Filtrar ruido extremo: Solo si no hay título, no hay DOI, y la confianza es casi nula (< 0.20)
-    const isExtremeNoise = (row.confidence_score ?? 0) < 0.20
+  activeRows.forEach((row: any) => {
+    const isExtremeNoise = (row.confidence_score ?? 0) < 0.2
     const hasNoIdentity = !row.official_title && !row.detected_title && !row.detected_doi && !row.detected_pmid
-    
-    if (hasNoIdentity && isExtremeNoise) {
-      return // Ignorar basura de OCR
-    }
 
-    // 2. Filtrar fragmentos absurdamente cortos ( < 12 chars ej. "p < 0.05")
-    if (hasNoIdentity && (row.raw_reference_text?.length ?? 0) < 12) {
-      return 
-    }
+    if (hasNoIdentity && isExtremeNoise) return
+    if (hasNoIdentity && (row.raw_reference_text?.length ?? 0) < 12) return
 
-    const current: LibraryReference = {
+    libraryRows.push({
       id: row.id,
       congress_id: row.congress_id,
       congress_name: row.congresses?.name || "Material General",
       image_id: row.image_id,
-      image_url: row.congress_images?.storage_path_thumbnail 
+      image_url: row.congress_images?.storage_path_thumbnail
         ? `${supabaseUrl}/storage/v1/object/public/congress-photos/${row.congress_images.storage_path_thumbnail}`
         : null,
+      image_full_url: row.congress_images?.storage_path
+        ? `${supabaseUrl}/storage/v1/object/public/congress-photos/${row.congress_images.storage_path}`
+        : row.congress_images?.storage_path_thumbnail
+          ? `${supabaseUrl}/storage/v1/object/public/congress-photos/${row.congress_images.storage_path_thumbnail}`
+          : null,
       raw_text: row.raw_reference_text ?? "",
       detected_title: row.detected_title,
       detected_authors: row.detected_authors,
@@ -197,40 +176,14 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       abstract: row.abstract ?? null,
       publication_type: row.publication_type ?? null,
       mesh_terms: row.mesh_terms ?? null,
+      verification_notes: row.verification_notes ?? null,
       detection_count: 1,
       citation_count: row.citation_count ?? null,
       influential_citation_count: row.influential_citation_count ?? null,
       is_open_access: row.is_open_access ?? false,
       open_access_url: row.open_access_url ?? null,
-    }
-
-    if (!existing) {
-      libraryMap.set(key, current)
-    } else {
-      // Consolidación inteligente:
-      // 1. Aumentar contador de detecciones
-      existing.detection_count += 1
-      
-      // 2. Acumular nombres de congresos (si son distintos)
-      if (!existing.congress_name.includes(current.congress_name)) {
-        existing.congress_name += `, ${current.congress_name}`
-      }
-
-      // 3. Priorizar la entrada con mejor estatus de verificación o metadatos
-      const statusPriority = { retracted: 4, verified: 3, partially_verified: 2, ambiguous: 1, not_verified: 0 }
-      const currentPrio = statusPriority[current.verification_status as keyof typeof statusPriority] || 0
-      const existingPrio = statusPriority[existing.verification_status as keyof typeof statusPriority] || 0
-
-      if (currentPrio > existingPrio || (!existing.official_title && current.official_title)) {
-        // Transferir metadatos superiores pero mantener el contador y congresos acumulados
-        const savedCount = existing.detection_count
-        const savedCongresses = existing.congress_name
-        Object.assign(existing, current)
-        existing.detection_count = savedCount
-        existing.congress_name = savedCongresses
-      }
-    }
+    })
   })
 
-  return { data: Array.from(libraryMap.values()) }
+  return { data: libraryRows }
 }

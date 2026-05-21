@@ -58,6 +58,41 @@ interface ReportRow {
   created_at: string
 }
 
+interface ProcessJobRow {
+  id: string
+  job_type: string
+  status: string
+  attempt_count: number
+  error_message: string | null
+  created_at: string
+  started_at: string | null
+  finished_at: string | null
+  result:
+      | {
+        stage?: string
+        kind?: string
+        imageCount?: number
+        ocrCount?: number
+        referenceCount?: number
+        topicCount?: number
+        topicsCreated?: number
+        processedCount?: number
+        retractedCount?: number
+        fullTextLength?: number
+        preparedBytes?: number
+        previewBytes?: number
+        provider?: string
+        model?: string
+        inputTokens?: number
+        outputTokens?: number
+        optimizedBytes?: number
+        thumbnailBytes?: number
+        congressId?: string
+        language?: string
+      }
+    | null
+}
+
 const STATUS_META: Record<
   string,
   { label: string; icon: typeof CheckCircle2; tone: string; bg: string }
@@ -117,6 +152,7 @@ export default async function ResumenPage({ params }: Props) {
     topicsRes,
     referencesRes,
     reportsRes,
+    jobsRes,
   ] = await Promise.all([
     supabase
       .from("congress_images")
@@ -143,6 +179,14 @@ export default async function ResumenPage({ params }: Props) {
       .eq("congress_id", id)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("ai_jobs")
+      .select("id, job_type, status, attempt_count, error_message, created_at, started_at, finished_at, result")
+      .eq("congress_id", id)
+      .eq("user_id", user.id)
+      .in("job_type", ["image_analysis", "topics_extraction", "report_generation", "reference_verification"])
+      .order("created_at", { ascending: false })
+      .limit(12),
   ])
 
   const totalPhotos = photosRes.count ?? 0
@@ -198,6 +242,17 @@ export default async function ResumenPage({ params }: Props) {
 
   const reports = (reportsRes.data ?? []) as ReportRow[]
   const latestReport = reports[0] ?? null
+  const processJobs = (jobsRes.data ?? []) as ProcessJobRow[]
+  const latestImageJob = processJobs.find((job) => job.job_type === "image_analysis") ?? null
+  const latestTopicsJob = processJobs.find((job) => job.job_type === "topics_extraction") ?? null
+  const latestReportJob = processJobs.find((job) => job.job_type === "report_generation") ?? null
+  const latestFinishedReportJob =
+    processJobs.find((job) => job.job_type === "report_generation" && job.status === "succeeded") ?? null
+  const latestFailedReportJob =
+    processJobs.find((job) => job.job_type === "report_generation" && job.status === "failed") ?? null
+  const latestReferenceJob =
+    processJobs.find((job) => job.job_type === "reference_verification") ?? null
+  const latestRelevantJob = processJobs[0] ?? null
 
   return (
     <div className="max-w-5xl mx-auto pb-16">
@@ -288,6 +343,52 @@ export default async function ResumenPage({ params }: Props) {
         </Card>
       </section>
 
+      <section className="mb-8">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-base font-semibold text-slate-900">
+            Trazabilidad del procesamiento
+          </h2>
+          <Link
+            href={`/dashboard/congresos/${id}#jobs`}
+            className="text-xs text-slate-500 hover:text-slate-800 inline-flex items-center gap-1"
+          >
+            <CircleHelp className="h-3 w-3" />
+            Ver cola completa
+          </Link>
+        </div>
+        {latestRelevantJob ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <TraceCard
+              title="Última foto"
+              job={latestImageJob}
+              fallbackText="No hay análisis de imagen reciente."
+            />
+            <TraceCard
+              title="Últimos tópicos"
+              job={latestTopicsJob}
+              fallbackText="No hay extracción de tópicos reciente."
+            />
+            <TraceCard
+              title="Último reporte"
+              job={latestReportJob}
+              fallbackText="No hay reporte reciente en cola."
+            />
+            <TraceCard
+              title="Última verificación"
+              job={latestReferenceJob}
+              fallbackText="No hay verificación bibliográfica reciente."
+            />
+            <TraceCard
+              title="Última tarea"
+              job={latestRelevantJob}
+              fallbackText="No hay tareas recientes."
+            />
+          </div>
+        ) : (
+          <EmptyState text="Aún no hay trazabilidad de jobs para este congreso. Cuando generes análisis, verás aquí la etapa, error o resultado del último proceso." />
+        )}
+      </section>
+
       {/* Reportes */}
       <section className="mb-10">
         <div className="flex items-baseline justify-between mb-3">
@@ -301,6 +402,23 @@ export default async function ResumenPage({ params }: Props) {
             <Plus className="h-3 w-3" />
             Generar nuevo
           </Link>
+        </div>
+        <div className="mb-3 grid gap-3 sm:grid-cols-3">
+          <MiniTrace
+            label="Último reporte"
+            value={formatReportState(latestReportJob)}
+            helper={reportJobHelper(latestReportJob)}
+          />
+          <MiniTrace
+            label="Último reporte OK"
+            value={formatReportState(latestFinishedReportJob)}
+            helper={reportJobHelper(latestFinishedReportJob)}
+          />
+          <MiniTrace
+            label="Último reporte fallido"
+            value={formatReportState(latestFailedReportJob)}
+            helper={reportJobHelper(latestFailedReportJob)}
+          />
         </div>
         {latestReport ? (
           <Card>
@@ -473,4 +591,164 @@ function EmptyState({ text }: { text: string }) {
       </CardContent>
     </Card>
   )
+}
+
+function MiniTrace({
+  label,
+  value,
+  helper,
+}: {
+  label: string
+  value: string
+  helper: string
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
+        <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+        <p className="mt-1 text-[11px] text-slate-500">{helper}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function TraceCard({
+  title,
+  job,
+  fallbackText,
+}: {
+  title: string
+  job: ProcessJobRow | null
+  fallbackText: string
+}) {
+  const tone = !job
+    ? "border-slate-200 bg-slate-50"
+    : job.status === "failed"
+      ? "border-red-200 bg-red-50"
+      : job.status === "processing"
+        ? "border-blue-200 bg-blue-50"
+        : job.status === "pending"
+          ? "border-amber-200 bg-amber-50"
+          : "border-emerald-200 bg-emerald-50"
+
+  return (
+    <Card className={tone}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">{title}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              {job ? describeJobStatus(job.status) : "Sin datos"}
+            </p>
+          </div>
+          {job?.result?.stage && (
+            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+              {job.result.stage}
+            </span>
+          )}
+        </div>
+        <div className="mt-3 space-y-1 text-[11px] text-slate-600">
+          {job ? (
+            <>
+              <p>{job.error_message ? `Error: ${job.error_message}` : fallbackText}</p>
+              <p>Creado: {new Date(job.created_at).toLocaleString("es-CO")}</p>
+              {job.started_at && <p>Inició: {new Date(job.started_at).toLocaleString("es-CO")}</p>}
+              {job.finished_at && <p>Terminó: {new Date(job.finished_at).toLocaleString("es-CO")}</p>}
+              {(job.result?.imageCount != null ||
+                job.result?.ocrCount != null ||
+                job.result?.referenceCount != null ||
+                job.result?.topicCount != null ||
+                job.result?.topicsCreated != null ||
+                job.result?.processedCount != null ||
+                job.result?.retractedCount != null ||
+                job.result?.provider ||
+                job.result?.model) && (
+                <p className="text-slate-500">
+                  {job.result?.imageCount != null ? `imgs ${job.result.imageCount}` : ""}
+                  {job.result?.ocrCount != null
+                    ? `${job.result?.imageCount != null ? " · " : ""}ocr ${job.result.ocrCount}`
+                    : ""}
+                  {job.result?.referenceCount != null
+                    ? `${job.result?.imageCount != null || job.result?.ocrCount != null ? " · " : ""}refs ${job.result.referenceCount}`
+                    : ""}
+                  {job.result?.topicCount != null
+                    ? `${job.result?.imageCount != null || job.result?.ocrCount != null || job.result?.referenceCount != null ? " · " : ""}topics ${job.result.topicCount}`
+                    : ""}
+                  {job.result?.topicsCreated != null
+                    ? `${job.result?.imageCount != null || job.result?.ocrCount != null || job.result?.referenceCount != null || job.result?.topicCount != null ? " · " : ""}created ${job.result.topicsCreated}`
+                    : ""}
+                  {job.result?.processedCount != null
+                    ? `${job.result?.imageCount != null || job.result?.ocrCount != null || job.result?.referenceCount != null || job.result?.topicCount != null || job.result?.topicsCreated != null ? " · " : ""}processed ${job.result.processedCount}`
+                    : ""}
+                  {job.result?.retractedCount != null
+                    ? `${job.result?.imageCount != null || job.result?.ocrCount != null || job.result?.referenceCount != null || job.result?.topicCount != null || job.result?.topicsCreated != null || job.result?.processedCount != null ? " · " : ""}retracted ${job.result.retractedCount}`
+                    : ""}
+                  {(job.result?.provider || job.result?.model) && (
+                    <>
+                      {(job.result?.imageCount != null ||
+                        job.result?.ocrCount != null ||
+                        job.result?.referenceCount != null ||
+                        job.result?.topicCount != null ||
+                        job.result?.topicsCreated != null ||
+                        job.result?.processedCount != null ||
+                        job.result?.retractedCount != null) && " · "}
+                      {job.result?.provider}
+                      {job.result?.provider && job.result?.model ? " / " : ""}
+                      {job.result?.model}
+                    </>
+                  )}
+                </p>
+              )}
+            </>
+          ) : (
+            <p>{fallbackText}</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function describeJobStatus(status: string) {
+  if (status === "failed") return "Falló"
+  if (status === "processing") return "Procesando"
+  if (status === "pending") return "En cola"
+  if (status === "cancelled") return "Cancelado"
+  if (status === "succeeded" || status === "completed") return "Listo"
+  return status
+}
+
+function formatReportState(job: ProcessJobRow | null) {
+  if (!job) return "Sin intentos"
+  return describeJobStatus(job.status)
+}
+
+function reportJobHelper(job: ProcessJobRow | null) {
+  if (!job) return "Todavía no hay jobs de reporte."
+  const parts: string[] = []
+  if (job.result?.stage) parts.push(`etapa ${job.result.stage}`)
+  if (job.started_at && job.finished_at) {
+    parts.push(`duró ${formatDuration(job.started_at, job.finished_at)}`)
+  } else if (job.started_at && !job.finished_at) {
+    parts.push("en ejecución")
+  } else {
+    parts.push("aún no inicia")
+  }
+  if (job.error_message) parts.push(job.error_message)
+  if (job.result?.imageCount != null) parts.push(`${job.result.imageCount} fotos`)
+  if (job.result?.referenceCount != null) parts.push(`${job.result.referenceCount} refs`)
+  if (job.result?.ocrCount != null) parts.push(`${job.result.ocrCount} OCR`)
+  return parts.join(" · ")
+}
+
+function formatDuration(startedAt: string, finishedAt: string) {
+  const started = new Date(startedAt).getTime()
+  const finished = new Date(finishedAt).getTime()
+  if (!Number.isFinite(started) || !Number.isFinite(finished) || finished < started) return "0s"
+  const seconds = Math.max(0, Math.round((finished - started) / 1000))
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  const rest = seconds % 60
+  return `${minutes}m ${rest}s`
 }

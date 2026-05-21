@@ -2,6 +2,7 @@
 // Centralizes quota checks and usage logging across all AI server actions.
 
 import { createClient } from "@/lib/supabase/server"
+import { getPlanDefaults } from "@/lib/plan-limits"
 
 export type AiActionType =
   | "image_analysis"
@@ -27,8 +28,28 @@ interface UsageLimits {
 const DEFAULT_LIMITS: UsageLimits = {
   plan: "free",
   monthly_image_quota: 15,
-  monthly_report_quota: 1,
+  monthly_report_quota: 2,
   monthly_cost_cap_usd: 1.5,
+}
+
+function normalizeUsageLimits(limits: UsageLimits): UsageLimits {
+  const plan = limits.plan || "free"
+  const defaults = getPlanDefaults(plan)
+  return {
+    plan,
+    monthly_image_quota:
+      limits.monthly_image_quota > 0
+        ? limits.monthly_image_quota
+        : defaults.imageQuota,
+    monthly_report_quota:
+      limits.monthly_report_quota > 0
+        ? limits.monthly_report_quota
+        : defaults.reportQuota,
+    monthly_cost_cap_usd:
+      limits.monthly_cost_cap_usd > 0
+        ? limits.monthly_cost_cap_usd
+        : defaults.monthlyCostCapUsd,
+  }
 }
 
 // Pricing per 1M tokens, USD (knowledge cutoff Jan 2026). Update if vendors change.
@@ -76,7 +97,7 @@ export async function checkAiQuota(
     .eq("user_id", userId)
     .maybeSingle()
 
-  const limits: UsageLimits = limitsRow ?? DEFAULT_LIMITS
+  const limits: UsageLimits = normalizeUsageLimits(limitsRow ?? DEFAULT_LIMITS)
 
   const monthStart = startOfMonthIso()
 

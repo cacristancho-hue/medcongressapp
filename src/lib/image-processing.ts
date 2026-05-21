@@ -27,6 +27,18 @@ export interface PreparedImageResult {
   compressionRatio: number
 }
 
+export interface PreparedThumbnailResult {
+  original: {
+    width: number
+    height: number
+    sizeBytes: number
+    mimeType: string
+  }
+  thumbnail: PreparedImageVariant
+  compressionQuality: number
+  compressionRatio: number
+}
+
 export interface ImageProcessingOptions {
   optimizedMaxWidth?: number
   optimizedMaxHeight?: number
@@ -37,10 +49,6 @@ export interface ImageProcessingOptions {
   thumbnailQuality?: number
 }
 
-// Tuned 2026-05-09 for medical congress slides:
-// - Gemini 2.5 Flash Vision accepts up to 3072×3072; downscales beyond that.
-// - Bibliographic references in slide footers need readable text → high quality.
-// - Trade-off: ~1-2 MB per photo (was ~300-500 KB), still well under 20 MB cap.
 const DEFAULT_OPTIONS: Required<ImageProcessingOptions> = {
   optimizedMaxWidth: 3072,
   optimizedMaxHeight: 3072,
@@ -69,12 +77,42 @@ interface DecodedImage {
   cleanup?: () => void
 }
 
+interface CropRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 function normalizeMimeType(mimeType: string) {
   return mimeType.toLowerCase().trim()
 }
 
 function isHeicLike(mimeType: string) {
   return mimeType === "image/heic" || mimeType === "image/heif"
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value))
+}
+
+function smoothSeries(values: Float32Array, windowSize = 5) {
+  const half = Math.floor(windowSize / 2)
+  const output = new Float32Array(values.length)
+
+  for (let i = 0; i < values.length; i++) {
+    let total = 0
+    let count = 0
+    for (let j = -half; j <= half; j++) {
+      const idx = i + j
+      if (idx < 0 || idx >= values.length) continue
+      total += values[idx]
+      count++
+    }
+    output[i] = count > 0 ? total / count : values[i]
+  }
+
+  return output
 }
 
 function computeTargetDimensions(
@@ -95,6 +133,13 @@ function computeTargetDimensions(
   const targetHeight = Math.max(1, Math.round(height * targetScale))
 
   return { width: targetWidth, height: targetHeight }
+}
+
+function pickOptimizedQuality(areaRatio: number, major: number) {
+  if (areaRatio < 0.45) return 0.86
+  if (areaRatio < 0.7) return 0.89
+  if (major > 2800) return 0.92
+  return 0.9
 }
 
 async function readExifOrientation(file: File): Promise<number> {
@@ -175,9 +220,7 @@ async function decodeImage(file: File): Promise<DecodedImage> {
       }
     } catch {
       if (isHeicLike(normalizeMimeType(file.type))) {
-        throw new Error(
-          "HEIC/HEIF no es compatible en este navegador. Convierte la imagen a JPG, PNG o WEBP."
-        )
+        throw new Error("HEIC/HEIF no es compatible en este navegador. Convierte la imagen a JPG, PNG o WEBP.")
       }
     }
   }
@@ -202,12 +245,101 @@ async function decodeImage(file: File): Promise<DecodedImage> {
     URL.revokeObjectURL(blobUrl)
 
     if (isHeicLike(normalizeMimeType(file.type))) {
-      throw new Error(
-        "HEIC/HEIF no es compatible en este navegador. Convierte la imagen a JPG, PNG o WEBP."
-      )
+      throw new Error("HEIC/HEIF no es compatible en este navegador. Convierte la imagen a JPG, PNG o WEBP.")
     }
 
     throw new Error("No se pudo decodificar la imagen seleccionada.")
+  }
+}
+
+function detectSlideCropRect(decoded: DecodedImage): CropRect | null {
+  if (decoded.kind !== "bitmap") return null
+
+  const analysisMax = 1280
+  const scale = Math.min(1, analysisMax / Math.max(decoded.width, decoded.height))
+  const analysisWidth = Math.max(1, Math.round(decoded.width * scale))
+  const analysisHeight = Math.max(1, Math.round(decoded.height * scale))
+
+  const canvas = document.createElement("canvas")
+  const context = canvas.getContext("2d")
+  if (!context) return null
+
+  canvas.width = analysisWidth
+  canvas.height = analysisHeight
+  context.drawImage(
+    decoded.source,
+    0,
+    0,
+    decoded.width,
+    decoded.height,
+    0,
+    0,
+    analysisWidth,
+    analysisHeight
+  )
+
+  const { data } = context.getImageData(0, 0, analysisWidth, analysisHeight)
+  const rowEnergy = new Float32Array(analysisHeight)
+  const colEnergy = new Float32Array(analysisWidth)
+
+  for (let y = 0; y < analysisHeight - 1; y++) {
+    for (let x = 0; x < analysisWidth - 1; x++) {
+      const index = (y * analysisWidth + x) * 4
+      const gray = data[index] * 0.299 + data[index + 1] * 0.587 + data[index + 2] * 0.114
+      const rightIndex = index + 4
+      const downIndex = index + analysisWidth * 4
+      const grayRight =
+        data[rightIndex] * 0.299 + data[rightIndex + 1] * 0.587 + data[rightIndex + 2] * 0.114
+      const grayDown =
+        data[downIndex] * 0.299 + data[downIndex + 1] * 0.587 + data[downIndex + 2] * 0.114
+      const energy = Math.abs(gray - grayRight) + Math.abs(gray - grayDown)
+      rowEnergy[y] += energy
+      colEnergy[x] += energy
+    }
+  }
+
+  const smoothRows = smoothSeries(rowEnergy)
+  const smoothCols = smoothSeries(colEnergy)
+  const maxRow = Math.max(...smoothRows)
+  const maxCol = Math.max(...smoothCols)
+  if (!maxRow || !maxCol) return null
+
+  const rowThreshold = maxRow * 0.1
+  const colThreshold = maxCol * 0.1
+
+  let top = 0
+  while (top < smoothRows.length && smoothRows[top] < rowThreshold) top++
+
+  let bottom = smoothRows.length - 1
+  while (bottom > top && smoothRows[bottom] < rowThreshold) bottom--
+
+  let left = 0
+  while (left < smoothCols.length && smoothCols[left] < colThreshold) left++
+
+  let right = smoothCols.length - 1
+  while (right > left && smoothCols[right] < colThreshold) right--
+
+  const cropWidth = right - left + 1
+  const cropHeight = bottom - top + 1
+  if (cropWidth < analysisWidth * 0.35 || cropHeight < analysisHeight * 0.35) return null
+
+  const padX = Math.max(2, Math.round(cropWidth * 0.04))
+  const padY = Math.max(2, Math.round(cropHeight * 0.04))
+  const finalLeft = clamp(left - padX, 0, analysisWidth - 1)
+  const finalTop = clamp(top - padY, 0, analysisHeight - 1)
+  const finalRight = clamp(right + padX, finalLeft + 1, analysisWidth - 1)
+  const finalBottom = clamp(bottom + padY, finalTop + 1, analysisHeight - 1)
+
+  const sourceWidth = finalRight - finalLeft + 1
+  const sourceHeight = finalBottom - finalTop + 1
+  const areaRatio = (sourceWidth * sourceHeight) / (analysisWidth * analysisHeight)
+  if (areaRatio > 0.98 || areaRatio < 0.25) return null
+
+  return {
+    x: Math.round(finalLeft / scale),
+    y: Math.round(finalTop / scale),
+    width: Math.max(1, Math.round(sourceWidth / scale)),
+    height: Math.max(1, Math.round(sourceHeight / scale)),
   }
 }
 
@@ -241,7 +373,8 @@ async function renderVariant(
   targetWidth: number,
   targetHeight: number,
   mimeType: "image/jpeg" | "image/webp",
-  quality: number
+  quality: number,
+  cropRect?: CropRect | null
 ) {
   const canvas = document.createElement("canvas")
   const context = canvas.getContext("2d")
@@ -255,21 +388,55 @@ async function renderVariant(
   context.imageSmoothingEnabled = true
   context.imageSmoothingQuality = "high"
 
-  // Aplicar rotación/orientación si es necesario
-  if (decoded.kind === "element" && decoded.orientation !== 1) {
+  if (cropRect) {
+    context.drawImage(
+      decoded.source,
+      cropRect.x,
+      cropRect.y,
+      cropRect.width,
+      cropRect.height,
+      0,
+      0,
+      targetWidth,
+      targetHeight
+    )
+  } else if (decoded.kind === "element" && decoded.orientation !== 1) {
     const swap = decoded.orientation >= 5 && decoded.orientation <= 8
     const sourceWidth = swap ? decoded.height : decoded.width
     const sourceHeight = swap ? decoded.width : decoded.height
 
     context.save()
     switch (decoded.orientation) {
-      case 2: context.translate(targetWidth, 0); context.scale(-1, 1); break
-      case 3: context.translate(targetWidth, targetHeight); context.rotate(Math.PI); break
-      case 4: context.translate(0, targetHeight); context.scale(1, -1); break
-      case 5: context.rotate(0.5 * Math.PI); context.scale(1, -1); context.translate(0, -targetHeight); break
-      case 6: context.rotate(0.5 * Math.PI); context.translate(0, -targetHeight); break
-      case 7: context.rotate(0.5 * Math.PI); context.translate(targetWidth, -targetHeight); context.scale(-1, 1); break
-      case 8: context.rotate(-0.5 * Math.PI); context.translate(-targetWidth, 0); break
+      case 2:
+        context.translate(targetWidth, 0)
+        context.scale(-1, 1)
+        break
+      case 3:
+        context.translate(targetWidth, targetHeight)
+        context.rotate(Math.PI)
+        break
+      case 4:
+        context.translate(0, targetHeight)
+        context.scale(1, -1)
+        break
+      case 5:
+        context.rotate(0.5 * Math.PI)
+        context.scale(1, -1)
+        context.translate(0, -targetHeight)
+        break
+      case 6:
+        context.rotate(0.5 * Math.PI)
+        context.translate(0, -targetHeight)
+        break
+      case 7:
+        context.rotate(0.5 * Math.PI)
+        context.translate(targetWidth, -targetHeight)
+        context.scale(-1, 1)
+        break
+      case 8:
+        context.rotate(-0.5 * Math.PI)
+        context.translate(-targetWidth, 0)
+        break
     }
     context.drawImage(decoded.source, 0, 0, sourceWidth, sourceHeight, 0, 0, targetWidth, targetHeight)
     context.restore()
@@ -277,20 +444,15 @@ async function renderVariant(
     context.drawImage(decoded.source, 0, 0, targetWidth, targetHeight)
   }
 
-  // --- Mejoras automáticas para diapositivas médicas ---
-  // 1. Contraste y Brillo (vía Canvas Filter)
-  // Ajuste ligero: contrast 1.1 para resaltar texto sobre fondos claros/oscuros.
-  if (targetWidth > 500) { // Solo para optimizadas, no para thumbnails pequeños
+  if (targetWidth > 500) {
     context.filter = "contrast(1.1) brightness(1.02) saturate(1.05)"
     context.drawImage(canvas, 0, 0)
     context.filter = "none"
 
-    // 2. Sharpening (Afilado) - Algoritmo de convolución 3x3
-    // Resalta los bordes de las letras para mejorar el OCR y la legibilidad humana.
     try {
       const imageData = context.getImageData(0, 0, targetWidth, targetHeight)
       const data = imageData.data
-      const weights = [0, -0.5, 0, -0.5, 3, -0.5, 0, -0.5, 0] // Sharpen matrix
+      const weights = [0, -0.5, 0, -0.5, 3, -0.5, 0, -0.5, 0]
       const side = Math.round(Math.sqrt(weights.length))
       const halfSide = Math.floor(side / 2)
       const output = context.createImageData(targetWidth, targetHeight)
@@ -298,23 +460,32 @@ async function renderVariant(
 
       for (let y = 0; y < targetHeight; y++) {
         for (let x = 0; x < targetWidth; x++) {
-          const sy = y; const sx = x; const dstOff = (y * targetWidth + x) * 4
-          let r = 0; let g = 0; let b = 0
+          const dstOff = (y * targetWidth + x) * 4
+          let r = 0
+          let g = 0
+          let b = 0
           for (let cy = 0; cy < side; cy++) {
             for (let cx = 0; cx < side; cx++) {
-              const scy = sy + cy - halfSide; const scx = sx + cx - halfSide
+              const scy = y + cy - halfSide
+              const scx = x + cx - halfSide
               if (scy >= 0 && scy < targetHeight && scx >= 0 && scx < targetWidth) {
-                const srcOff = (scy * targetWidth + scx) * 4; const wt = weights[cy * side + cx]
-                r += data[srcOff] * wt; g += data[srcOff + 1] * wt; b += data[srcOff + 2] * wt
+                const srcOff = (scy * targetWidth + scx) * 4
+                const wt = weights[cy * side + cx]
+                r += data[srcOff] * wt
+                g += data[srcOff + 1] * wt
+                b += data[srcOff + 2] * wt
               }
             }
           }
-          dst[dstOff] = r; dst[dstOff + 1] = g; dst[dstOff + 2] = b; dst[dstOff + 3] = data[dstOff + 3]
+          dst[dstOff] = r
+          dst[dstOff + 1] = g
+          dst[dstOff + 2] = b
+          dst[dstOff + 3] = data[dstOff + 3]
         }
       }
       context.putImageData(output, 0, 0)
-    } catch (e) {
-      console.warn("Fallo en filtro de nitidez:", e)
+    } catch (error) {
+      console.warn("Fallo en filtro de nitidez:", error)
     }
   }
 
@@ -339,8 +510,72 @@ export function buildCongressPhotoPaths(
   photoId: string
 ) {
   return {
+    original: `${userId}/photos/${congressId}/${photoId}/original.jpg`,
     optimized: `${userId}/photos/${congressId}/${photoId}/optimized.jpg`,
     thumbnail: `${userId}/photos/${congressId}/${photoId}/thumb.webp`,
+  }
+}
+
+export async function prepareCongressThumbnail(
+  file: File,
+  options: ImageProcessingOptions = {}
+): Promise<PreparedThumbnailResult> {
+  const merged = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+  }
+
+  const mimeType = normalizeMimeType(file.type)
+  if (!ALLOWED_MIME_TYPES.has(mimeType as SupportedImageMimeType)) {
+    throw new Error("Formato no compatible. Usa JPG, PNG o WEBP.")
+  }
+
+  const decoded = await decodeImage(file)
+  try {
+    const originalWidth = decoded.width
+    const originalHeight = decoded.height
+    const originalSize = file.size
+
+    const cropRect = detectSlideCropRect(decoded)
+    const workingWidth = cropRect?.width ?? originalWidth
+    const workingHeight = cropRect?.height ?? originalHeight
+    const thumbnailTarget = computeTargetDimensions(
+      workingWidth,
+      workingHeight,
+      merged.thumbnailMaxWidth,
+      merged.thumbnailMaxHeight
+    )
+
+    const thumbnailFile = await renderVariant(
+      decoded,
+      thumbnailTarget.width,
+      thumbnailTarget.height,
+      "image/webp",
+      merged.thumbnailQuality,
+      cropRect
+    )
+
+    const thumbnailSize = thumbnailFile.size
+
+    return {
+      original: {
+        width: originalWidth,
+        height: originalHeight,
+        sizeBytes: originalSize,
+        mimeType: file.type,
+      },
+      thumbnail: {
+        file: thumbnailFile,
+        width: thumbnailTarget.width,
+        height: thumbnailTarget.height,
+        sizeBytes: thumbnailSize,
+        mimeType: thumbnailFile.type,
+      },
+      compressionQuality: merged.thumbnailQuality,
+      compressionRatio: calculateRatio(thumbnailSize, originalSize),
+    }
+  } finally {
+    decoded.cleanup?.()
   }
 }
 
@@ -364,17 +599,27 @@ export async function prepareCongressPhotoVariants(
     const originalHeight = decoded.height
     const originalSize = file.size
 
+    const cropRect = detectSlideCropRect(decoded)
+    const workingWidth = cropRect?.width ?? originalWidth
+    const workingHeight = cropRect?.height ?? originalHeight
+    const cropAreaRatio =
+      cropRect ? (cropRect.width * cropRect.height) / (originalWidth * originalHeight) : 1
+    const optimizedQuality = pickOptimizedQuality(
+      cropAreaRatio,
+      Math.max(workingWidth, workingHeight)
+    )
+
     const optimizedTarget = computeTargetDimensions(
-      originalWidth,
-      originalHeight,
+      workingWidth,
+      workingHeight,
       merged.optimizedMaxWidth,
       merged.optimizedMaxHeight,
       merged.optimizedMinMajor
     )
 
     const thumbnailTarget = computeTargetDimensions(
-      originalWidth,
-      originalHeight,
+      workingWidth,
+      workingHeight,
       merged.thumbnailMaxWidth,
       merged.thumbnailMaxHeight
     )
@@ -384,7 +629,8 @@ export async function prepareCongressPhotoVariants(
       optimizedTarget.width,
       optimizedTarget.height,
       "image/jpeg",
-      merged.optimizedQuality
+      optimizedQuality,
+      cropRect
     )
 
     const thumbnailFile = await renderVariant(
@@ -392,7 +638,8 @@ export async function prepareCongressPhotoVariants(
       thumbnailTarget.width,
       thumbnailTarget.height,
       "image/webp",
-      merged.thumbnailQuality
+      merged.thumbnailQuality,
+      cropRect
     )
 
     const optimizedSize = optimizedFile.size
@@ -419,7 +666,7 @@ export async function prepareCongressPhotoVariants(
         sizeBytes: thumbnailSize,
         mimeType: thumbnailFile.type,
       },
-      compressionQuality: merged.optimizedQuality,
+      compressionQuality: optimizedQuality,
       compressionRatio: calculateRatio(optimizedSize, originalSize),
     }
   } finally {

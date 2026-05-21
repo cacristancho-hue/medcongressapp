@@ -62,10 +62,9 @@ export function withAction(config: ActionConfig) {
         return { success: false, error: "No autorizado" }
       }
 
-      // FINAL OVERRIDE: AI IS ALWAYS ENABLED.
-      // Removed the MEDCONGRESS_AI_ENABLED check because Vercel is failing to propagate env vars.
-      if (config.requiresAi && false) {
-        return { success: false, error: "IA Desactivada." }
+      const aiEnabled = process.env.MEDCONGRESS_AI_ENABLED === "true"
+      if (config.requiresAi && !aiEnabled) {
+        return { success: false, error: "IA desactivada por configuracion." }
       }
 
       if (config.rateLimit) {

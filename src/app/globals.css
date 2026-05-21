@@ -3,87 +3,9 @@
 /* ============================================================
    MDCONGRESS design tokens
    - Premium medical palette: trust + clinical clarity + warmth
-   - Typography: Inter (UI) + IBM Plex Mono (data: DOIs, PMIDs, IDs)
-   - Surfaces: warm-white + slate ink (less clinical, more human)
-   - WCAG AA on all primary pairings
    ============================================================ */
 
-:root {
-  /* surfaces */
-  --color-bg:           #fafaf9;   /* warm paper */
-  --color-bg-elevated:  #ffffff;
-  --color-bg-muted:     #f4f4f5;
-
-  /* ink */
-  --color-fg:           #0f172a;   /* slate-900 */
-  --color-fg-muted:     #475569;   /* slate-600 */
-  --color-fg-subtle:    #94a3b8;   /* slate-400 */
-
-  /* borders */
-  --color-border:       #e2e8f0;   /* slate-200 */
-  --color-border-muted: #f1f5f9;
-
-  /* brand: medical teal — confianza + clínico fresco */
-  --color-brand:        #0d9488;   /* teal-600 */
-  --color-brand-hover:  #0f766e;   /* teal-700 */
-  --color-brand-soft:   #ccfbf1;   /* teal-100 */
-  --color-brand-fg:     #134e4a;   /* teal-900 */
-
-  /* primary CTA: deep medical blue */
-  --color-primary:      #1e40af;   /* blue-800 */
-  --color-primary-hover:#1e3a8a;   /* blue-900 */
-
-  /* semantics */
-  --color-success:      #059669;   /* emerald-600 */
-  --color-success-soft: #d1fae5;
-  --color-warning:      #d97706;   /* amber-600 */
-  --color-warning-soft: #fef3c7;
-  --color-danger:       #dc2626;   /* red-600 */
-  --color-danger-soft:  #fee2e2;
-  --color-info:         #0284c7;   /* sky-600 */
-  --color-info-soft:    #e0f2fe;
-
-  /* accent (soft, no clínico-frío) */
-  --color-accent:       #f59e0b;   /* amber-500, used sparingly for highlights */
-
-  /* shadows premium (soft, layered) */
-  --shadow-xs:  0 1px 2px 0 rgb(15 23 42 / 0.04);
-  --shadow-sm:  0 1px 2px 0 rgb(15 23 42 / 0.05), 0 1px 3px 0 rgb(15 23 42 / 0.04);
-  --shadow-md:  0 2px 4px -1px rgb(15 23 42 / 0.06), 0 4px 6px -1px rgb(15 23 42 / 0.04);
-  --shadow-lg:  0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -2px rgb(15 23 42 / 0.04);
-  --shadow-xl:  0 20px 25px -5px rgb(15 23 42 / 0.10), 0 8px 10px -4px rgb(15 23 42 / 0.04);
-
-  /* radii */
-  --radius-sm:   0.375rem;
-  --radius:      0.5rem;
-  --radius-md:   0.75rem;
-  --radius-lg:   1rem;
-  --radius-xl:   1.5rem;
-
-  /* type scale (premium ratio 1.250 — major third) */
-  --text-display:  clamp(2.5rem, 4vw, 3.5rem);
-  --text-h1:       clamp(2rem, 3vw, 2.5rem);
-  --text-h2:       1.875rem;
-  --text-h3:       1.5rem;
-  --text-h4:       1.25rem;
-  --text-body-lg:  1.125rem;
-  --text-body:     1rem;
-  --text-sm:       0.875rem;
-  --text-xs:       0.75rem;
-
-  /* spacing scale (4px base, consistent) */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-}
-
-/* Tailwind 4 inline theme: tokens become utilities. */
-@theme inline {
+@theme {
   --color-background: var(--color-bg);
   --color-foreground: var(--color-fg);
   --color-brand:      var(--color-brand);
@@ -101,9 +23,46 @@
   --radius-card: var(--radius-md);
 }
 
-/* ============================================================
-   Base styles
-   ============================================================ */
+:root {
+  --font-inter: "Inter";
+  --font-plex-mono: "IBM Plex Mono";
+
+  /* surfaces */
+  --color-bg:           #fafaf9;   /* warm paper */
+  --color-bg-elevated:  #ffffff;
+  --color-bg-muted:     #f4f4f5;
+
+  /* ink */
+  --color-fg:           #0f172a;   /* slate-900 */
+  --color-fg-muted:     #475569;   /* slate-600 */
+  --color-fg-subtle:    #94a3b8;   /* slate-400 */
+
+  /* borders */
+  --color-border:       #e2e8f0;   /* slate-200 */
+  --color-border-muted: #f1f5f9;
+
+  /* brand: medical teal */
+  --color-brand:        #0d9488;   /* teal-600 */
+  --color-brand-hover:  #0f766e;   /* teal-700 */
+  --color-brand-soft:   #ccfbf1;   /* teal-100 */
+  --color-brand-fg:     #134e4a;   /* teal-900 */
+
+  /* primary CTA */
+  --color-primary:      #1e40af;   /* blue-800 */
+  
+  /* shadows */
+  --shadow-xs:  0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-sm:  0 1px 2px 0 rgb(15 23 42 / 0.05), 0 1px 3px 0 rgb(15 23 42 / 0.04);
+  --shadow-md:  0 2px 4px -1px rgb(15 23 42 / 0.06), 0 4px 6px -1px rgb(15 23 42 / 0.04);
+
+  /* radii */
+  --radius-sm:   0.375rem;
+  --radius:      0.5rem;
+  --radius-md:   0.75rem;
+  --radius-lg:   1rem;
+}
+
+/* Base styles */
 html {
   -webkit-text-size-adjust: 100%;
   text-rendering: optimizeLegibility;
@@ -114,279 +73,35 @@ html {
 body {
   background: var(--color-bg);
   color: var(--color-fg);
-  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
-  font-feature-settings: "ss01" on, "cv11" on, "calt" on;  /* Inter stylistic sets */
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-feature-settings: "ss01" on, "cv11" on, "calt" on;
 }
 
-/* Typography defaults — prose-friendly */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--color-fg);
-}
-
-h1 { letter-spacing: -0.025em; }
-h2 { letter-spacing: -0.02em; }
-
-code, kbd, pre, samp,
-[class~="font-mono"] {
-  font-family: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, SFMono-Regular,
-               Menlo, Monaco, Consolas, monospace;
-}
-
-/* Smooth focus rings */
-:focus-visible {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 2px;
-  border-radius: 0.25rem;
-}
-
-/* Scrollbar refinement */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border) transparent;
-}
-
-/* Selection */
-::selection {
-  background: var(--color-brand-soft);
-  color: var(--color-brand-fg);
-}
-
-/* ============================================================
-   Component primitives — premium feel without overengineering
-   ============================================================ */
-
-.glass {
-  background: rgb(255 255 255 / 0.85);
-  backdrop-filter: saturate(180%) blur(12px);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
-}
-
-.surface-elevated {
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-}
-
-.gradient-brand {
-  background: linear-gradient(
-    135deg,
-    var(--color-brand) 0%,
-    var(--color-primary) 100%
-  );
-}
-
-.gradient-warm {
-  background: linear-gradient(
-    180deg,
-    #fafaf9 0%,
-    #ffffff 100%
-  );
-}
-
-/* Premium button base */
-.btn-premium {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  border-radius: var(--radius);
-  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  letter-spacing: -0.005em;
-}
-
-.btn-premium:active {
-  transform: translateY(1px);
-}
-
-/* ============================================================
-   Micro-interactions — global animation tokens
-   ============================================================ */
-
-/* Default transition durations + easing */
-:root {
-  --duration-instant: 80ms;
-  --duration-fast:    150ms;
-  --duration-base:    220ms;
-  --duration-slow:    400ms;
-
-  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
-  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
-  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
-  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Subtle fade-in-up for content that mounts (cards, lists). */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp var(--duration-base) var(--easing-decelerate) both;
-}
-
-/* Slide in for sidebars / tooltips */
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(8px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-.animate-slide-in-right {
-  animation: slideInRight var(--duration-base) var(--easing-decelerate) both;
-}
-
-/* Pulse subtle (live indicator) */
-@keyframes pulseSoft {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.5; }
-}
-
-.animate-pulse-soft {
-  animation: pulseSoft 2s var(--easing-standard) infinite;
-}
-
-/* Hover lift — subtle elevation increase on cards */
-.hover-lift {
-  transition: transform var(--duration-fast) var(--easing-standard),
-              box-shadow var(--duration-fast) var(--easing-standard);
-}
-.hover-lift:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-/* Press effect (mobile feedback) */
-.press {
-  transition: transform var(--duration-instant) var(--easing-standard);
-}
-.press:active {
-  transform: scale(0.97);
-}
-
-/* Smooth interactive base (universal hover/focus consistency) */
-.interactive {
-  transition:
-    background-color var(--duration-fast) var(--easing-standard),
-    color var(--duration-fast) var(--easing-standard),
-    border-color var(--duration-fast) var(--easing-standard),
-    box-shadow var(--duration-fast) var(--easing-standard),
-    transform var(--duration-fast) var(--easing-standard);
-}
-
-/* Spinner premium: ring with brand gradient */
-.spinner-brand {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 9999px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-brand);
-  animation: spin var(--duration-slow) linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Live dot — for "online/processing" indicators */
-.live-dot {
+/* Ensure Lucide icons have a default size if classes fail, 
+   but usually h-x w-x classes from Tailwind are needed. */
+svg {
   display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 9999px;
-  background: var(--color-success);
-  position: relative;
-}
-.live-dot::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background: var(--color-success);
-  animation: livePulse 1.6s var(--easing-standard) infinite;
+  vertical-align: middle;
 }
 
-@keyframes livePulse {
-  0%   { transform: scale(1);   opacity: 0.7; }
-  100% { transform: scale(2.8); opacity: 0; }
+/* Fix for giant icons: if they have no explicit size, 
+   they should not expand to container. */
+.lucide {
+  width: 1em;
+  height: 1em;
 }
 
-/* Shimmer / Flash effect for cinematic branding */
-@keyframes shimmer {
-  0% { transform: translateX(-150%) skewX(-12deg); opacity: 0; }
-  20% { opacity: 0.5; }
-  50% { transform: translateX(150%) skewX(-12deg); opacity: 0; }
-  100% { transform: translateX(150%) skewX(-12deg); opacity: 0; }
+/* Distorted photo fix: ensure aspect-ratio utility is supported 
+   and standard img behaviors are preserved. */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
-/* ============================================================
-   Print styles — academic reports ready for clinical/journal use
-   ============================================================ */
-@media print {
-  @page {
-    size: A4;
-    margin: 18mm 16mm 22mm 16mm;
-  }
-
-  html, body {
-    background: white !important;
-    color: #0f172a !important;
-    font-size: 11pt;
-    line-height: 1.45;
-  }
-
-  .no-print,
-  nav,
-  aside,
-  header[role="banner"],
-  [data-sonner-toaster],
-  button:not(.print-show) {
-    display: none !important;
-  }
-
-  a[href]:not([href^="#"])::after {
-    content: " (" attr(href) ")";
-    font-size: 9pt;
-    color: #475569;
-  }
-
-  h1, h2, h3, h4 {
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  article, table, .print-no-break {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
-
-  p, li, span, td, th {
-    color: #0f172a !important;
-  }
-
-  .print-break-before { break-before: page; page-break-before: always; }
-  .print-break-after  { break-after: page; page-break-after: always; }
-
-  *, *::before, *::after {
-    background: transparent !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  table, th, td { border-color: #cbd5e1 !important; }
+.aspect-square {
+  aspect-ratio: 1 / 1;
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+.object-cover {
+  object-fit: cover;
 }

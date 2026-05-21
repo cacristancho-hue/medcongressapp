@@ -11,11 +11,11 @@ import fs from "fs"
 import os from "os"
 
 interface AIReference {
-  detected_title?: string
-  detected_authors?: string
-  detected_year?: string
-  detected_journal?: string
-  detected_doi?: string
+  detected_title?: string | null
+  detected_authors?: string | null
+  detected_year?: string | null
+  detected_journal?: string | null
+  detected_doi?: string | null
 }
 
 // =============================================================================
@@ -150,7 +150,10 @@ export const processImageWithAI = withAction({
 
     // Procesar Referencias
     if (result.references?.length > 0) {
-      await supabase.from("reference_candidates").delete().eq("image_id", imageId)
+      const { data: previousRefs } = await supabase
+        .from("reference_candidates")
+        .select("id")
+        .eq("image_id", imageId)
 
       const refEntries = result.references.map((r: AIReference) => ({
         congress_id: image.congress_id,
@@ -168,6 +171,13 @@ export const processImageWithAI = withAction({
       const { data: insertedRefs } = await supabase.from("reference_candidates").insert(refEntries).select()
 
       if (insertedRefs) {
+        if (previousRefs?.length) {
+          await supabase
+            .from("reference_candidates")
+            .delete()
+            .in("id", previousRefs.map((ref) => ref.id))
+        }
+
         for (const ref of insertedRefs) {
           try {
             const vResult = await verifyReference({
@@ -217,6 +227,7 @@ export const processImageWithAI = withAction({
     })
 
     revalidatePath(`/dashboard/congresos/${image.congress_id}`)
+    revalidatePath("/dashboard/biblioteca")
     return { data: result, provider: usage.provider, success: true }
 
   } catch (error: unknown) {

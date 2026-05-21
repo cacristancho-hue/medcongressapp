@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Trash2, Loader2 } from "lucide-react"
+import { Trash2, Loader2, Clock3 } from "lucide-react"
 import Image from "next/image"
 import { clsx } from "clsx"
 
@@ -12,6 +12,8 @@ interface Photo {
   thumbSignedUrl?: string | null
   signedUrl?: string | null
   status: string
+  ai_status?: string | null
+  ocr_status?: string | null
 }
 
 interface Props {
@@ -30,7 +32,8 @@ export default function PhotoCard({ photo, deleteAction }: Props) {
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  const isProcessing = photo.status === "processing" || photo.status === "ai_pending"
+  const isQueued = photo.ai_status === "ai_pending" || photo.ocr_status === "ocr_pending"
+  const isProcessing = photo.status === "processing"
 
   function handleDeleteClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -83,7 +86,16 @@ export default function PhotoCard({ photo, deleteAction }: Props) {
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-900/10">
           <Loader2 className="h-6 w-6 text-slate-700 animate-spin" />
           <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest bg-white/80 px-2 py-0.5 rounded shadow-sm">
-            IA Analizando
+            Procesando
+          </span>
+        </div>
+      )}
+
+      {!isProcessing && isQueued && (
+        <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 shadow-sm">
+          <Clock3 className="h-3.5 w-3.5 text-blue-600" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-700">
+            En cola
           </span>
         </div>
       )}

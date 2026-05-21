@@ -60,8 +60,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-5xl">
-      {/* HEADER */}
-      <header className="mb-8 flex justify-between items-start">
+      <header className="mb-8 flex justify-between items-start gap-6">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-teal-700 font-medium mb-1">
             {greeting}
@@ -78,24 +77,22 @@ export default async function DashboardPage() {
             Convierte cada foto de congreso en conocimiento académico verificado.
           </p>
         </div>
-        
-        <Link 
-          href="/dashboard/tutorial" 
-          className="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+
+        <Link
+          href="/dashboard/tutorial"
+          className="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition-colors flex items-center gap-1.5 shrink-0"
         >
           <Sparkles className="h-3 w-3" />
           ¿CÓMO FUNCIONA?
         </Link>
       </header>
 
-      {/* SEARCH (only when there's content to search) */}
       {!isFirstTime && (
         <div className="mb-8">
           <GlobalSearch />
         </div>
       )}
 
-      {/* WELCOME / FIRST-TIME STATE */}
       {isFirstTime ? (
         <FirstTimeWelcome />
       ) : (
@@ -120,16 +117,10 @@ export default async function DashboardPage() {
   )
 }
 
-// ============================================================
-// First-time welcome — onboarding surface
-// ============================================================
-
 function FirstTimeWelcome() {
   return (
     <div className="space-y-6">
-      {/* Hero CTA */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-600 via-teal-700 to-blue-800 px-6 sm:px-10 py-10 sm:py-14 text-white shadow-xl shadow-teal-900/10">
-        {/* Decorative pulse */}
         <svg
           className="absolute right-0 top-0 h-full w-1/2 opacity-15 pointer-events-none"
           viewBox="0 0 400 400"
@@ -176,7 +167,6 @@ function FirstTimeWelcome() {
         </div>
       </div>
 
-      {/* 3 quick steps */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Step
           number="01"
@@ -198,7 +188,6 @@ function FirstTimeWelcome() {
         />
       </div>
 
-      {/* Quality bullets */}
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <BookCheck className="h-4 w-4 text-teal-600" />
@@ -248,10 +237,6 @@ function Bullet({ children }: { children: React.ReactNode }) {
     </div>
   )
 }
-
-// ============================================================
-// Returning user — stats + recent
-// ============================================================
 
 interface StatsRowProps {
   congresses: number
@@ -360,10 +345,6 @@ function RecentCongresses({ congresses }: { congresses: CongressRow[] }) {
     </section>
   )
 }
-
-// ============================================================
-// Helpers
-// ============================================================
 
 function greetingForHour(): string {
   const h = new Date().getHours()
