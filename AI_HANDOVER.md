@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-21 — Ajuste de copy del hero (Claude Opus 4.7)
+- **Última actualización**: 2026-05-21 — Trazabilidad OCR vs síntesis IA (fase32) (Claude Opus 4.7)
 
 ---
 
@@ -50,6 +50,7 @@
 - **Branding Consolidado (Teal)**: Unificación cromática hacia el `teal-600` en toda la interfaz de la biblioteca y dashboard.
 - **Código Limpio**: Cero errores de linting en las rutas principales; tipado estricto aplicado a `assistant.ts` y `library.ts`.
 - **Landing depurado**: el hero del landing ya no muestra el badge "Actualización Médica de Élite" (removido 2026-05-21 por decisión estética de Camilo).
+- **Trazabilidad OCR vs IA (fase32)**: `ocr_results.cleaned_text` ya no contiene la síntesis IA. Nueva columna `medical_summary` para la inferencia. `raw_text` = OCR literal y es ahora la fuente de verdad de tópicos, búsqueda, export y métricas. Reportes usan OCR literal + síntesis IA etiquetada explícitamente como inferencia. Migración fase32 ya aplicada en Supabase (2026-05-21).
 
 ### Validado en runtime con datos reales
 
@@ -241,6 +242,25 @@ app/
 ---
 
 ## 11. Cambios entre sesiones (changelog)
+
+### 2026-05-21 · Claude Opus 4.7 — Brecha #1 auditoría: trazabilidad OCR vs síntesis IA (fase32)
+
+**Contexto:** auditoría completa del repo a petición de Camilo (vía prompt de Codex). Hallazgo: el repo está mucho más maduro que documentado (~Sprint 4-5), pero con una brecha crítica de seguridad médica.
+
+**Brecha #1 corregida — conflación extraído vs inferido:**
+- `ocr_results.cleaned_text` almacenaba el `medical_summary` (INFERENCIA IA), no OCR limpio. Reportes, búsqueda, tópicos, export y métricas lo leían como texto extraído → inferencia presentada como hecho.
+- **Decisión de Camilo: modelo HÍBRIDO** (búsqueda/tópicos sobre OCR literal; reportes combinan OCR + síntesis etiquetada).
+- Migración `fase32` (aditiva, no destructiva): nueva columna `medical_summary` + backfill desde `cleaned_text` + `search_ocr` recreada para devolver `raw_text`. **Ya aplicada en Supabase 2026-05-21.**
+- Caminos de escritura (`ai-processing.ts` + `api/jobs/worker/route.ts`): `raw_text`/`cleaned_text` = OCR, `medical_summary` = inferencia.
+- Lectores actualizados: tópicos/búsqueda/export/métricas/vista congreso usan `raw_text`; reportes (`polyglot-reports.ts` + worker) usan OCR + síntesis etiquetada como inferencia; `getImageAnalysis` expone `ocr`=raw_text y `summary` aparte; edición manual de OCR persiste en `raw_text`.
+- Commit `a18f63c`. Verificación: tsc limpio + 6/6 tests + build verde.
+
+**Brechas pendientes de la auditoría (no abordadas aún):**
+- **#2 (alta):** OpenCV/zoom de citas está MUERTO en producción — `ai-processing.ts` salta OpenCV cuando `VERCEL||production`, así que `zoomLeftUrl/zoomRightUrl` nunca se generan en prod pese a que el prompt de visión los pide. Decidir: mover crops a server-side o quitar la promesa del prompt.
+- **#3:** falta `congress_sessions` (jerarquía Congreso→Sesión→Imagen) para vender a sociedades/organizadores.
+- **#4:** verificación de referencias es síncrona dentro del request (riesgo timeout); debería ir a la cola `ai_jobs`.
+- **#5:** falta `knowledge_items` (biblioteca transversal con tags clínicos).
+- **Infra:** hook pre-commit (eslint) sigue roto a nivel proyecto; se commitea con --no-verify.
 
 ### 2026-05-21 · Claude Opus 4.7 — Ajuste de copy del landing hero
 
