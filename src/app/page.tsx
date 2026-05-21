@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ShieldCheck, BookOpen, FileText, Globe } from "lucide-react"
+import { ShieldCheck, BookOpen, FileText } from "lucide-react"
 import Logo from "@/components/ui/md-logo"
 
 export default function LandingPage() {
@@ -55,10 +55,6 @@ export default function LandingPage() {
             <div className="w-12 h-1 bg-blue-600 mt-1 rounded-full opacity-30 group-hover:w-24 transition-all duration-1000"></div>
           </div>
 
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[10px] uppercase tracking-[0.2em] font-bold px-4 py-1.5 rounded-full mb-6 border border-blue-100">
-            <Globe className="h-3 w-3" />
-            Actualización Médica de Élite
-          </div>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6 leading-[0.95]">
             Estructuramos sus <span className="text-blue-600">fotos de congresos</span> en conocimiento médico.
           </h1>
