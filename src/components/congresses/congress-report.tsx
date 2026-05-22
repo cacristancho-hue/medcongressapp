@@ -37,6 +37,8 @@ export default function CongressReport({ congressId, reports, sessions = [] }: C
   const [isGenerating, startGenerating] = useTransition()
   // "" = todo el congreso; o el id de una sesión.
   const [reportScope, setReportScope] = useState<string>("")
+  // Idioma del reporte generado (el motor IA ya soporta ES/EN).
+  const [reportLang, setReportLang] = useState<"es" | "en">("es")
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [isRenaming, setIsRenaming] = useState<string | null>(null)
@@ -74,7 +76,7 @@ export default function CongressReport({ congressId, reports, sessions = [] }: C
       try {
         const result = await enqueueReportGeneration({
           congressId,
-          language: "es",
+          language: reportLang,
           sessionId: reportScope || null,
         })
         if (!result.success) {
@@ -147,6 +149,16 @@ export default function CongressReport({ congressId, reports, sessions = [] }: C
           Resúmenes y Esquemas Académicos
         </h3>
         <div className="flex items-center gap-2">
+        <select
+          value={reportLang}
+          onChange={(e) => setReportLang(e.target.value as "es" | "en")}
+          disabled={isGenerating}
+          className="h-9 text-xs rounded-md border border-slate-300 bg-white px-2 text-slate-700"
+          title="Idioma del reporte"
+        >
+          <option value="es">🇪🇸 Español</option>
+          <option value="en">🇺🇸 English</option>
+        </select>
         {sessions.length > 0 && (
           <select
             value={reportScope}
