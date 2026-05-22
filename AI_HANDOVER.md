@@ -244,6 +244,18 @@ app/
 
 ## 11. Cambios entre sesiones (changelog)
 
+### 2026-05-21 · Claude Opus 4.7 — CIERRE DE SESIÓN + decisión: inglés como próximo objetivo
+
+**Estado al cierre:**
+- Las 6 brechas de la auditoría (#1–#5 + infra ESLint) están cerradas, commiteadas y en `origin/sprint-1/shell-hardening`.
+- Migraciones fase32, fase33 y fase34 **ejecutadas en Supabase** (confirmado por Camilo).
+- **Desplegado a producción en Vercel** vía `vercel --prod` (URL prod: https://app-omega-hazel-21.vercel.app, health `ok`/db `ok`). NOTA: los deploys NO son automáticos desde Git — se hacen a mano con `vercel --prod` (los previos eran de la cuenta `cac94col`). El proyecto Vercel vive en el team `cac94cols-projects`, no en `cacristancho-hue`.
+
+**DECISIÓN ESTRATÉGICA (Camilo, 2026-05-21):** adelantar el **inglés / i18n de la UI** como **próximo objetivo prioritario** para entrar al mercado USA, antes de lo que decía el roadmap (estaba en Q2). Razón: Camilo quiere "entrar de una al mercado gringo".
+- Ya disponible: `next-intl` instalado; reportes ya se generan en ES/EN (motor IA acepta `language`).
+- Falta: extraer los textos de UI (hardcodeados en español por todo el código) a archivos de traducción + traducir + selector de idioma. Trabajo laborioso y transversal.
+- Punto de entrada sugerido para la próxima sesión: empezar por configurar `next-intl` (routing/locale), extraer textos a `messages/es.json` + `messages/en.json`, y añadir selector de idioma. Considerar primero un quick-win: selector ES/EN solo para el reporte generado.
+
 ### 2026-05-21 · Claude Opus 4.7 — Brecha #1 auditoría: trazabilidad OCR vs síntesis IA (fase32)
 
 **Contexto:** auditoría completa del repo a petición de Camilo (vía prompt de Codex). Hallazgo: el repo está mucho más maduro que documentado (~Sprint 4-5), pero con una brecha crítica de seguridad médica.
