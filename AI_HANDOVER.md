@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-21 — Auditoría completa: fase32-34 (trazabilidad, zooms, verif. async, ESLint, sesiones, biblioteca) (Claude Opus 4.7)
+- **Última actualización**: 2026-05-22 — i18n (ES/EN/PT) + análisis adaptado por tipo de imagen y especialidad (fase35-36) (Claude Opus 4.7)
 
 ---
 
@@ -243,6 +243,16 @@ app/
 ---
 
 ## 11. Cambios entre sesiones (changelog)
+
+### 2026-05-22 · Claude Opus 4.7 — i18n + calidad de análisis de imágenes
+
+**Desplegado a producción (vercel --prod). Migraciones fase33–fase36 aplicadas en Supabase.**
+
+- **i18n activado (next-intl, por cookie sin routing):** plugin en next.config → `src/i18n/request.ts` (lee cookie LOCALE, default es), `NextIntlClientProvider` en layout, `setLocale` server action + `LocaleSwitcher` (ES/EN/PT) en landing y sidebar. Landing 100% traducido (sección `landing` en es/en/pt.json). Reportes ya tenían selector ES/EN. **Pendiente:** traducir el resto del dashboard. NOTA: activar i18n por cookie volvió dinámicas todas las rutas (landing ya no es estática) — tradeoff aceptado; si el SEO del landing importa, migrar a rutas `/en`.
+- **Texto de diapositiva depurado (`slide_text`, fase35):** la IA devuelve el contenido de la diapositiva SIN aparato bibliográfico (títulos citados, autores, journals, DOIs). El visor lo muestra; respaldo por reglas `cleanSlideText()` (con test) para fotos viejas. raw_text se conserva.
+- **Visor reorganizado:** Síntesis IA protagonista (interpretación) + texto literal plegable ("Ver texto extraído"). Recupera la comprensión que daba el resumen, manteniendo trazabilidad.
+- **Análisis adaptado al tipo de imagen + especialidad (fase36):** nuevo `image_type` (texto|tabla|grafica|imagen_medica|algoritmo|poster|foto_clinica|otro), normalizado a "otro" si el modelo devuelve algo raro. El prompt adapta extracción por tipo (gráficas→describe tendencia/valores; tablas→estructura; imagen_medica→hallazgos con disclaimer educativo; algoritmos→flujo; pósters→columnas). `analyzeImage` recibe la especialidad del congreso. UI: badge de tipo en visor + filtro por tipo en la galería.
+- **Pendiente operativo:** fotos pre-fase35/36 necesitan re-análisis para tener slide_text/image_type. Deploys siguen siendo manuales (`vercel --prod`).
 
 ### 2026-05-21 · Claude Opus 4.7 — CIERRE DE SESIÓN + decisión: inglés como próximo objetivo
 
