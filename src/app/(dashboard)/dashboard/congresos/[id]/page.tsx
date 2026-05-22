@@ -295,7 +295,7 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
       created_at,
       session_id,
       captured_at,
-      ocr_results(raw_text, cleaned_text),
+      ocr_results(raw_text, cleaned_text, image_type),
       image_topics(topic_id)
     `)
     .eq("congress_id", congressId)
@@ -325,13 +325,14 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
   ])
 
   const initialImages = images.map((img, idx) => {
-    const ocrData = img.ocr_results as unknown as { raw_text: string | null; cleaned_text: string | null }[] | undefined
+    const ocrData = img.ocr_results as unknown as { raw_text: string | null; cleaned_text: string | null; image_type: string | null }[] | undefined
     const topicRelations = (img.image_topics as unknown as Array<{ topic_id: string }>) || []
     const topicIds = topicRelations.map(it => it.topic_id)
     return {
       ...img,
       topic_ids: topicIds,
       session_id: (img as { session_id?: string | null }).session_id ?? null,
+      image_type: ocrData?.[0]?.image_type ?? null,
       ocr_text: ocrData?.[0]?.raw_text || ocrData?.[0]?.cleaned_text || null,
       signedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,
       optimizedSignedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,

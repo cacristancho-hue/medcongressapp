@@ -29,7 +29,7 @@ export const processImageWithAI = withAction({
   // Ownership gate.
   const { data: image, error: imgError } = await supabase
     .from("congress_images")
-    .select("id, user_id, congress_id, storage_path, storage_path_optimized")
+    .select("id, user_id, congress_id, storage_path, storage_path_optimized, congresses(specialty)")
     .eq("id", imageId)
     .eq("user_id", user.id)
     .single()
@@ -79,10 +79,13 @@ export const processImageWithAI = withAction({
 
   // --- FASE 2: ANÁLISIS IA (UBICUO Y AGRESIVO) ---
   try {
+    const congressSpecialty =
+      (image as { congresses?: { specialty?: string | null } | null }).congresses?.specialty ?? null
     const { data: result, usage } = await analyzeImage({
       imageUrl: finalAnalysisUrl!,
       zoomLeftUrl: leftBuffer ? `data:image/jpeg;base64,${leftBuffer.toString('base64')}` : undefined,
       zoomRightUrl: rightBuffer ? `data:image/jpeg;base64,${rightBuffer.toString('base64')}` : undefined,
+      specialty: congressSpecialty,
     })
 
     // Auditoría Heurística (Safety Net)
@@ -101,6 +104,7 @@ export const processImageWithAI = withAction({
         raw_text: result.raw_text,
         cleaned_text: result.raw_text,
         slide_text: result.slide_text,
+        image_type: result.image_type,
         medical_summary: result.medical_summary,
       }, { onConflict: "image_id" })
 

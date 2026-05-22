@@ -10,6 +10,18 @@ import { verifyCongressReferences, updateReferenceCandidate, verifySingleReferen
 import { updateImageAnalysis } from "@/lib/actions/edits"
 import { cleanSlideText } from "@/lib/clean-slide-text"
 import Image from "next/image"
+
+// Human labels + emoji for the AI-classified image type.
+const IMAGE_TYPE_LABELS: Record<string, string> = {
+  texto: "📝 Texto",
+  tabla: "📊 Tabla",
+  grafica: "📈 Gráfica",
+  imagen_medica: "🩻 Imagen médica",
+  algoritmo: "🔀 Algoritmo",
+  poster: "🪧 Póster",
+  foto_clinica: "📷 Foto",
+  otro: "Otro",
+}
 import { clsx } from "clsx"
 import { toast } from "sonner"
 
@@ -34,6 +46,7 @@ interface PhotoViewerProps {
 interface AnalysisData {
   ocr: string | null;
   slideText: string | null;
+  imageType: string | null;
   summary: string | null;
   topics: { name: string; category: string }[];
   references: {
@@ -624,6 +637,15 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                       ))}
                     </ul>
                   </section>
+                )}
+
+                {/* Tipo de imagen clasificado por la IA */}
+                {analysisData.imageType && (
+                  <div>
+                    <span className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-200 border border-slate-700">
+                      {IMAGE_TYPE_LABELS[analysisData.imageType] ?? analysisData.imageType}
+                    </span>
+                  </div>
                 )}
 
                 {/* Síntesis IA (interpretación) — protagonista: explica la diapositiva. */}

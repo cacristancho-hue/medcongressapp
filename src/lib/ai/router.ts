@@ -27,6 +27,7 @@ export interface AiUsage {
 
 export interface ImageAnalysisResult {
   specialty: string | null
+  image_type: string
   raw_text: string
   slide_text: string
   medical_summary: string
@@ -56,6 +57,11 @@ export interface ReportOutput {
 
 const IMAGE_ANALYSIS_SCHEMA = z.object({
   specialty: z.string().nullable().describe("Especialidad médica predominante o null."),
+  image_type: z
+    .enum(["texto", "tabla", "grafica", "imagen_medica", "algoritmo", "poster", "foto_clinica", "otro"])
+    .describe(
+      "Tipo de contenido predominante de la imagen: 'texto' (diapositiva de texto/bullets), 'tabla' (tabla de datos), 'grafica' (gráfica/curva/forest plot/diagrama estadístico), 'imagen_medica' (ECG, radiografía, TAC, RM, histología, ecografía, lesión clínica), 'algoritmo' (algoritmo/flujo de decisión), 'poster' (póster de investigación), 'foto_clinica' (foto del entorno, ponente, sala), 'otro'."
+    ),
   raw_text: z.string().describe("Texto literal extraído de la imagen, tal cual aparece (incluye pies de página y citas)."),
   slide_text: z
     .string()
@@ -105,8 +111,17 @@ FLUJO DE ANÁLISIS:
 - Paso 3: Reporta TODA referencia detectada en el array 'references', sin importar su posición en la imagen.
 
 ESTRUCTURA DE REFERENCIAS:
-- Captura: Título, Autores (primeros 3 + et al), Año, Journal y DOI/PMID si es legible. 
-- Si la cita está cortada, extrae los caracteres que veas. Nuestro motor de consenso de 2026 lo resolverá.`
+- Captura: Título, Autores (primeros 3 + et al), Año, Journal y DOI/PMID si es legible.
+- Si la cita está cortada, extrae los caracteres que veas. Nuestro motor de consenso de 2026 lo resolverá.
+
+CLASIFICACIÓN Y ANÁLISIS ADAPTADO AL TIPO DE IMAGEN:
+Primero clasifica la imagen en 'image_type' y adapta 'slide_text' y 'medical_summary' según el tipo:
+- **grafica** (Kaplan-Meier, forest plot, barras, curvas): el OCR no basta. En 'medical_summary' DESCRIBE qué muestra: tipo de gráfica, ejes/variables, tendencia, valores clave (HR, IC95%, p, medianas) y la conclusión visual. En 'slide_text' incluye el título y las anotaciones legibles.
+- **tabla**: preserva la ESTRUCTURA en 'slide_text' como tabla Markdown (filas/columnas). En 'medical_summary' resalta los datos más relevantes.
+- **imagen_medica** (ECG, Rx, TAC, RM, histología, ecografía, lesión): DESCRIBE los hallazgos visibles de forma educativa y objetiva. INCLUYE SIEMPRE al inicio del medical_summary la nota: "[Imagen educativa de congreso — descripción, no diagnóstico de paciente]". No infieras diagnósticos de un paciente real.
+- **algoritmo**: reconstruye el flujo/pasos de decisión en orden lógico en 'slide_text'.
+- **poster**: respeta el orden de lectura por columnas; identifica secciones (Intro, Métodos, Resultados, Conclusión).
+- **texto / foto_clinica / otro**: comportamiento estándar.`
 
 const REPORT_SYSTEM_PROMPT = (language: "es" | "en") =>
   `Eres el motor de síntesis académica más avanzado, especializado en la creación de ESQUEMAS DE PONENCIA para médicos de postgrado. 
@@ -198,6 +213,7 @@ interface AnalyzeImageInput {
   zoomLeftUrl?: string
   zoomRightUrl?: string
   forceProvider?: ProviderId
+  specialty?: string | null
 }
 
 async function retry<T>(
@@ -233,10 +249,13 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<ImageAnaly
 
     try {
       const result = await retry(async () => {
+        const specialtyHint = input.specialty
+          ? `\n\nCONTEXTO: El congreso es de la especialidad "${input.specialty}". Usa su terminología y enfoque al describir y clasificar.`
+          : ""
         const content: Array<{ type: "text"; text: string } | { type: "image"; image: URL }> = [
           {
             type: "text",
-            text: `Analiza esta diapositiva médica. 
+            text: `Analiza esta diapositiva médica.${specialtyHint}
                    REGLA DE ORO PARA CITAS: Se proporcionan hasta 3 imágenes. 
                    1. 'Imagen Principal': Vista completa de la diapositiva.
                    2. 'Zoom Inferior Izquierdo' y 'Zoom Inferior Derecho': Ampliaciones de alta calidad de los pies de página. 

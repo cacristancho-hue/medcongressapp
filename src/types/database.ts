@@ -133,6 +133,8 @@ export interface OcrResult {
   cleaned_text: string | null
   /** Slide content with bibliographic citations removed (AI-produced). For display. */
   slide_text: string | null
+  /** AI-classified content type: texto|tabla|grafica|imagen_medica|algoritmo|poster|foto_clinica|otro. */
+  image_type: string | null
   /** AI-generated medical synthesis (INFERENCE). Not literal text. */
   medical_summary: string | null
   confidence_score: number | null

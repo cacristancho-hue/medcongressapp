@@ -21,6 +21,18 @@ interface DiscoveryImage {
   ocr_text?: string | null
   topic_ids: string[]
   session_id?: string | null
+  image_type?: string | null
+}
+
+const IMAGE_TYPE_LABELS: Record<string, string> = {
+  texto: "📝 Texto",
+  tabla: "📊 Tablas",
+  grafica: "📈 Gráficas",
+  imagen_medica: "🩻 Imágenes médicas",
+  algoritmo: "🔀 Algoritmos",
+  poster: "🪧 Pósters",
+  foto_clinica: "📷 Fotos",
+  otro: "Otro",
 }
 
 interface DiscoveryTopic {
@@ -51,11 +63,21 @@ type SessionFilter = "all" | "unassigned" | string
 export default function DiscoveryClient({ congressId, initialImages, topics, sessions }: Props) {
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null)
   const [sessionFilter, setSessionFilter] = useState<SessionFilter>("all")
+  const [typeFilter, setTypeFilter] = useState<string>("all")
 
   const unassignedCount = useMemo(
     () => initialImages.filter((img) => !img.session_id).length,
     [initialImages]
   )
+
+  // Image types present in this congress (for the type filter chips).
+  const availableTypes = useMemo(() => {
+    const set = new Set<string>()
+    initialImages.forEach((img) => {
+      if (img.image_type) set.add(img.image_type)
+    })
+    return Array.from(set)
+  }, [initialImages])
 
   const filteredImages = useMemo(() => {
     return initialImages.filter((img) => {
@@ -63,9 +85,10 @@ export default function DiscoveryClient({ congressId, initialImages, topics, ses
       const matchesSession =
         sessionFilter === "all" ||
         (sessionFilter === "unassigned" ? !img.session_id : img.session_id === sessionFilter)
-      return matchesTopic && matchesSession
+      const matchesType = typeFilter === "all" || img.image_type === typeFilter
+      return matchesTopic && matchesSession && matchesType
     })
-  }, [activeTopicId, sessionFilter, initialImages])
+  }, [activeTopicId, sessionFilter, typeFilter, initialImages])
 
   return (
     <div className="space-y-8">
@@ -108,12 +131,30 @@ export default function DiscoveryClient({ congressId, initialImages, topics, ses
         </div>
       )}
 
+      {/* Filtro por tipo de imagen (clasificado por IA) */}
+      {availableTypes.length > 1 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tipo de contenido</h4>
+          <div className="flex flex-wrap gap-2">
+            <SessionChip label="Todos" active={typeFilter === "all"} onClick={() => setTypeFilter("all")} />
+            {availableTypes.map((ty) => (
+              <SessionChip
+                key={ty}
+                label={IMAGE_TYPE_LABELS[ty] ?? ty}
+                active={typeFilter === ty}
+                onClick={() => setTypeFilter(ty)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
             {activeTopicId ? "Fotos relacionadas con el tema" : "Galería Completa"}
           </h4>
-          {(activeTopicId || sessionFilter !== "all") && (
+          {(activeTopicId || sessionFilter !== "all" || typeFilter !== "all") && (
             <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-100">
               {filteredImages.length} resultados
             </span>

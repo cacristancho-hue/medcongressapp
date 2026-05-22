@@ -77,7 +77,7 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
 
   const { data: image, error: imgErr } = await supabase
     .from("congress_images")
-    .select("id, user_id, congress_id, storage_path, storage_path_optimized")
+    .select("id, user_id, congress_id, storage_path, storage_path_optimized, congresses(specialty)")
     .eq("id", job.image_id)
     .single()
 
@@ -168,10 +168,13 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
 
   // --- FASE 2: ANÁLISIS IA ---
   try {
+    const congressSpecialty =
+      (image as { congresses?: { specialty?: string | null } | null }).congresses?.specialty ?? null
     const { data: result, usage } = await analyzeImage({
       imageUrl: finalAnalysisUrl!,
       zoomLeftUrl: leftBuffer ? `data:image/jpeg;base64,${leftBuffer.toString('base64')}` : undefined,
       zoomRightUrl: rightBuffer ? `data:image/jpeg;base64,${rightBuffer.toString('base64')}` : undefined,
+      specialty: congressSpecialty,
     })
     await writeJobResult(supabase, job.id, {
       stage: "analyzed",
@@ -199,6 +202,7 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
       raw_text: result.raw_text,
       cleaned_text: result.raw_text,
       slide_text: result.slide_text,
+      image_type: result.image_type,
       medical_summary: result.medical_summary,
     }, { onConflict: "image_id" })
     if (ocrErr) log("error", "failed to save ocr_results", { error: ocrErr })
