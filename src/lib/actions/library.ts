@@ -129,7 +129,37 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
-  const activeRows = (data ?? []).filter((row: any) => {
+  type LibraryQueryRow = {
+    id: string
+    congress_id: string
+    image_id: string | null
+    raw_reference_text: string | null
+    detected_title: string | null
+    detected_authors: string | null
+    detected_year: string | null
+    detected_journal: string | null
+    detected_doi: string | null
+    detected_pmid: string | null
+    verification_status: string
+    confidence_score: number | null
+    created_at: string
+    official_title: string | null
+    official_authors: string | null
+    official_year: string | null
+    official_journal: string | null
+    abstract: string | null
+    publication_type: string | null
+    mesh_terms: string[] | null
+    verification_notes: string | null
+    citation_count: number | null
+    influential_citation_count: number | null
+    is_open_access: boolean | null
+    open_access_url: string | null
+    congress_images: { deleted_at: string | null; storage_path_thumbnail: string | null; storage_path: string | null } | null
+    congresses: { name: string | null; specialty: string | null; deleted_at: string | null } | null
+  }
+
+  const activeRows = ((data ?? []) as unknown as LibraryQueryRow[]).filter((row) => {
     if (!row.image_id || !row.congress_images || row.congress_images.deleted_at !== null) {
       return false
     }
@@ -138,7 +168,7 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
 
   const libraryRows: LibraryReference[] = []
 
-  activeRows.forEach((row: any) => {
+  activeRows.forEach((row) => {
     const isExtremeNoise = (row.confidence_score ?? 0) < 0.2
     const hasNoIdentity = !row.official_title && !row.detected_title && !row.detected_doi && !row.detected_pmid
 

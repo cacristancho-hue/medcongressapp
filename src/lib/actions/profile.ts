@@ -19,7 +19,7 @@ export async function updateProfile(formData: FormData) {
   if (!user) redirect("/login")
 
   const roleValue = optionalText(formData.get("role"))
-  const role = roleValue && (VALID_ROLES as any).has(roleValue) ? (roleValue as UserRole) : null
+  const role = roleValue && (VALID_ROLES as Set<string>).has(roleValue) ? (roleValue as UserRole) : null
   
   const ageValue = formData.get("age")
   const parsedAge = ageValue ? Number(ageValue.toString()) : null

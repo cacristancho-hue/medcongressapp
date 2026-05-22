@@ -595,7 +595,16 @@ async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
       const imgRefs = (references || [])
         .filter((r) => r.image_id === img.id)
         .map((r) => {
-          const row = r as any
+          const row = r as {
+            id: string
+            verification_status?: string
+            detected_doi?: string
+            detected_pmid?: string
+            citation_count?: number
+            abstract?: string
+            official_title?: string
+            detected_title?: string
+          }
           const status = row.verification_status?.toUpperCase() || "PENDING"
           const doi = row.detected_doi ? ` [DOI: ${row.detected_doi}]` : ""
           const pmid = row.detected_pmid ? ` [PMID: ${row.detected_pmid}]` : ""

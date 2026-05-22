@@ -75,7 +75,7 @@ export default function TerminosPage() {
       </p>
       <ul>
         <li><strong>Optimización de Algoritmos</strong>: MDCONGRESS podrá utilizar metadatos técnicos desidentificados y patrones de error en la detección OCR para mejorar la sensibilidad y especificidad de sus motores de búsqueda bibliográfica. En ningún momento se utilizarán las fotografías originales para entrenar modelos de IA generativa fundacionales.</li>
-        <li><strong>Inteligencia de Mercado Agregada (Pharma Insights)</strong>: Podremos procesar estadísticas macroscópicas y anónimas (ej. "¿Cuáles son los temas más discutidos en cardiología este mes?") para generar reportes de valor para sociedades científicas e industria. Estos reportes son siempre de carácter estadístico y nunca comprometen la identidad del médico ni el contenido privado de su biblioteca.</li>
+        <li><strong>Inteligencia de Mercado Agregada (Pharma Insights)</strong>: Podremos procesar estadísticas macroscópicas y anónimas (ej. &quot;¿Cuáles son los temas más discutidos en cardiología este mes?&quot;) para generar reportes de valor para sociedades científicas e industria. Estos reportes son siempre de carácter estadístico y nunca comprometen la identidad del médico ni el contenido privado de su biblioteca.</li>
       </ul>
 
       <h2>8. Garantías y Limitación de Responsabilidad Corporativa</h2>

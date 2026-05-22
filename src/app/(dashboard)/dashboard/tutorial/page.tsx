@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles, ClipboardList, ImageIcon, BookCheck, Plus, ArrowRight } from "lucide-react"
+import { ArrowLeft, Sparkles, ClipboardList, ImageIcon, BookCheck, Plus, ArrowRight, type LucideIcon } from "lucide-react"
 import Link from "next/link"
 
 export default function TutorialPage() {
@@ -109,7 +109,7 @@ function Step({
   number: string
   title: string
   description: string
-  icon: any
+  icon: LucideIcon
 }) {
   return (
     <div className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

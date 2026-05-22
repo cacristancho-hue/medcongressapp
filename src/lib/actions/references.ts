@@ -34,7 +34,7 @@ interface VerifySingleInput {
 export const updateReferenceCandidate = withAction({
   name: "reference.update",
   rateLimit: "reference_verify",
-})(async ({ user, supabase }, input: { id: string; congressId: string; updates: any }) => {
+})(async ({ user, supabase }, input: { id: string; congressId: string; updates: Record<string, unknown> }) => {
   const { id, congressId, updates } = input
 
   const { error } = await supabase

@@ -123,7 +123,7 @@ export default function PrivacidadPage() {
       </ul>
       <p className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium my-6">
         <strong>Uso Comercial y Pharma Insights:</strong> MDCONGRESS NO vende, alquila ni comparte datos personales identificables (como su nombre, correo o perfil) a terceros para fines de marketing. Tampoco usamos sus fotografías originales para entrenar modelos de IA generativa fundacionales.<br/><br/>
-        Sin embargo, MDCONGRESS procesa los datos derivados de la plataforma (como las referencias bibliográficas más citadas, las tendencias en patologías emergentes y los tópicos abordados en congresos globales) para crear conjuntos de datos <strong>completamente anonimizados y agregados</strong>. Esta inteligencia de mercado ("Pharma Insights") es propiedad exclusiva de MDCONGRESS y puede ser comercializada, licenciada o compartida con la industria farmacéutica y sociedades científicas. Al aceptar esta política, usted consiente la agregación y desidentificación irreversible de los datos de uso para estos fines.
+        Sin embargo, MDCONGRESS procesa los datos derivados de la plataforma (como las referencias bibliográficas más citadas, las tendencias en patologías emergentes y los tópicos abordados en congresos globales) para crear conjuntos de datos <strong>completamente anonimizados y agregados</strong>. Esta inteligencia de mercado (&quot;Pharma Insights&quot;) es propiedad exclusiva de MDCONGRESS y puede ser comercializada, licenciada o compartida con la industria farmacéutica y sociedades científicas. Al aceptar esta política, usted consiente la agregación y desidentificación irreversible de los datos de uso para estos fines.
       </p>
 
       <h2>5. Base legal del tratamiento</h2>
@@ -200,7 +200,7 @@ export default function PrivacidadPage() {
           usuario tiene control total para borrar fotos o congresos en cualquier momento.
         </li>
         <li>
-          <strong>Datos anonimizados agregados</strong>: MDCONGRESS retiene permanentemente las estadísticas desidentificadas ("Pharma Insights") derivadas del uso histórico de la plataforma.
+          <strong>Datos anonimizados agregados</strong>: MDCONGRESS retiene permanentemente las estadísticas desidentificadas (&quot;Pharma Insights&quot;) derivadas del uso histórico de la plataforma.
         </li>
       </ul>
 
