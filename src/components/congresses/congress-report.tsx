@@ -21,14 +21,22 @@ interface Report {
   report_type: string
 }
 
+interface ReportSession {
+  id: string
+  title: string
+}
+
 interface CongressReportProps {
   congressId: string
   reports: Report[]
+  sessions?: ReportSession[]
 }
 
-export default function CongressReport({ congressId, reports }: CongressReportProps) {
+export default function CongressReport({ congressId, reports, sessions = [] }: CongressReportProps) {
   const router = useRouter()
   const [isGenerating, startGenerating] = useTransition()
+  // "" = todo el congreso; o el id de una sesión.
+  const [reportScope, setReportScope] = useState<string>("")
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [isRenaming, setIsRenaming] = useState<string | null>(null)
@@ -64,7 +72,11 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
   const handleGenerate = () => {
     startGenerating(async () => {
       try {
-        const result = await enqueueReportGeneration({ congressId, language: "es" })
+        const result = await enqueueReportGeneration({
+          congressId,
+          language: "es",
+          sessionId: reportScope || null,
+        })
         if (!result.success) {
           toast.error(result.error)
           return
@@ -134,6 +146,21 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
           <Sparkles className="h-5 w-5 text-teal-600" />
           Resúmenes y Esquemas Académicos
         </h3>
+        <div className="flex items-center gap-2">
+        {sessions.length > 0 && (
+          <select
+            value={reportScope}
+            onChange={(e) => setReportScope(e.target.value)}
+            disabled={isGenerating}
+            className="h-9 text-xs rounded-md border border-slate-300 bg-white px-2 text-slate-700 max-w-[180px]"
+            title="Alcance del reporte"
+          >
+            <option value="">Todo el congreso</option>
+            {sessions.map((s) => (
+              <option key={s.id} value={s.id}>{s.title}</option>
+            ))}
+          </select>
+        )}
         <Button
           onClick={handleGenerate}
           disabled={isGenerating}
@@ -152,6 +179,7 @@ export default function CongressReport({ congressId, reports }: CongressReportPr
             </>
           )}
         </Button>
+        </div>
       </div>
 
       {reports.length === 0 ? (

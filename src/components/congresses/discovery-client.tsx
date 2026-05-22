@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react"
 import TopicNavigator from "./topic-navigator"
 import PhotoGrid from "./photo-grid"
+import { clsx } from "clsx"
+import { Layers } from "lucide-react"
 
 interface DiscoveryImage {
   id: string
@@ -18,6 +20,7 @@ interface DiscoveryImage {
   optimizedSignedUrl?: string | null
   ocr_text?: string | null
   topic_ids: string[]
+  session_id?: string | null
 }
 
 interface DiscoveryTopic {
@@ -28,41 +31,128 @@ interface DiscoveryTopic {
   image_count: number
 }
 
+export interface DiscoverySession {
+  id: string
+  title: string
+  speaker?: string | null
+  room?: string | null
+}
+
 interface Props {
   congressId: string
   initialImages: DiscoveryImage[]
   topics: DiscoveryTopic[]
+  sessions: DiscoverySession[]
 }
 
-export default function DiscoveryClient({ congressId, initialImages, topics }: Props) {
+// "all" = todas, "unassigned" = sin sesión, o un id de sesión.
+type SessionFilter = "all" | "unassigned" | string
+
+export default function DiscoveryClient({ congressId, initialImages, topics, sessions }: Props) {
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null)
+  const [sessionFilter, setSessionFilter] = useState<SessionFilter>("all")
+
+  const unassignedCount = useMemo(
+    () => initialImages.filter((img) => !img.session_id).length,
+    [initialImages]
+  )
 
   const filteredImages = useMemo(() => {
-    if (!activeTopicId) return initialImages
-    return initialImages.filter(img => img.topic_ids.includes(activeTopicId))
-  }, [activeTopicId, initialImages])
+    return initialImages.filter((img) => {
+      const matchesTopic = !activeTopicId || img.topic_ids.includes(activeTopicId)
+      const matchesSession =
+        sessionFilter === "all" ||
+        (sessionFilter === "unassigned" ? !img.session_id : img.session_id === sessionFilter)
+      return matchesTopic && matchesSession
+    })
+  }, [activeTopicId, sessionFilter, initialImages])
 
   return (
     <div className="space-y-8">
-      <TopicNavigator 
-        topics={topics} 
+      <TopicNavigator
+        topics={topics}
         activeTopicId={activeTopicId}
         onTopicClick={setActiveTopicId}
       />
-      
+
+      {/* Navegador de sesiones (ponencias) */}
+      {(sessions.length > 0 || unassignedCount > 0) && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+            <Layers className="h-3.5 w-3.5" /> Sesiones
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            <SessionChip
+              label="Todas"
+              active={sessionFilter === "all"}
+              onClick={() => setSessionFilter("all")}
+            />
+            {sessions.map((s) => (
+              <SessionChip
+                key={s.id}
+                label={s.title}
+                sublabel={s.speaker ?? undefined}
+                active={sessionFilter === s.id}
+                onClick={() => setSessionFilter(s.id)}
+              />
+            ))}
+            {unassignedCount > 0 && (
+              <SessionChip
+                label={`Sin asignar (${unassignedCount})`}
+                active={sessionFilter === "unassigned"}
+                onClick={() => setSessionFilter("unassigned")}
+                muted
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
             {activeTopicId ? "Fotos relacionadas con el tema" : "Galería Completa"}
           </h4>
-          {activeTopicId && (
+          {(activeTopicId || sessionFilter !== "all") && (
             <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-100">
               {filteredImages.length} resultados
             </span>
           )}
         </div>
-        <PhotoGrid congressId={congressId} initialImages={filteredImages} />
+        <PhotoGrid congressId={congressId} initialImages={filteredImages} sessions={sessions} />
       </div>
     </div>
+  )
+}
+
+function SessionChip({
+  label,
+  sublabel,
+  active,
+  onClick,
+  muted,
+}: {
+  label: string
+  sublabel?: string
+  active: boolean
+  onClick: () => void
+  muted?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={clsx(
+        "px-3 py-1.5 rounded-full text-xs font-semibold border transition-all text-left",
+        active
+          ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+          : muted
+            ? "bg-slate-50 text-slate-500 border-slate-200 hover:border-slate-300"
+            : "bg-white text-slate-700 border-slate-200 hover:border-blue-300"
+      )}
+    >
+      <span className="block leading-tight">{label}</span>
+      {sublabel && <span className="block text-[10px] opacity-70 leading-tight">{sublabel}</span>}
+    </button>
   )
 }

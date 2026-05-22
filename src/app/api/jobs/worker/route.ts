@@ -526,10 +526,21 @@ async function runTopicsExtraction(supabase: SupabaseClient, job: AiJobRow) {
 }
 
 async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
-  const { language } = job.payload as { language: "es" | "en" }
+  const { language, sessionId } = job.payload as { language: "es" | "en"; sessionId?: string | null }
   if (!language) throw new Error("Payload incompleto para reporte")
 
-  log("info", "generating academic report in background", { congressId: job.congress_id })
+  // Optional session scope: when set, the report covers only that session's slides.
+  let sessionTitle: string | null = null
+  if (sessionId) {
+    const { data: session } = await supabase
+      .from("congress_sessions")
+      .select("title")
+      .eq("id", sessionId)
+      .maybeSingle()
+    sessionTitle = session?.title ?? null
+  }
+
+  log("info", "generating academic report in background", { congressId: job.congress_id, sessionId: sessionId ?? null })
   await writeJobResult(supabase, job.id, {
     stage: "init",
     kind: "report_generation",
@@ -537,12 +548,14 @@ async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
     congressId: job.congress_id,
   })
 
-  // 1. Fetch images
-  const { data: images } = await supabase
+  // 1. Fetch images (scoped to the session when provided).
+  let imagesQuery = supabase
     .from("congress_images")
     .select("id")
     .eq("congress_id", job.congress_id)
     .eq("user_id", job.user_id)
+  if (sessionId) imagesQuery = imagesQuery.eq("session_id", sessionId)
+  const { data: images } = await imagesQuery
 
   // 2. Fetch OCR results
   const { data: ocrResults } = await supabase
@@ -654,10 +667,14 @@ async function runReportGeneration(supabase: SupabaseClient, job: AiJobRow) {
     fullTextLength: fullText.length,
   })
 
+  const reportTitle = sessionTitle
+    ? `Esquema · ${sessionTitle} (${language.toUpperCase()})`
+    : `Esquema Académico Automático (${language.toUpperCase()})`
+
   const { error: insErr } = await supabase.from("reports").insert({
     congress_id: job.congress_id,
     user_id: job.user_id,
-    title: `Esquema Académico Automático (${language.toUpperCase()})`,
+    title: reportTitle,
     content,
     report_type: "academic_outline",
   })

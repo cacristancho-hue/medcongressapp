@@ -245,6 +245,8 @@ export const enqueueCongressAnalysis = withAction({
 interface EnqueueReportInput {
   congressId: string
   language: "es" | "en"
+  // Optional: scope the report to a single session (ponencia). null/undefined = whole congress.
+  sessionId?: string | null
 }
 
 export const enqueueReportGeneration = withAction({
@@ -260,23 +262,28 @@ export const enqueueReportGeneration = withAction({
 
   if (!congress) throw new Error("Congreso no encontrado")
 
-  const { data: activeJobs } = await supabase
+  // Dedup within the same scope: a pending congress-wide report shouldn't block
+  // a session report (and vice versa). Match the sessionId carried in payload.
+  let activeQuery = supabase
     .from("ai_jobs")
     .select("id, status, started_at")
     .eq("congress_id", input.congressId)
     .eq("job_type", "report_generation")
     .in("status", ["pending", "processing"])
-    .limit(1)
+  activeQuery = input.sessionId
+    ? activeQuery.contains("payload", { sessionId: input.sessionId })
+    : activeQuery.contains("payload", { sessionId: null })
+  const { data: activeJobs } = await activeQuery.limit(1)
 
   if (hasLiveActiveJobs(activeJobs as ActiveJobRow[] | null | undefined)) {
-    return { jobId: activeJobs?.[0]?.id ?? null, message: "Ya hay un reporte en proceso." }
+    return { jobId: activeJobs?.[0]?.id ?? null, message: "Ya hay un reporte en proceso para este alcance." }
   }
 
   const { id, error } = await enqueueJob({
     userId: user.id,
     organizationId: congress.organization_id ?? null,
     jobType: "report_generation",
-    payload: { language: input.language },
+    payload: { language: input.language, sessionId: input.sessionId ?? null },
     congressId: input.congressId,
     priority: 50, // higher priority than per-image analysis
   })

@@ -86,6 +86,13 @@ export default async function CongresoDetailPage({ params }: Props) {
   const currentReferenceCount = referenceCount ?? 0
   const fastPathLimit = getImageFastPathLimit(aiLimits?.plan, aiLimits?.monthly_image_quota)
 
+  // Sessions for the report scope selector (RLS scopes to current user).
+  const { data: reportSessions } = await supabase
+    .from("congress_sessions")
+    .select("id, title")
+    .eq("congress_id", id)
+    .order("session_order", { ascending: true })
+
   // Presence display name: full_name from profile, fallback to email.
   const { data: profile } = await supabase
     .from("profiles")
@@ -235,9 +242,10 @@ export default async function CongresoDetailPage({ params }: Props) {
 
       {/* Reports Section */}
       <div className="mb-10 pt-6 border-t border-slate-100">
-        <CongressReport 
-          congressId={id} 
-          reports={reports || []} 
+        <CongressReport
+          congressId={id}
+          reports={reports || []}
+          sessions={(reportSessions ?? []).map((s) => ({ id: s.id, title: s.title }))}
         />
       </div>
 
@@ -281,10 +289,12 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
       storage_path_thumbnail, 
       original_filename, 
       file_size, 
-      status, 
+      status,
       ai_status,
       ocr_status,
       created_at,
+      session_id,
+      captured_at,
       ocr_results(raw_text, cleaned_text),
       image_topics(topic_id)
     `)
@@ -292,6 +302,14 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
     .order("created_at", { ascending: true })
 
   if (!images?.length) return null
+
+  // Sessions for this congress (ponencias) — for grouping/assignment UI.
+  // RLS already scopes congress_sessions to the current user.
+  const { data: sessionsData } = await supabase
+    .from("congress_sessions")
+    .select("id, title, speaker, room, session_order")
+    .eq("congress_id", congressId)
+    .order("session_order", { ascending: true })
 
   // Prepara URLs firmadas
   const thumbnailPaths = images.map((image) => image.storage_path_thumbnail ?? image.storage_path_optimized ?? image.storage_path)
@@ -313,6 +331,7 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
     return {
       ...img,
       topic_ids: topicIds,
+      session_id: (img as { session_id?: string | null }).session_id ?? null,
       ocr_text: ocrData?.[0]?.raw_text || ocrData?.[0]?.cleaned_text || null,
       signedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,
       optimizedSignedUrl: optimizedSignedUrls?.[idx]?.signedUrl ?? null,
@@ -331,11 +350,19 @@ async function CongressDiscovery({ congressId }: { congressId: string }) {
     }
   })
 
+  const sessions = (sessionsData ?? []).map((s) => ({
+    id: s.id,
+    title: s.title,
+    speaker: s.speaker,
+    room: s.room,
+  }))
+
   return (
-    <DiscoveryClient 
+    <DiscoveryClient
       congressId={congressId}
       initialImages={initialImages}
       topics={topics}
+      sessions={sessions}
     />
   )
 }

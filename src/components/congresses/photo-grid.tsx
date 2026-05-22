@@ -1,6 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import { deleteImage, deleteImages } from "@/lib/actions/photos"
+import { assignImagesToSession, createSession } from "@/lib/actions/sessions"
 import { toast } from "sonner"
 import PhotoCard from "./photo-card"
 import PhotoViewer from "./photo-viewer"
@@ -9,7 +10,7 @@ import { clsx } from "clsx"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Trash2, CheckSquare, Square, X, ListChecks } from "lucide-react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 
 interface Photo {
   id: string
@@ -26,16 +27,25 @@ interface Photo {
   thumbSignedUrl?: string | null
   optimizedSignedUrl?: string | null
   ocr_text?: string | null
+  session_id?: string | null
+}
+
+interface SessionOption {
+  id: string
+  title: string
 }
 
 interface Props {
   congressId: string
   initialImages: Photo[]
+  sessions?: SessionOption[]
 }
 
-export default function PhotoGrid({ congressId, initialImages }: Props) {
+export default function PhotoGrid({ congressId, initialImages, sessions = [] }: Props) {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const highlightId = searchParams.get("highlight")
+  const [isAssigning, setIsAssigning] = useState(false)
   
   const [images, setImages] = useState<Photo[]>(initialImages)
   const [viewerIndex, setViewerIndex] = useState<number | null>(null)
@@ -130,6 +140,56 @@ export default function PhotoGrid({ congressId, initialImages }: Props) {
     setIsSelectionMode(false)
   }
 
+  // Move the selected photos to a session (or unassign with sessionId = null).
+  const assignToSession = async (sessionId: string | null) => {
+    if (selectedIds.size === 0) return
+    setIsAssigning(true)
+    try {
+      const result = await assignImagesToSession({
+        congressId,
+        imageIds: Array.from(selectedIds),
+        sessionId,
+      })
+      if (!result.success) {
+        toast.error(result.error)
+        return
+      }
+      toast.success(
+        sessionId ? `${result.assigned} foto(s) movida(s) a la sesión` : `${result.assigned} foto(s) sin asignar`
+      )
+      setSelectedIds(new Set())
+      setIsSelectionMode(false)
+      router.refresh()
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
+  const handleSessionSelect = async (value: string) => {
+    if (value === "") return
+    if (value === "__unassign__") {
+      await assignToSession(null)
+      return
+    }
+    if (value === "__new__") {
+      const title = window.prompt("Nombre de la nueva sesión (ponencia):")?.trim()
+      if (!title) return
+      setIsAssigning(true)
+      try {
+        const created = await createSession({ congressId, title })
+        if (!created.success) {
+          toast.error(created.error)
+          return
+        }
+        await assignToSession(created.sessionId)
+      } finally {
+        setIsAssigning(false)
+      }
+      return
+    }
+    await assignToSession(value)
+  }
+
   async function handleDelete(photoId: string) {
     const photo = images.find(p => p.id === photoId)
     if (!photo) return
@@ -174,6 +234,20 @@ export default function PhotoGrid({ congressId, initialImages }: Props) {
               >
                 <X className="h-3 w-3 mr-1" /> Cancelar
               </Button>
+              <select
+                value=""
+                disabled={selectedIds.size === 0 || isAssigning}
+                onChange={(e) => { void handleSessionSelect(e.target.value) }}
+                className="h-8 text-xs rounded-md border border-slate-300 bg-white px-2 text-slate-700 disabled:opacity-50"
+                title="Mover las fotos seleccionadas a una sesión"
+              >
+                <option value="">Mover a sesión…</option>
+                {sessions.map((s) => (
+                  <option key={s.id} value={s.id}>{s.title}</option>
+                ))}
+                <option value="__unassign__">— Quitar de sesión —</option>
+                <option value="__new__">✚ Nueva sesión…</option>
+              </select>
               <Button
                 variant="destructive"
                 size="sm"
