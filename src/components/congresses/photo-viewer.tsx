@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2, Trash2, BrainCircuit, Loader2, FileText, Tags, BookOpen, Stethoscope, Edit3, Save, ExternalLink, Pencil, Sparkles } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Maximize2, Minimize2, Trash2, BrainCircuit, Loader2, FileText, Tags, BookOpen, Stethoscope, Edit3, Save, ExternalLink, Pencil, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { getImageAnalysis } from "@/lib/actions/ai"
@@ -70,6 +70,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
   const [showMetadata, setShowMetadata] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editOcr, setEditOcr] = useState("")
+  const [showRawText, setShowRawText] = useState(false)
   const [selectedReferenceIndex, setSelectedReferenceIndex] = useState<number | null>(null)
   const [referenceDraft, setReferenceDraft] = useState({
     official_title: "",
@@ -623,43 +624,68 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                   </section>
                 )}
 
-                {/* Síntesis IA (interpretación) — explica la diapositiva. */}
+                {/* Síntesis IA (interpretación) — protagonista: explica la diapositiva. */}
                 {analysisData.summary && (
                   <section>
                     <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Sparkles className="h-3.5 w-3.5" /> Síntesis de la IA
+                      <Sparkles className="h-4 w-4" /> Síntesis de la IA
                       <span className="text-[9px] font-bold normal-case px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 tracking-normal">
                         Interpretación · no es texto literal
                       </span>
                     </h4>
-                    <div className="bg-blue-950/30 p-4 rounded-lg border border-blue-900/40">
-                      <p className="text-sm text-slate-200 whitespace-pre-wrap font-sans leading-relaxed">
+                    <div className="bg-blue-950/30 p-5 rounded-xl border border-blue-900/40">
+                      <p className="text-[15px] text-slate-100 whitespace-pre-wrap font-sans leading-relaxed">
                         {analysisData.summary}
                       </p>
                     </div>
                   </section>
                 )}
 
-                {/* Texto literal de la diapositiva (OCR). Editable. */}
+                {/* Texto literal de la diapositiva (OCR) — secundario y plegable. */}
                 <section>
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5" /> Texto de la diapositiva
-                    <span className="text-[9px] font-bold normal-case px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 tracking-normal">
-                      Extraído de la imagen
-                    </span>
-                  </h4>
-                  {isEditing ? (
-                    <textarea
-                      value={editOcr}
-                      onChange={(e) => setEditOcr(e.target.value)}
-                      className="w-full min-h-[300px] bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:ring-1 focus:ring-blue-500 focus:outline-none leading-relaxed"
-                    />
+                  {/* En modo edición o sin síntesis disponible, se muestra siempre. */}
+                  {(isEditing || showRawText || !analysisData.summary) ? (
+                    <>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                          <FileText className="h-3.5 w-3.5" /> Texto de la diapositiva
+                          <span className="text-[9px] font-bold normal-case px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 tracking-normal">
+                            Extraído de la imagen
+                          </span>
+                        </h4>
+                        {!isEditing && analysisData.summary && (
+                          <button
+                            onClick={() => setShowRawText(false)}
+                            className="text-[10px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
+                          >
+                            Ocultar <ChevronUp className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      {isEditing ? (
+                        <textarea
+                          value={editOcr}
+                          onChange={(e) => setEditOcr(e.target.value)}
+                          className="w-full min-h-[300px] bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 focus:ring-1 focus:ring-blue-500 focus:outline-none leading-relaxed"
+                        />
+                      ) : (
+                        <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
+                          <p className="text-sm text-slate-300 whitespace-pre-wrap font-sans leading-relaxed">
+                            {analysisData.ocr}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   ) : (
-                    <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
-                      <p className="text-sm text-slate-300 whitespace-pre-wrap font-sans leading-relaxed">
-                        {analysisData.ocr}
-                      </p>
-                    </div>
+                    <button
+                      onClick={() => setShowRawText(true)}
+                      className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-slate-800 bg-slate-950/50 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-3.5 w-3.5" /> Ver texto extraído (OCR literal)
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
                   )}
                 </section>
 
