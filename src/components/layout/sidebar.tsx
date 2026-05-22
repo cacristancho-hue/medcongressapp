@@ -6,6 +6,7 @@ import { clsx } from "clsx"
 import { LayoutDashboard, ClipboardList, LogOut, BookOpen, Settings, Archive, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import Logo from "@/components/ui/md-logo"
+import LocaleSwitcher from "@/components/layout/locale-switcher"
 import type { User } from "@supabase/supabase-js"
 import type { Profile } from "@/types/database"
 
@@ -78,6 +79,9 @@ export default function Sidebar({ user, profile }: SidebarProps) {
           {profile?.specialty && (
             <p className="text-[10px] text-blue-600 font-bold uppercase mt-0.5">{profile.specialty}</p>
           )}
+        </div>
+        <div className="mb-3">
+          <LocaleSwitcher />
         </div>
         <button
           onClick={handleSignOut}

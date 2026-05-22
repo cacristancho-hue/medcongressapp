@@ -1,5 +1,9 @@
 import type { NextConfig } from "next"
 import { withSentryConfig } from "@sentry/nextjs"
+import createNextIntlPlugin from "next-intl/plugin"
+
+// next-intl: points at the request config that resolves the locale from cookie.
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -24,8 +28,10 @@ const sentryEnabled = Boolean(
   process.env.SENTRY_AUTH_TOKEN && process.env.NEXT_PUBLIC_SENTRY_DSN
 )
 
+const baseConfig = withNextIntl(nextConfig)
+
 export default sentryEnabled
-  ? withSentryConfig(nextConfig, {
+  ? withSentryConfig(baseConfig, {
       // Tag every build with the git SHA (or fallback) so Sentry groups
       // errors per release.
       release: {
@@ -46,4 +52,4 @@ export default sentryEnabled
       disableLogger: true,
       automaticVercelMonitors: false,
     })
-  : nextConfig
+  : baseConfig

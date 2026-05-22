@@ -42,5 +42,21 @@
   "legal": {
     "termsTitle": "Termos de uso",
     "privacyTitle": "Política de privacidade"
+  },
+  "landing": {
+    "login": "Entrar",
+    "register": "Cadastrar-se",
+    "heroTitlePre": "Estruturamos suas ",
+    "heroTitleHighlight": "fotos de congressos",
+    "heroTitlePost": " em conhecimento médico.",
+    "heroSubtitle": "Transforme suas capturas visuais em relatórios técnicos e bibliografia verificada instantaneamente. Sem ruído, só ciência.",
+    "ctaPrimary": "Começar agora",
+    "ctaSecondary": "Explorar demo",
+    "feature1Title": "Relatórios Estruturados",
+    "feature1Desc": "Obtenha a síntese técnica de cada palestra, organizada por eixos temáticos e pronta para sessões clínicas.",
+    "feature2Title": "Bibliografia de Apoio",
+    "feature2Desc": "Acesse abstracts oficiais e verifique o impacto científico das citações detectadas nos slides.",
+    "feature3Title": "Rigor e Verificação",
+    "feature3Desc": "Filtramos o ruído visual para entregar apenas informação validada com os mais altos padrões acadêmicos."
   }
 }

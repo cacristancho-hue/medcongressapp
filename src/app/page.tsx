@@ -1,8 +1,11 @@
 import Link from "next/link"
 import { ShieldCheck, BookOpen, FileText } from "lucide-react"
+import { getTranslations } from "next-intl/server"
 import Logo from "@/components/ui/md-logo"
+import LocaleSwitcher from "@/components/layout/locale-switcher"
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const t = await getTranslations("landing")
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header Premium */}
@@ -14,18 +17,19 @@ export default function LandingPage() {
               CONGRESS
             </span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <LocaleSwitcher />
             <Link
               href="/login"
               className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
             >
-              Iniciar sesión
+              {t("login")}
             </Link>
             <Link
               href="/registro"
               className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
             >
-              Registrarse
+              {t("register")}
             </Link>
           </div>
         </div>
@@ -56,24 +60,24 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter mb-6 leading-[0.95]">
-            Estructuramos sus <span className="text-blue-600">fotos de congresos</span> en conocimiento médico.
+            {t("heroTitlePre")}<span className="text-blue-600">{t("heroTitleHighlight")}</span>{t("heroTitlePost")}
           </h1>
           <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
-            Transforme sus capturas visuales en reportes técnicos y bibliografía verificada al instante. Sin ruido, solo ciencia.
+            {t("heroSubtitle")}
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/registro"
               className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-10 py-5 text-base font-bold text-white hover:bg-slate-900 shadow-[0_20px_50px_rgba(37,99,235,0.2)] transition-all active:scale-95"
             >
-              Empezar ahora
+              {t("ctaPrimary")}
             </Link>
             <Link
               href="/login"
               className="inline-flex items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-10 py-5 text-base font-bold text-slate-700 hover:border-blue-600 hover:text-blue-600 transition-all"
             >
-              Explorar demo
+              {t("ctaSecondary")}
             </Link>
           </div>
         </div>
@@ -85,18 +89,18 @@ export default function LandingPage() {
           {[
             {
               icon: <FileText className="h-10 w-10 text-blue-600" />,
-              title: "Reportes Estructurados",
-              desc: "Obtenga la síntesis técnica de cada ponencia, organizada por ejes temáticos y lista para sesiones clínicas.",
+              title: t("feature1Title"),
+              desc: t("feature1Desc"),
             },
             {
               icon: <BookOpen className="h-10 w-10 text-blue-600" />,
-              title: "Bibliografía de Soporte",
-              desc: "Acceda a abstracts oficiales y verifique el impacto científico de las citas detectadas en las diapositivas.",
+              title: t("feature2Title"),
+              desc: t("feature2Desc"),
             },
             {
               icon: <ShieldCheck className="h-10 w-10 text-blue-600" />,
-              title: "Rigor y Verificación",
-              desc: "Filtramos el ruido visual para entregarle solo información validada con los más altos estándares académicos.",
+              title: t("feature3Title"),
+              desc: t("feature3Desc"),
             },
           ].map((feature, i) => (
             <div key={i} className="group bg-white rounded-3xl border border-slate-100 p-10 hover:border-blue-100 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.05)] transition-all duration-500">

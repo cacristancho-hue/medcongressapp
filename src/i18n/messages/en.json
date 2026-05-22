@@ -42,5 +42,21 @@
   "legal": {
     "termsTitle": "Terms of use",
     "privacyTitle": "Privacy policy"
+  },
+  "landing": {
+    "login": "Sign in",
+    "register": "Sign up",
+    "heroTitlePre": "We turn your ",
+    "heroTitleHighlight": "congress photos",
+    "heroTitlePost": " into medical knowledge.",
+    "heroSubtitle": "Transform your visual captures into technical reports and verified bibliography instantly. No noise, just science.",
+    "ctaPrimary": "Get started",
+    "ctaSecondary": "Explore demo",
+    "feature1Title": "Structured Reports",
+    "feature1Desc": "Get the technical synthesis of each talk, organized by topic and ready for clinical sessions.",
+    "feature2Title": "Supporting Bibliography",
+    "feature2Desc": "Access official abstracts and verify the scientific impact of the citations detected in the slides.",
+    "feature3Title": "Rigor and Verification",
+    "feature3Desc": "We filter out the visual noise to deliver only information validated to the highest academic standards."
   }
 }
