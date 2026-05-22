@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-21 — Auditoría: trazabilidad (fase32) + zooms en prod + verif. async + ESLint reparado (Claude Opus 4.7)
+- **Última actualización**: 2026-05-21 — Auditoría: trazabilidad (fase32) + zooms + verif. async + ESLint + sesiones (fase33) (Claude Opus 4.7)
 
 ---
 
@@ -51,6 +51,7 @@
 - **Código Limpio**: Cero errores de linting en las rutas principales; tipado estricto aplicado a `assistant.ts` y `library.ts`.
 - **Landing depurado**: el hero del landing ya no muestra el badge "Actualización Médica de Élite" (removido 2026-05-21 por decisión estética de Camilo).
 - **Trazabilidad OCR vs IA (fase32)**: `ocr_results.cleaned_text` ya no contiene la síntesis IA. Nueva columna `medical_summary` para la inferencia. `raw_text` = OCR literal y es ahora la fuente de verdad de tópicos, búsqueda, export y métricas. Reportes usan OCR literal + síntesis IA etiquetada explícitamente como inferencia. Migración fase32 ya aplicada en Supabase (2026-05-21).
+- **Sesiones de congreso (fase33)**: jerarquía Congreso→Sesión→Imagen. Asignación manual de diapositivas a ponencias, navegador/filtro de sesiones, y reportes académicos por sesión. Captura EXIF de hora de foto. **Pendiente correr migración fase33 en Supabase.**
 
 ### Validado en runtime con datos reales
 
@@ -264,8 +265,14 @@ app/
 - `ai-processing.ts` (sync) y worker `runImageAnalysis` verificaban cada referencia inline (CrossRef/PubMed/OpenAlex secuencial) dentro del request → riesgo de timeout con muchas citas.
 - Fix: helper `enqueueReferenceVerificationIfPending` (jobs.ts), deduplicado por congreso. Ambos caminos ahora encolan un job `reference_verification` (procesado por el worker async ya existente `runReferenceVerification`, con estado visible en UI). `verifySingleReference` sigue síncrono (acción explícita de 1 ref).
 
+**Brecha #3 corregida — sesiones de congreso (commits b8a8d1c + ffae682):**
+- Nueva jerarquía Congreso→Sesión→Imagen. Migración `fase33` (aditiva): tabla `congress_sessions` (RLS por user_id), `congress_images.session_id` nullable (ON DELETE SET NULL) y `captured_at` timestamptz. **Debe correrse en Supabase** (idempotente). 
+- EXIF: `readExifCapturedAt` lee DateTimeOriginal al subir → `captured_at` (habilita autoagrupación por tiempo a futuro).
+- Server actions `sessions.ts` (create/update/delete/assign). UI: navegador de sesiones + "Sin asignar" en DiscoveryClient; acción "Mover a sesión" (con creación al vuelo) en PhotoGrid.
+- Reportes por sesión: `enqueueReportGeneration` acepta `sessionId`; worker filtra imágenes por sesión y titula el reporte; selector de alcance en `CongressReport`.
+- Decisión de Camilo: asignación manual + captura EXIF; reportes por sesión habilitados.
+
 **Brechas pendientes de la auditoría (no abordadas aún):**
-- **#3:** falta `congress_sessions` (jerarquía Congreso→Sesión→Imagen) para vender a sociedades/organizadores.
 - **#5:** falta `knowledge_items` (biblioteca transversal con tags clínicos).
 - **Infra (RESUELTO, commits 8eb18aa + ed269dd):** el hook pre-commit ya funciona. Se reemplazó `FlatCompat` por los flat configs nativos de `eslint-config-next` 16 (core-web-vitals + typescript) en `eslint.config.mjs`. Se corrigieron los errores de lint preexistentes (`no-explicit-any` tipados, comillas sin escapar en páginas legales). Los `set-state-in-effect` de `reference-library.tsx` y `photo-viewer.tsx` se refactorizaron al patrón de ajuste de estado en render (guarda de valor previo), así que la regla `react-hooks/set-state-in-effect` quedó en **`error`** (linter estricto). Quedan 22 warnings no bloqueantes. **Ya NO se necesita `--no-verify`.**
 
