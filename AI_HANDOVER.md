@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-21 — Trazabilidad OCR (fase32) + zooms de citas en prod (Claude Opus 4.7)
+- **Última actualización**: 2026-05-21 — Auditoría: trazabilidad (fase32) + zooms en prod + verificación async (Claude Opus 4.7)
 
 ---
 
@@ -260,9 +260,12 @@ app/
 - Fix: nuevo helper `src/lib/server-image.ts` (sharp, corre en Vercel) con `renderPreparedDerivative` + `extractFooterZooms` (banda inferior 42%, mitad izq/der). `ai-processing.ts` ahora usa sharp en vez de Python. El worker (que ya usaba sharp inline con la misma lógica) se refactorizó para usar el mismo helper y no divergir. `sharp` declarado en package.json (estaba solo transitivo).
 - `tools/optimize_slide.py` queda legacy/sin uso por la app web (lo puede seguir usando `local_worker.py`).
 
+**Brecha #4 corregida — verificación de referencias síncrona (commit 9929584):**
+- `ai-processing.ts` (sync) y worker `runImageAnalysis` verificaban cada referencia inline (CrossRef/PubMed/OpenAlex secuencial) dentro del request → riesgo de timeout con muchas citas.
+- Fix: helper `enqueueReferenceVerificationIfPending` (jobs.ts), deduplicado por congreso. Ambos caminos ahora encolan un job `reference_verification` (procesado por el worker async ya existente `runReferenceVerification`, con estado visible en UI). `verifySingleReference` sigue síncrono (acción explícita de 1 ref).
+
 **Brechas pendientes de la auditoría (no abordadas aún):**
 - **#3:** falta `congress_sessions` (jerarquía Congreso→Sesión→Imagen) para vender a sociedades/organizadores.
-- **#4:** verificación de referencias es síncrona dentro del request (riesgo timeout); debería ir a la cola `ai_jobs`.
 - **#5:** falta `knowledge_items` (biblioteca transversal con tags clínicos).
 - **Infra:** hook pre-commit (eslint) sigue roto a nivel proyecto; se commitea con --no-verify.
 
