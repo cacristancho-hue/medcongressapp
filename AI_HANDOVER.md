@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-21 — Auditoría: trazabilidad (fase32) + zooms en prod + verificación async (Claude Opus 4.7)
+- **Última actualización**: 2026-05-21 — Auditoría: trazabilidad (fase32) + zooms en prod + verif. async + ESLint reparado (Claude Opus 4.7)
 
 ---
 
@@ -267,7 +267,7 @@ app/
 **Brechas pendientes de la auditoría (no abordadas aún):**
 - **#3:** falta `congress_sessions` (jerarquía Congreso→Sesión→Imagen) para vender a sociedades/organizadores.
 - **#5:** falta `knowledge_items` (biblioteca transversal con tags clínicos).
-- **Infra:** hook pre-commit (eslint) sigue roto a nivel proyecto; se commitea con --no-verify.
+- **Infra (RESUELTO, commit 8eb18aa):** el hook pre-commit ya funciona. Se reemplazó `FlatCompat` por los flat configs nativos de `eslint-config-next` 16 (core-web-vitals + typescript) en `eslint.config.mjs`. Se corrigieron los 16 errores de lint preexistentes (6 `no-explicit-any` tipados, comillas sin escapar en páginas legales). La regla advisory nueva `react-hooks/set-state-in-effect` quedó en `warn` (TODO: refactor de efectos en `reference-library.tsx`). Quedan 24 warnings no bloqueantes. **Ya NO se necesita `--no-verify`.**
 
 ### 2026-05-21 · Claude Opus 4.7 — Ajuste de copy del landing hero
 
