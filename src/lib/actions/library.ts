@@ -33,6 +33,8 @@ export interface LibraryReference {
   is_open_access: boolean
   open_access_url: string | null
   image_full_url: string | null
+  clinical_tags: string[] | null
+  is_favorite: boolean
 }
 
 interface ReferenceCandidateRow {
@@ -108,6 +110,8 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       influential_citation_count,
       is_open_access,
       open_access_url,
+      clinical_tags,
+      is_favorite,
       congresses!inner (
         name,
         specialty,
@@ -155,6 +159,8 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     influential_citation_count: number | null
     is_open_access: boolean | null
     open_access_url: string | null
+    clinical_tags: string[] | null
+    is_favorite: boolean | null
     congress_images: { deleted_at: string | null; storage_path_thumbnail: string | null; storage_path: string | null } | null
     congresses: { name: string | null; specialty: string | null; deleted_at: string | null } | null
   }
@@ -212,6 +218,8 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       influential_citation_count: row.influential_citation_count ?? null,
       is_open_access: row.is_open_access ?? false,
       open_access_url: row.open_access_url ?? null,
+      clinical_tags: row.clinical_tags ?? null,
+      is_favorite: row.is_favorite ?? false,
     })
   })
 

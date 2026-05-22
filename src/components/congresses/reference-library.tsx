@@ -39,6 +39,7 @@ interface ReferenceEditorDraft {
   publication_type: string
   verification_status: string
   verification_notes: string
+  clinical_tags: string
 }
 
 function createDraft(reference: LibraryReference): ReferenceEditorDraft {
@@ -52,7 +53,20 @@ function createDraft(reference: LibraryReference): ReferenceEditorDraft {
     publication_type: reference.publication_type ?? "",
     verification_status: reference.verification_status ?? "not_verified",
     verification_notes: reference.verification_notes ?? "",
+    clinical_tags: (reference.clinical_tags ?? []).join(", "),
   }
+}
+
+// Parse a comma/semicolon-separated tag string into a clean array.
+function parseTags(input: string): string[] {
+  return Array.from(
+    new Set(
+      input
+        .split(/[,;]/)
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0)
+    )
+  )
 }
 
 export default function ReferenceLibrary({ initialReferences }: Props) {
@@ -62,6 +76,8 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
   const [filterSpecialty, setFilterSpecialty] = useState<string>("all")
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [filterYear, setFilterYear] = useState<string>("all")
+  const [filterTag, setFilterTag] = useState<string>("all")
+  const [onlyFavorites, setOnlyFavorites] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "congress">("grid")
   const [selectedReference, setSelectedReference] = useState<LibraryReference | null>(null)
   const [draft, setDraft] = useState<ReferenceEditorDraft | null>(null)
@@ -128,6 +144,17 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
     return c
   }, [initialReferences])
 
+  const allTags = useMemo(() => {
+    const set = new Set<string>()
+    initialReferences.forEach((r) => (r.clinical_tags ?? []).forEach((t) => set.add(t)))
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [initialReferences])
+
+  const favoritesCount = useMemo(
+    () => initialReferences.filter((r) => r.is_favorite).length,
+    [initialReferences]
+  )
+
   const filtered = useMemo(() => {
     const term = searchTerm.toLowerCase()
     return initialReferences.filter((ref) => {
@@ -137,16 +164,19 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
         ref.detected_authors?.toLowerCase().includes(term) ||
         ref.raw_text.toLowerCase().includes(term) ||
         ref.detected_journal?.toLowerCase().includes(term) ||
-        ref.verification_notes?.toLowerCase().includes(term)
+        ref.verification_notes?.toLowerCase().includes(term) ||
+        (ref.clinical_tags ?? []).some((t) => t.toLowerCase().includes(term))
 
       const matchesCongress = filterCongress === "all" || ref.congress_name.includes(filterCongress)
       const matchesSpecialty = filterSpecialty === "all" || ref.specialty === filterSpecialty
       const matchesStatus = filterStatus === "all" || ref.verification_status === filterStatus
       const matchesYear = filterYear === "all" || ref.detected_year === filterYear
+      const matchesTag = filterTag === "all" || (ref.clinical_tags ?? []).includes(filterTag)
+      const matchesFavorite = !onlyFavorites || ref.is_favorite
 
-      return matchesSearch && matchesCongress && matchesSpecialty && matchesStatus && matchesYear
+      return matchesSearch && matchesCongress && matchesSpecialty && matchesStatus && matchesYear && matchesTag && matchesFavorite
     })
-  }, [initialReferences, searchTerm, filterCongress, filterSpecialty, filterStatus, filterYear])
+  }, [initialReferences, searchTerm, filterCongress, filterSpecialty, filterStatus, filterYear, filterTag, onlyFavorites])
 
   const groupedByCongress = useMemo(() => {
     const groups: Record<string, LibraryReference[]> = {}
@@ -169,6 +199,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
 
     setIsSavingDetail(true)
     try {
+      const tags = parseTags(draft.clinical_tags)
       const res = await updateReferenceCandidate({
         id: selectedReference.id,
         congressId: selectedReference.congress_id,
@@ -182,6 +213,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
           publication_type: draft.publication_type.trim() || null,
           verification_status: draft.verification_status,
           verification_notes: draft.verification_notes.trim() || null,
+          clinical_tags: tags.length > 0 ? tags : null,
         },
       })
 
@@ -200,6 +232,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                 publication_type: draft.publication_type.trim() || null,
                 verification_status: draft.verification_status,
                 verification_notes: draft.verification_notes.trim() || null,
+                clinical_tags: tags.length > 0 ? tags : null,
               }
             : prev
         )
@@ -210,6 +243,28 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
       toast.error("No se pudo guardar la referencia")
     } finally {
       setIsSavingDetail(false)
+    }
+  }
+
+  const toggleFavorite = async (reference: LibraryReference) => {
+    const next = !reference.is_favorite
+    // Optimistic update of the open detail panel.
+    setSelectedReference((prev) =>
+      prev && prev.id === reference.id ? { ...prev, is_favorite: next } : prev
+    )
+    const res = await updateReferenceCandidate({
+      id: reference.id,
+      congressId: reference.congress_id,
+      updates: { is_favorite: next },
+    })
+    if (res.success) {
+      toast.success(next ? "Añadida a favoritos" : "Quitada de favoritos")
+      router.refresh()
+    } else {
+      toast.error(res.error)
+      setSelectedReference((prev) =>
+        prev && prev.id === reference.id ? { ...prev, is_favorite: !next } : prev
+      )
     }
   }
 
@@ -356,6 +411,34 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                 </option>
               ))}
             </select>
+
+            {allTags.length > 0 && (
+              <select
+                className="text-xs border-slate-200 rounded-lg bg-slate-50 py-1.5 pl-2 pr-8"
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+                title="Filtrar por etiqueta clínica"
+              >
+                <option value="all">Todas las etiquetas</option>
+                {allTags.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setOnlyFavorites((v) => !v)}
+              className={clsx(
+                "text-xs rounded-lg py-1.5 px-3 border font-semibold transition-colors",
+                onlyFavorites
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-slate-50 text-slate-500 border-slate-200 hover:border-amber-200"
+              )}
+              title="Mostrar solo favoritos"
+            >
+              ★ Favoritos{favoritesCount > 0 ? ` (${favoritesCount})` : ""}
+            </button>
           </div>
         </div>
 
@@ -367,6 +450,8 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
             filterSpecialty !== "all" ||
             filterStatus !== "all" ||
             filterYear !== "all" ||
+            filterTag !== "all" ||
+            onlyFavorites ||
             searchTerm) && (
             <button
               onClick={() => {
@@ -374,6 +459,8 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                 setFilterSpecialty("all")
                 setFilterStatus("all")
                 setFilterYear("all")
+                setFilterTag("all")
+                setOnlyFavorites(false)
                 setSearchTerm("")
               }}
               className="text-blue-600 hover:underline"
@@ -597,8 +684,31 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                     />
                   </Field>
 
+                  <Field label="Etiquetas clínicas (separadas por coma)">
+                    <input
+                      value={draft.clinical_tags}
+                      onChange={(e) =>
+                        setDraft((prev) => (prev ? { ...prev, clinical_tags: e.target.value } : prev))
+                      }
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
+                      placeholder="ej: hipertensión, guía 2024, para estudiar"
+                    />
+                  </Field>
+
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => toggleFavorite(selectedReference)}
+                        className={clsx(
+                          "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold border transition-colors",
+                          selectedReference.is_favorite
+                            ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                            : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
+                        )}
+                        title={selectedReference.is_favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                      >
+                        {selectedReference.is_favorite ? "★ Favorito" : "☆ Favorito"}
+                      </button>
                       <button
                         onClick={saveReferenceDetail}
                         disabled={isSavingDetail}
@@ -667,6 +777,9 @@ function ReferenceCard({
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            {reference.is_favorite && (
+              <span className="text-[10px] text-amber-500" title="Favorito">★</span>
+            )}
             <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
               {reference.specialty || "General"}
             </span>
@@ -700,6 +813,15 @@ function ReferenceCard({
               ? `· ${reference.official_year || reference.detected_year}`
               : ""}
           </p>
+          {reference.clinical_tags && reference.clinical_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {reference.clinical_tags.map((t) => (
+                <span key={t} className="text-[10px] bg-teal-50 text-teal-700 border border-teal-100 px-1.5 py-0.5 rounded-full font-medium">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
