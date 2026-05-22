@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache"
 import { recordAiUsage } from "@/lib/ai-usage"
 import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
 import { withAction } from "@/lib/with-action"
-import { verifyReference } from "@/lib/reference-verification"
+import { enqueueReferenceVerificationIfPending } from "@/lib/jobs"
+import { kickQueuedAiJobs } from "@/lib/worker-kick"
 import { renderPreparedDerivative, extractFooterZooms } from "@/lib/server-image"
 
 interface AIReference {
@@ -166,35 +167,15 @@ export const processImageWithAI = withAction({
             .in("id", previousRefs.map((ref) => ref.id))
         }
 
-        for (const ref of insertedRefs) {
-          try {
-            const vResult = await verifyReference({
-              id: ref.id,
-              raw_text: ref.raw_reference_text,
-              detected_title: ref.detected_title,
-              detected_authors: ref.detected_authors,
-              detected_year: ref.detected_year,
-              detected_journal: ref.detected_journal,
-              detected_doi: ref.detected_doi,
-            })
-            
-            await supabase.from("reference_candidates").update({
-              verification_status: vResult.status,
-              confidence_score: vResult.confidenceScore,
-              detected_doi: vResult.matchedDoi ?? ref.detected_doi,
-              detected_pmid: vResult.matchedPmid,
-              verification_source: vResult.source,
-              official_title: vResult.matchedTitle,
-              official_authors: vResult.matchedAuthors,
-              official_year: vResult.matchedYear,
-              official_journal: vResult.matchedJournal,
-              abstract: vResult.abstract,
-              publication_type: vResult.publicationType,
-            }).eq("id", ref.id)
-          } catch (e) {
-            console.warn("[processImageWithAI] Fallo auto-verificación:", ref.id, e)
-          }
-        }
+        // Verification is decoupled from analysis (brecha #4): enqueue a
+        // background job (deduped per congress) instead of calling CrossRef/
+        // PubMed/OpenAlex inline, which could time out the request when a slide
+        // carries many citations. The job runs via the existing worker.
+        await enqueueReferenceVerificationIfPending(supabase, {
+          userId: user.id,
+          congressId: image.congress_id,
+        })
+        void kickQueuedAiJobs().catch(() => {})
       }
     }
 

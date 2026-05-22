@@ -3,6 +3,7 @@
 // will live in supabase/functions/ai-job-worker (next iteration) or Vercel
 // cron. This module is what server actions call to schedule work.
 
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 import { log } from "@/lib/logger"
 
@@ -63,6 +64,46 @@ export async function enqueueJob(input: EnqueueInput): Promise<{ id?: string; er
     log("error", "enqueueJob unexpected", { err: msg })
     return { error: msg }
   }
+}
+
+// Enqueue a congress-wide reference_verification job, deduped: skips if one is
+// already pending/processing for the congress. Accepts any Supabase client so
+// both server actions (user client) and the worker (service client) can call it.
+export async function enqueueReferenceVerificationIfPending(
+  supabase: SupabaseClient,
+  input: { userId: string; congressId: string; organizationId?: string | null }
+): Promise<{ id?: string; skipped?: boolean; error?: string }> {
+  const { data: existing } = await supabase
+    .from("ai_jobs")
+    .select("id")
+    .eq("congress_id", input.congressId)
+    .eq("job_type", "reference_verification")
+    .in("status", ["pending", "processing"])
+    .limit(1)
+
+  if (existing && existing.length > 0) return { skipped: true }
+
+  const { data, error } = await supabase
+    .from("ai_jobs")
+    .insert({
+      user_id: input.userId,
+      organization_id: input.organizationId ?? null,
+      job_type: "reference_verification",
+      payload: {},
+      congress_id: input.congressId,
+      priority: 75,
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    log("error", "enqueueReferenceVerificationIfPending failed", {
+      congressId: input.congressId,
+      err: error.message,
+    })
+    return { error: error.message }
+  }
+  return { id: data.id }
 }
 
 export interface JobSnapshot {

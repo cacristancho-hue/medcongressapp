@@ -11,6 +11,7 @@ import { createServiceClient } from "@/lib/supabase/service"
 import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
 import { recordAiUsage } from "@/lib/ai-usage"
 import { verifyReference } from "@/lib/reference-verification"
+import { enqueueReferenceVerificationIfPending } from "@/lib/jobs"
 import { revalidatePath } from "next/cache"
 import { NextResponse } from "next/server"
 import { renderPreparedDerivative, extractFooterZooms } from "@/lib/server-image"
@@ -264,40 +265,13 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
             .in("id", previousRefs.map((ref) => ref.id))
         }
 
-        for (const ref of insertedRefs) {
-          try {
-            const vResult = await verifyReference({
-              id: ref.id,
-              raw_text: ref.raw_reference_text,
-              detected_title: ref.detected_title,
-              detected_authors: ref.detected_authors,
-              detected_year: ref.detected_year,
-              detected_journal: ref.detected_journal,
-              detected_doi: ref.detected_doi,
-            })
-            
-            await supabase.from("reference_candidates").update({
-              verification_status: vResult.status,
-              confidence_score: vResult.confidenceScore,
-              detected_title: vResult.matchedTitle ?? ref.detected_title,
-              detected_authors: vResult.matchedAuthors ?? ref.detected_authors,
-              detected_year: vResult.matchedYear ?? ref.detected_year,
-              detected_journal: vResult.matchedJournal ?? ref.detected_journal,
-              detected_doi: vResult.matchedDoi ?? ref.detected_doi,
-              detected_pmid: vResult.matchedPmid,
-              verification_source: vResult.source,
-              verification_notes: vResult.notes,
-              official_title: vResult.matchedTitle,
-              official_authors: vResult.matchedAuthors,
-              official_year: vResult.matchedYear,
-              official_journal: vResult.matchedJournal,
-              abstract: vResult.abstract,
-              publication_type: vResult.publicationType,
-            }).eq("id", ref.id)
-          } catch (vErr) {
-            log("warn", "auto-verify failed in worker", { refId: ref.id, error: vErr })
-          }
-        }
+        // Decouple verification from analysis (brecha #4): enqueue a background
+        // reference_verification job (deduped per congress) instead of verifying
+        // inline within this image job's 60s budget. Picked up by a later cron run.
+        await enqueueReferenceVerificationIfPending(supabase, {
+          userId: image.user_id,
+          congressId: image.congress_id,
+        })
       }
     }
 
