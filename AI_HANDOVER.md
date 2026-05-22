@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-21 — Auditoría: trazabilidad (fase32) + zooms + verif. async + ESLint + sesiones (fase33) (Claude Opus 4.7)
+- **Última actualización**: 2026-05-21 — Auditoría completa: fase32-34 (trazabilidad, zooms, verif. async, ESLint, sesiones, biblioteca) (Claude Opus 4.7)
 
 ---
 
@@ -272,8 +272,12 @@ app/
 - Reportes por sesión: `enqueueReportGeneration` acepta `sessionId`; worker filtra imágenes por sesión y titula el reporte; selector de alcance en `CongressReport`.
 - Decisión de Camilo: asignación manual + captura EXIF; reportes por sesión habilitados.
 
-**Brechas pendientes de la auditoría (no abordadas aún):**
-- **#5:** falta `knowledge_items` (biblioteca transversal con tags clínicos).
+**Brecha #5 corregida — biblioteca de conocimiento (commit c85f1d3):**
+- Decisión de Camilo: potenciar la biblioteca de referencias existente (reuso) en vez de una tabla `knowledge_items` paralela.
+- Migración `fase34` (aditiva): `reference_candidates.clinical_tags text[]` + `is_favorite boolean` (índices GIN + parcial). **Debe correrse en Supabase.**
+- UI: editor de etiquetas clínicas + botón favorito en el detalle; filtros por etiqueta y "solo favoritos"; búsqueda incluye tags; chips + estrella en cada tarjeta. Persisten vía `updateReferenceCandidate`.
+
+**Auditoría completa: las 6 brechas (#1–#5 + infra ESLint) están cerradas.** Quedan TODOs menores: refactor opcional de UX, autoagrupación de sesiones por `captured_at` (datos ya capturándose).
 - **Infra (RESUELTO, commits 8eb18aa + ed269dd):** el hook pre-commit ya funciona. Se reemplazó `FlatCompat` por los flat configs nativos de `eslint-config-next` 16 (core-web-vitals + typescript) en `eslint.config.mjs`. Se corrigieron los errores de lint preexistentes (`no-explicit-any` tipados, comillas sin escapar en páginas legales). Los `set-state-in-effect` de `reference-library.tsx` y `photo-viewer.tsx` se refactorizaron al patrón de ajuste de estado en render (guarda de valor previo), así que la regla `react-hooks/set-state-in-effect` quedó en **`error`** (linter estricto). Quedan 22 warnings no bloqueantes. **Ya NO se necesita `--no-verify`.**
 
 ### 2026-05-21 · Claude Opus 4.7 — Ajuste de copy del landing hero
