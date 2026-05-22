@@ -267,7 +267,7 @@ app/
 **Brechas pendientes de la auditoría (no abordadas aún):**
 - **#3:** falta `congress_sessions` (jerarquía Congreso→Sesión→Imagen) para vender a sociedades/organizadores.
 - **#5:** falta `knowledge_items` (biblioteca transversal con tags clínicos).
-- **Infra (RESUELTO, commit 8eb18aa):** el hook pre-commit ya funciona. Se reemplazó `FlatCompat` por los flat configs nativos de `eslint-config-next` 16 (core-web-vitals + typescript) en `eslint.config.mjs`. Se corrigieron los 16 errores de lint preexistentes (6 `no-explicit-any` tipados, comillas sin escapar en páginas legales). La regla advisory nueva `react-hooks/set-state-in-effect` quedó en `warn` (TODO: refactor de efectos en `reference-library.tsx`). Quedan 24 warnings no bloqueantes. **Ya NO se necesita `--no-verify`.**
+- **Infra (RESUELTO, commits 8eb18aa + ed269dd):** el hook pre-commit ya funciona. Se reemplazó `FlatCompat` por los flat configs nativos de `eslint-config-next` 16 (core-web-vitals + typescript) en `eslint.config.mjs`. Se corrigieron los errores de lint preexistentes (`no-explicit-any` tipados, comillas sin escapar en páginas legales). Los `set-state-in-effect` de `reference-library.tsx` y `photo-viewer.tsx` se refactorizaron al patrón de ajuste de estado en render (guarda de valor previo), así que la regla `react-hooks/set-state-in-effect` quedó en **`error`** (linter estricto). Quedan 22 warnings no bloqueantes. **Ya NO se necesita `--no-verify`.**
 
 ### 2026-05-21 · Claude Opus 4.7 — Ajuste de copy del landing hero
 
