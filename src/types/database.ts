@@ -87,6 +87,22 @@ export interface CongressImage {
   ai_status: AiStatus | null
   upload_error: string | null
   image_order: number
+  session_id: string | null
+  captured_at: string | null
+  created_at: string
+  updated_at?: string
+}
+
+export interface CongressSession {
+  id: string
+  congress_id: string
+  user_id: string
+  title: string
+  speaker: string | null
+  room: string | null
+  session_date: string | null
+  starts_at: string | null
+  session_order: number
   created_at: string
   updated_at?: string
 }

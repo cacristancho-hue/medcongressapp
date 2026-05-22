@@ -146,6 +146,7 @@ export async function registerImage(payload: {
   file_size: number
   mime_type: string
   file_hash?: string
+  captured_at?: string | null
 }): Promise<{ error?: string }> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -211,6 +212,7 @@ export async function registerImage(payload: {
     mime_type: payload.mime_type_original,
     original_filename: payload.original_filename,
     file_hash: payload.file_hash,
+    captured_at: payload.captured_at ?? null,
   })
 
   if (error) {

@@ -9,7 +9,7 @@ import { registerImage } from "@/lib/actions/photos"
 import { enqueueImageAnalysis, enqueueImageDerivation } from "@/lib/actions/queue"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { kickQueuedAiJobs } from "@/lib/worker-kick"
-import { buildCongressPhotoPaths } from "@/lib/image-processing"
+import { buildCongressPhotoPaths, readExifCapturedAt } from "@/lib/image-processing"
 import UploadDisclaimer from "@/components/legal/upload-disclaimer"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -134,6 +134,9 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         return
       }
 
+      // Capture time (EXIF) read from the original file; null when unavailable.
+      const capturedAt = await readExifCapturedAt(item.file)
+
       const { error: regErr } = await registerImage({
         id: item.id,
         congress_id: congressId,
@@ -163,6 +166,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         file_size: item.file.size,
         mime_type: item.file.type,
         file_hash: item.hash,
+        captured_at: capturedAt,
       })
 
       if (regErr) {

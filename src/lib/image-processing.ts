@@ -201,6 +201,94 @@ async function readExifOrientation(file: File): Promise<number> {
   return 1
 }
 
+// Read EXIF DateTimeOriginal (capture time) from a JPEG, returning an ISO
+// string or null. Parses the EXIF SubIFD (tag 0x8769 → 0x9003). The timestamp
+// has no timezone in EXIF; we interpret it as local time. Used to enable
+// session grouping by capture time later.
+export async function readExifCapturedAt(file: File): Promise<string | null> {
+  const mimeType = normalizeMimeType(file.type)
+  if (mimeType !== "image/jpeg" && mimeType !== "image/jpg") {
+    return null
+  }
+
+  try {
+    const buffer = await file.slice(0, 131072).arrayBuffer()
+    const view = new DataView(buffer)
+    if (view.byteLength < 4 || view.getUint16(0, false) !== 0xffd8) return null
+
+    let offset = 2
+    while (offset + 4 < view.byteLength) {
+      const marker = view.getUint16(offset, false)
+      offset += 2
+      if (marker === 0xffda || marker === 0xffd9) break
+
+      const segmentLength = view.getUint16(offset, false)
+      if (marker === 0xffe1) {
+        if (view.getUint32(offset + 2, false) !== 0x45786966) return null
+
+        const tiffOffset = offset + 8
+        const littleEndian = view.getUint16(tiffOffset, false) === 0x4949
+        const getUint16 = (pos: number) => view.getUint16(pos, littleEndian)
+        const getUint32 = (pos: number) => view.getUint32(pos, littleEndian)
+
+        const readAscii = (entryOffset: number): string | null => {
+          const count = getUint32(entryOffset + 4)
+          if (count <= 0 || count > 64) return null
+          let valueOffset = entryOffset + 8
+          if (count > 4) valueOffset = tiffOffset + getUint32(entryOffset + 8)
+          let s = ""
+          for (let j = 0; j < count && valueOffset + j < view.byteLength; j++) {
+            const c = view.getUint8(valueOffset + j)
+            if (c === 0) break
+            s += String.fromCharCode(c)
+          }
+          return s || null
+        }
+
+        const findTag = (ifdStart: number, target: number): number | null => {
+          if (ifdStart + 2 > view.byteLength) return null
+          const entries = getUint16(ifdStart)
+          for (let i = 0; i < entries; i++) {
+            const entryOffset = ifdStart + 2 + i * 12
+            if (entryOffset + 12 > view.byteLength) break
+            if (getUint16(entryOffset) === target) return entryOffset
+          }
+          return null
+        }
+
+        const ifd0 = tiffOffset + getUint32(tiffOffset + 4)
+        // ExifIFDPointer (0x8769) → SubIFD that holds DateTimeOriginal.
+        const exifPtrEntry = findTag(ifd0, 0x8769)
+        let raw: string | null = null
+        if (exifPtrEntry !== null) {
+          const subIfd = tiffOffset + getUint32(exifPtrEntry + 8)
+          const dtoEntry = findTag(subIfd, 0x9003) // DateTimeOriginal
+          if (dtoEntry !== null) raw = readAscii(dtoEntry)
+        }
+        // Fallback: main IFD DateTime (0x0132).
+        if (!raw) {
+          const dtEntry = findTag(ifd0, 0x0132)
+          if (dtEntry !== null) raw = readAscii(dtEntry)
+        }
+
+        if (!raw) return null
+        // EXIF format: "YYYY:MM:DD HH:MM:SS" → interpret as local time.
+        const m = raw.match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/)
+        if (!m) return null
+        const [, y, mo, d, h, mi, s] = m
+        const date = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s))
+        if (Number.isNaN(date.getTime())) return null
+        return date.toISOString()
+      }
+
+      offset += segmentLength
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 async function decodeImage(file: File): Promise<DecodedImage> {
   const orientation = await readExifOrientation(file)
 
