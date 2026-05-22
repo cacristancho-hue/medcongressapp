@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { recordAiUsage } from "@/lib/ai-usage"
-import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
+import { analyzeImage, extractTopicsFromCorpus, normalizeImageType } from "@/lib/ai/router"
 import { withAction } from "@/lib/with-action"
 import { enqueueReferenceVerificationIfPending } from "@/lib/jobs"
 import { kickQueuedAiJobs } from "@/lib/worker-kick"
@@ -104,7 +104,7 @@ export const processImageWithAI = withAction({
         raw_text: result.raw_text,
         cleaned_text: result.raw_text,
         slide_text: result.slide_text,
-        image_type: result.image_type,
+        image_type: normalizeImageType(result.image_type),
         medical_summary: result.medical_summary,
       }, { onConflict: "image_id" })
 

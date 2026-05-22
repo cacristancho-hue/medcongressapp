@@ -8,7 +8,7 @@
 // 3. A small batch reduces the "wait until next cron" experience without overloading the function.
 
 import { createServiceClient } from "@/lib/supabase/service"
-import { analyzeImage, extractTopicsFromCorpus } from "@/lib/ai/router"
+import { analyzeImage, extractTopicsFromCorpus, normalizeImageType } from "@/lib/ai/router"
 import { recordAiUsage } from "@/lib/ai-usage"
 import { verifyReference } from "@/lib/reference-verification"
 import { enqueueReferenceVerificationIfPending } from "@/lib/jobs"
@@ -202,7 +202,7 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
       raw_text: result.raw_text,
       cleaned_text: result.raw_text,
       slide_text: result.slide_text,
-      image_type: result.image_type,
+      image_type: normalizeImageType(result.image_type),
       medical_summary: result.medical_summary,
     }, { onConflict: "image_id" })
     if (ocrErr) log("error", "failed to save ocr_results", { error: ocrErr })

@@ -18,6 +18,23 @@ import { z } from "zod"
 
 export type ProviderId = "openai" | "google" | "anthropic"
 
+export const IMAGE_TYPES = [
+  "texto",
+  "tabla",
+  "grafica",
+  "imagen_medica",
+  "algoritmo",
+  "poster",
+  "foto_clinica",
+  "otro",
+] as const
+
+// Coerce the model's image_type into the allowed set; anything unexpected → "otro".
+export function normalizeImageType(value: string | null | undefined): string {
+  const v = (value ?? "").trim().toLowerCase()
+  return (IMAGE_TYPES as readonly string[]).includes(v) ? v : "otro"
+}
+
 export interface AiUsage {
   provider: ProviderId
   model: string
@@ -58,9 +75,9 @@ export interface ReportOutput {
 const IMAGE_ANALYSIS_SCHEMA = z.object({
   specialty: z.string().nullable().describe("Especialidad médica predominante o null."),
   image_type: z
-    .enum(["texto", "tabla", "grafica", "imagen_medica", "algoritmo", "poster", "foto_clinica", "otro"])
+    .string()
     .describe(
-      "Tipo de contenido predominante de la imagen: 'texto' (diapositiva de texto/bullets), 'tabla' (tabla de datos), 'grafica' (gráfica/curva/forest plot/diagrama estadístico), 'imagen_medica' (ECG, radiografía, TAC, RM, histología, ecografía, lesión clínica), 'algoritmo' (algoritmo/flujo de decisión), 'poster' (póster de investigación), 'foto_clinica' (foto del entorno, ponente, sala), 'otro'."
+      "Tipo de contenido predominante. Usa EXACTAMENTE uno de: 'texto' (diapositiva de texto/bullets), 'tabla' (tabla de datos), 'grafica' (gráfica/curva/forest plot/diagrama estadístico), 'imagen_medica' (ECG, radiografía, TAC, RM, histología, ecografía, lesión clínica), 'algoritmo' (algoritmo/flujo de decisión), 'poster' (póster de investigación), 'foto_clinica' (foto del entorno, ponente, sala), 'otro'."
     ),
   raw_text: z.string().describe("Texto literal extraído de la imagen, tal cual aparece (incluye pies de página y citas)."),
   slide_text: z
