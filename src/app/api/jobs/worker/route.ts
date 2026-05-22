@@ -198,6 +198,7 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
       // holds the AI inference, kept separate from extracted text (fase32).
       raw_text: result.raw_text,
       cleaned_text: result.raw_text,
+      slide_text: result.slide_text,
       medical_summary: result.medical_summary,
     }, { onConflict: "image_id" })
     if (ocrErr) log("error", "failed to save ocr_results", { error: ocrErr })

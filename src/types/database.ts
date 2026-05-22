@@ -131,6 +131,8 @@ export interface OcrResult {
   raw_text: string | null
   /** Cleaned OCR. Legacy rows (<= fase31) may hold the AI summary instead. */
   cleaned_text: string | null
+  /** Slide content with bibliographic citations removed (AI-produced). For display. */
+  slide_text: string | null
   /** AI-generated medical synthesis (INFERENCE). Not literal text. */
   medical_summary: string | null
   confidence_score: number | null

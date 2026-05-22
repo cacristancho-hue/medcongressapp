@@ -28,6 +28,7 @@ export interface AiUsage {
 export interface ImageAnalysisResult {
   specialty: string | null
   raw_text: string
+  slide_text: string
   medical_summary: string
   topics: Array<{
     name: string
@@ -55,7 +56,12 @@ export interface ReportOutput {
 
 const IMAGE_ANALYSIS_SCHEMA = z.object({
   specialty: z.string().nullable().describe("Especialidad médica predominante o null."),
-  raw_text: z.string().describe("Texto literal extraído de la imagen."),
+  raw_text: z.string().describe("Texto literal extraído de la imagen, tal cual aparece (incluye pies de página y citas)."),
+  slide_text: z
+    .string()
+    .describe(
+      "El CONTENIDO textual de la diapositiva DEPURADO de aparato bibliográfico: el mismo texto literal pero SIN las referencias/citas (sin títulos de artículos citados, sin listas de autores de citas, sin nombres de journals, sin DOIs/PMIDs, sin años de publicación de citas, sin números de cita tipo '1.' o '[3]'). Conserva el mensaje clínico, títulos de la diapositiva, datos y conclusiones. NO resumas ni interpretes: es el texto de la diapositiva con el ruido bibliográfico removido y los saltos de línea normalizados."
+    ),
   medical_summary: z
     .string()
     .describe("Resumen médico profesional con datos clave y conclusión."),

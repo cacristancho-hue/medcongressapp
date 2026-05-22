@@ -8,6 +8,7 @@ import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { getImageAnalysis } from "@/lib/actions/ai"
 import { verifyCongressReferences, updateReferenceCandidate, verifySingleReference } from "@/lib/actions/references"
 import { updateImageAnalysis } from "@/lib/actions/edits"
+import { cleanSlideText } from "@/lib/clean-slide-text"
 import Image from "next/image"
 import { clsx } from "clsx"
 import { toast } from "sonner"
@@ -32,6 +33,7 @@ interface PhotoViewerProps {
 
 interface AnalysisData {
   ocr: string | null;
+  slideText: string | null;
   summary: string | null;
   topics: { name: string; category: string }[];
   references: {
@@ -671,7 +673,10 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                       ) : (
                         <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
                           <p className="text-sm text-slate-300 whitespace-pre-wrap font-sans leading-relaxed">
-                            {analysisData.ocr}
+                            {analysisData.slideText || cleanSlideText(analysisData.ocr) || analysisData.ocr}
+                          </p>
+                          <p className="mt-3 text-[10px] text-slate-500 italic">
+                            Texto de la diapositiva, depurado de referencias. Las citas detectadas están en la sección de referencias.
                           </p>
                         </div>
                       )}

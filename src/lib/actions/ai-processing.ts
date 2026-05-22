@@ -100,6 +100,7 @@ export const processImageWithAI = withAction({
         // so downstream never confuses "extracted" with "inferred".
         raw_text: result.raw_text,
         cleaned_text: result.raw_text,
+        slide_text: result.slide_text,
         medical_summary: result.medical_summary,
       }, { onConflict: "image_id" })
 
