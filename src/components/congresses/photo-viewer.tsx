@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2, Trash2, BrainCircuit, Loader2, FileText, Tags, BookOpen, Stethoscope, Edit3, Save, ExternalLink, Pencil } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2, Trash2, BrainCircuit, Loader2, FileText, Tags, BookOpen, Stethoscope, Edit3, Save, ExternalLink, Pencil, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { getImageAnalysis } from "@/lib/actions/ai"
@@ -32,6 +32,7 @@ interface PhotoViewerProps {
 
 interface AnalysisData {
   ocr: string | null;
+  summary: string | null;
   topics: { name: string; category: string }[];
   references: {
     id: string
@@ -622,10 +623,30 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                   </section>
                 )}
 
-                {/* OCR Text / Resumen */}
+                {/* Síntesis IA (interpretación) — explica la diapositiva. */}
+                {analysisData.summary && (
+                  <section>
+                    <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Sparkles className="h-3.5 w-3.5" /> Síntesis de la IA
+                      <span className="text-[9px] font-bold normal-case px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 tracking-normal">
+                        Interpretación · no es texto literal
+                      </span>
+                    </h4>
+                    <div className="bg-blue-950/30 p-4 rounded-lg border border-blue-900/40">
+                      <p className="text-sm text-slate-200 whitespace-pre-wrap font-sans leading-relaxed">
+                        {analysisData.summary}
+                      </p>
+                    </div>
+                  </section>
+                )}
+
+                {/* Texto literal de la diapositiva (OCR). Editable. */}
                 <section>
                   <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <FileText className="h-3.5 w-3.5" /> Resumen y Hallazgos
+                    <FileText className="h-3.5 w-3.5" /> Texto de la diapositiva
+                    <span className="text-[9px] font-bold normal-case px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 tracking-normal">
+                      Extraído de la imagen
+                    </span>
                   </h4>
                   {isEditing ? (
                     <textarea
@@ -641,9 +662,9 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                     </div>
                   )}
                 </section>
-                
+
                 {/* Empty State */}
-                {!analysisData.ocr && (!analysisData.topics || analysisData.topics.length === 0) && (!analysisData.references || analysisData.references.length === 0) && (
+                {!analysisData.ocr && !analysisData.summary && (!analysisData.topics || analysisData.topics.length === 0) && (!analysisData.references || analysisData.references.length === 0) && (
                   <div className="text-center text-slate-500 py-8 text-sm">
                     La IA no encontró información médica relevante en esta imagen.
                   </div>
