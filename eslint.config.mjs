@@ -10,14 +10,6 @@ const eslintConfig = [
   {
     ignores: [".next/**", "node_modules/**", "dist/**"],
   },
-  {
-    rules: {
-      // Advisory perf rule newly introduced by eslint-config-next 16. Demoted to
-      // warn to unblock commits; the existing setState-in-effect usages in
-      // reference-library.tsx need a dedicated refactor (TODO, see AI_HANDOVER).
-      "react-hooks/set-state-in-effect": "warn",
-    },
-  },
 ];
 
 export default eslintConfig;

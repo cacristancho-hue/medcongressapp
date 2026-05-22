@@ -65,7 +65,17 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
   const [viewMode, setViewMode] = useState<"grid" | "congress">("grid")
   const [selectedReference, setSelectedReference] = useState<LibraryReference | null>(null)
   const [draft, setDraft] = useState<ReferenceEditorDraft | null>(null)
+  const [prevSelectedId, setPrevSelectedId] = useState<string | null>(null)
   const [isSavingDetail, setIsSavingDetail] = useState(false)
+
+  // Reset the editable draft when the selected reference changes. Done during
+  // render (React's recommended pattern over a setState-in-effect) so the draft
+  // is in sync on the same commit, avoiding a cascading re-render.
+  const selectedId = selectedReference?.id ?? null
+  if (selectedId !== prevSelectedId) {
+    setPrevSelectedId(selectedId)
+    setDraft(selectedReference ? createDraft(selectedReference) : null)
+  }
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -148,14 +158,6 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
     })
     return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]))
   }, [filtered])
-
-  useEffect(() => {
-    if (!selectedReference) {
-      setDraft(null)
-      return
-    }
-    setDraft(createDraft(selectedReference))
-  }, [selectedReference])
 
   const closeReferenceDetail = () => {
     setSelectedReference(null)

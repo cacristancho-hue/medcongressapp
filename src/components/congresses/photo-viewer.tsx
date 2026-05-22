@@ -118,15 +118,12 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
     return () => { mounted = false }
   }, [currentPhoto?.id, isProcessed, analysisData])
 
-  useEffect(() => {
-    if (!analysisData?.references?.length) {
-      setSelectedReferenceIndex(null)
-      return
-    }
-    if (selectedReferenceIndex !== null && selectedReferenceIndex >= analysisData.references.length) {
-      setSelectedReferenceIndex(null)
-    }
-  }, [analysisData, selectedReferenceIndex])
+  // Clamp the selected reference index during render when the analysis data
+  // changes (React's recommended pattern over a setState-in-effect).
+  const referenceCount = analysisData?.references?.length ?? 0
+  if (selectedReferenceIndex !== null && (referenceCount === 0 || selectedReferenceIndex >= referenceCount)) {
+    setSelectedReferenceIndex(null)
+  }
 
   const handleNext = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % photos.length)
