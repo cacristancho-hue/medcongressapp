@@ -3,16 +3,16 @@
 import { MEDICAL_SPECIALTIES_RETHUS } from "@/lib/constants/medical-specialties"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 
-const SPECIALTIES = [...MEDICAL_SPECIALTIES_RETHUS, "Otra"]
-
 export default function CongressForm() {
   const router = useRouter()
+  const t = useTranslations("congressForm")
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -39,7 +39,7 @@ export default function CongressForm() {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      setError("Sesión expirada. Por favor inicia sesión nuevamente.")
+      setError(t("errorSession"))
       setLoading(false)
       return
     }
@@ -59,7 +59,7 @@ export default function CongressForm() {
       .single()
 
     if (insertError) {
-      setError("Error al crear el congreso. Intenta de nuevo.")
+      setError(t("errorCreate"))
       setLoading(false)
       return
     }
@@ -79,11 +79,11 @@ export default function CongressForm() {
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="name">Nombre del congreso *</Label>
+            <Label htmlFor="name">{t("nameLabel")}</Label>
             <Input
               id="name"
               name="name"
-              placeholder="Ej: Congreso Colombiano de Alergología 2025"
+              placeholder={t("namePlaceholder")}
               value={formData.name}
               onChange={handleChange}
               required
@@ -91,7 +91,7 @@ export default function CongressForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="specialty">Especialidad</Label>
+            <Label htmlFor="specialty">{t("specialtyLabel")}</Label>
             <select
               id="specialty"
               name="specialty"
@@ -99,19 +99,20 @@ export default function CongressForm() {
               onChange={handleChange}
               className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-800"
             >
-              <option value="">Seleccionar especialidad</option>
-              {SPECIALTIES.map((s) => (
+              <option value="">{t("specialtyPlaceholder")}</option>
+              {MEDICAL_SPECIALTIES_RETHUS.map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
+              <option value="Otra">{t("otherSpecialty")}</option>
             </select>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="location">Lugar</Label>
+            <Label htmlFor="location">{t("locationLabel")}</Label>
             <Input
               id="location"
               name="location"
-              placeholder="Ej: Bogotá, Colombia"
+              placeholder={t("locationPlaceholder")}
               value={formData.location}
               onChange={handleChange}
             />
@@ -119,7 +120,7 @@ export default function CongressForm() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="start_date">Fecha inicio</Label>
+              <Label htmlFor="start_date">{t("startDateLabel")}</Label>
               <Input
                 id="start_date"
                 name="start_date"
@@ -129,7 +130,7 @@ export default function CongressForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="end_date">Fecha fin</Label>
+              <Label htmlFor="end_date">{t("endDateLabel")}</Label>
               <Input
                 id="end_date"
                 name="end_date"
@@ -141,11 +142,11 @@ export default function CongressForm() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="notes">Notas personales</Label>
+            <Label htmlFor="notes">{t("notesLabel")}</Label>
             <textarea
               id="notes"
               name="notes"
-              placeholder="Sesiones más importantes, contexto personal, etc."
+              placeholder={t("notesPlaceholder")}
               value={formData.notes}
               onChange={handleChange}
               rows={3}
@@ -155,7 +156,7 @@ export default function CongressForm() {
         </CardContent>
         <CardFooter className="gap-3">
           <Button type="submit" loading={loading}>
-            Crear congreso
+            {t("submit")}
           </Button>
           <Button
             type="button"
@@ -163,7 +164,7 @@ export default function CongressForm() {
             onClick={() => router.back()}
             disabled={loading}
           >
-            Cancelar
+            {t("cancel")}
           </Button>
         </CardFooter>
       </form>

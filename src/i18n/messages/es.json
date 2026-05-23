@@ -77,6 +77,25 @@
     "noDetails": "Sin detalles",
     "newCongress": "Nuevo congreso"
   },
+  "congressForm": {
+    "pageTitle": "Nuevo congreso",
+    "pageSubtitle": "Registra un congreso para empezar a subir y organizar tus fotos.",
+    "errorSession": "Sesión expirada. Por favor inicia sesión nuevamente.",
+    "errorCreate": "Error al crear el congreso. Intenta de nuevo.",
+    "nameLabel": "Nombre del congreso *",
+    "namePlaceholder": "Ej: Congreso Colombiano de Alergología 2025",
+    "specialtyLabel": "Especialidad",
+    "specialtyPlaceholder": "Seleccionar especialidad",
+    "otherSpecialty": "Otra",
+    "locationLabel": "Lugar",
+    "locationPlaceholder": "Ej: Bogotá, Colombia",
+    "startDateLabel": "Fecha inicio",
+    "endDateLabel": "Fecha fin",
+    "notesLabel": "Notas personales",
+    "notesPlaceholder": "Sesiones más importantes, contexto personal, etc.",
+    "submit": "Crear congreso",
+    "cancel": "Cancelar"
+  },
   "congressList": {
     "title": "Mis congresos",
     "count": "{count, plural, =1 {# congreso} other {# congresos}}",

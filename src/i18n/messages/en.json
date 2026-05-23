@@ -77,6 +77,25 @@
     "noDetails": "No details",
     "newCongress": "New congress"
   },
+  "congressForm": {
+    "pageTitle": "New congress",
+    "pageSubtitle": "Register a congress to start uploading and organizing your photos.",
+    "errorSession": "Session expired. Please sign in again.",
+    "errorCreate": "Error creating the congress. Please try again.",
+    "nameLabel": "Congress name *",
+    "namePlaceholder": "e.g. Colombian Congress of Allergology 2025",
+    "specialtyLabel": "Specialty",
+    "specialtyPlaceholder": "Select specialty",
+    "otherSpecialty": "Other",
+    "locationLabel": "Location",
+    "locationPlaceholder": "e.g. Bogotá, Colombia",
+    "startDateLabel": "Start date",
+    "endDateLabel": "End date",
+    "notesLabel": "Personal notes",
+    "notesPlaceholder": "Most important sessions, personal context, etc.",
+    "submit": "Create congress",
+    "cancel": "Cancel"
+  },
   "congressList": {
     "title": "My congresses",
     "count": "{count, plural, =1 {# congress} other {# congresses}}",
