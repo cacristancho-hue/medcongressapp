@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import PhotoUploadZone from "@/components/congresses/photo-upload-zone"
 import BulkAnalysisButton from "@/components/congresses/bulk-analysis-button"
+import ReanalyzeButton from "@/components/congresses/reanalyze-button"
 import CongressReport from "@/components/congresses/congress-report"
 import JobsStatus from "@/components/congresses/jobs-status"
 import CongressPresence from "@/components/congresses/congress-presence"
@@ -186,6 +187,7 @@ export default async function CongresoDetailPage({ params }: Props) {
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-slate-800">Galería de fotos</h3>
             <BulkAnalysisButton congressId={id} photoCount={currentCount} />
+            <ReanalyzeButton congressId={id} photoCount={currentCount} />
           </div>
           <span className="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
             {currentCount}/100

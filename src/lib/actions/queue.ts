@@ -242,6 +242,72 @@ export const enqueueCongressAnalysis = withAction({
   return { enqueued, total: images.length }
 })
 
+// Re-analiza TODAS las imágenes del congreso (incluidas las ya 'ai_done'), para
+// regenerar campos nuevos del pipeline (slide_text, image_type, análisis por
+// especialidad). A diferencia de enqueueCongressAnalysis, no salta las hechas.
+// Consume cuota/costo de IA → es una acción deliberada del usuario.
+export const reanalyzeCongress = withAction({
+  name: "ai.bulk_analysis",
+})(async ({ user, supabase }, congressId: string) => {
+  const { data: congress } = await supabase
+    .from("congresses")
+    .select("id, organization_id")
+    .eq("id", congressId)
+    .eq("user_id", user.id)
+    .single()
+
+  if (!congress) throw new Error("Congreso no encontrado")
+
+  // Evita duplicar si ya hay procesamiento en curso.
+  const { data: activeJobs } = await supabase
+    .from("ai_jobs")
+    .select("id, status, started_at")
+    .eq("congress_id", congressId)
+    .in("status", ["pending", "processing"])
+    .limit(1)
+
+  if (hasLiveActiveJobs(activeJobs as ActiveJobRow[] | null | undefined)) {
+    return { enqueued: 0, message: "Ya hay procesamiento con IA en curso para este congreso." }
+  }
+
+  const { data: images } = await supabase
+    .from("congress_images")
+    .select("id")
+    .eq("congress_id", congressId)
+    .eq("user_id", user.id)
+    .is("deleted_at", null)
+
+  if (!images || images.length === 0) {
+    return { enqueued: 0, message: "No hay imágenes para re-analizar." }
+  }
+
+  let enqueued = 0
+  for (const img of images) {
+    await supabase
+      .from("congress_images")
+      .update({ ai_status: "ai_pending", ocr_status: "ocr_pending" })
+      .eq("id", img.id)
+      .eq("user_id", user.id)
+
+    const { id } = await enqueueJob({
+      userId: user.id,
+      organizationId: congress.organization_id ?? null,
+      jobType: "image_analysis",
+      payload: { imageId: img.id },
+      congressId,
+      imageId: img.id,
+      priority: 90,
+    })
+    if (id) enqueued++
+  }
+
+  void kickQueuedAiJobs().catch((err) => {
+    console.warn("[queue] worker kick failed for reanalyze:", err instanceof Error ? err.message : err)
+  })
+
+  return { enqueued, total: images.length, message: `Re-análisis encolado para ${enqueued} imagen(es).` }
+})
+
 interface EnqueueReportInput {
   congressId: string
   language: "es" | "en"
