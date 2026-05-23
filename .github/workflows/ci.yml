@@ -2,9 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main, "sprint-*"]
+    # "**" matches nested branch names too (e.g. sprint-1/shell-hardening).
+    # The previous "sprint-*" pattern did NOT match branches containing "/".
+    branches: ["**"]
   pull_request:
-    branches: [main]
+    branches: ["**"]
 
 jobs:
   ci:
