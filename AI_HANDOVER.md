@@ -244,6 +244,19 @@ app/
 
 ## 11. Cambios entre sesiones (changelog)
 
+### 2026-05-22 · Claude Opus 4.7 — Auditoría internacional + P0 (imágenes biblioteca, CI)
+
+**Auditoría completa del estado real (ver respuesta de sesión). Hallazgos atacados:**
+- **P0 — Imágenes de la biblioteca rotas:** `library.ts` construía URLs públicas contra el bucket privado `congress-photos` → 403. Corregido a `createSignedUrls` en lote (commit 628cd0e). Desplegado.
+- **P0 — CI no corría en nuestra rama:** el filtro `branches:[main,"sprint-*"]` no matchea `sprint-1/shell-hardening` (el `*` no cruza `/`). Cambiado a `"**"`. Además el lint que lo hacía fallar se reparó hoy. **CI por fin en verde** (lint+typecheck+test+build).
+- **Lockfile desincronizado:** `package-lock.json` (npm viejo) no incluía el `@swc/helpers` anidado de next-intl; `npm ci` lo rechazaba. Regenerado limpio (commit 4c0df7b).
+
+**Hallazgos de auditoría PENDIENTES (priorizados):**
+- **P0 USA:** HIPAA/PHI — protección de datos de paciente es solo contractual; para USA faltan BAAs con OpenAI/Anthropic/Google + detección/redacción de PHI. Revisar SaMD (la descripción de imágenes médicas acerca a interpretación clínica; disclaimers ya puestos).
+- **P0 seguridad:** auditar los 10 usos de `createServiceClient` (bypass RLS).
+- **P1:** cobertura de tests delgada (4 archivos); re-análisis batch de fotos viejas (slide_text/image_type/tipo); guardrail de alucinación en reportes; gating de calidad de imagen + multi-slide; unificar logging (47 console.* pese a logger.ts); versión hardcodeada en /api/health.
+- **P2:** búsqueda semántica (pgvector); i18n completo de UI + SEO /en; checkout/billing; enlaces compartidos + SSO; accesibilidad (a11y); PWA offline.
+
 ### 2026-05-22 · Claude Opus 4.7 — i18n + calidad de análisis de imágenes
 
 **Desplegado a producción (vercel --prod). Migraciones fase33–fase36 aplicadas en Supabase.**
