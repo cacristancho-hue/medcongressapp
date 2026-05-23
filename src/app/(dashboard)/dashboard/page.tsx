@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import GlobalSearch from "@/components/congresses/global-search"
 import DashboardTour from "@/components/onboarding/dashboard-tour"
+import { getTranslations, getLocale } from "next-intl/server"
 
 export const dynamic = "force-dynamic"
 
@@ -52,10 +53,11 @@ export default async function DashboardPage() {
       .eq("verification_status", "verified"),
   ])
 
-  const firstName = profile?.full_name?.split(" ")[0] ?? "doctor/a"
+  const t = await getTranslations("home")
+  const firstName = profile?.full_name?.split(" ")[0] ?? t("defaultName")
   const specialty = profile?.specialty
   const role = profile?.role
-  const greeting = greetingForHour()
+  const greeting = t(greetingKeyForHour())
   const isFirstTime = (congressCount ?? 0) === 0
 
   return (
@@ -66,7 +68,7 @@ export default async function DashboardPage() {
             {greeting}
           </p>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-            Hola, <span className="font-plex-mono">{firstName}</span>.
+            {t("hello")}, <span className="font-plex-mono">{firstName}</span>.
           </h1>
           {specialty && (
             <p className="text-teal-700 font-medium text-sm mt-1">
@@ -74,7 +76,7 @@ export default async function DashboardPage() {
             </p>
           )}
           <p className="text-slate-600 mt-2 text-base max-w-xl">
-            Convierte cada foto de congreso en conocimiento académico verificado.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -83,7 +85,7 @@ export default async function DashboardPage() {
           className="text-[10px] font-bold text-slate-400 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-50 transition-colors flex items-center gap-1.5 shrink-0"
         >
           <Sparkles className="h-3 w-3" />
-          ¿CÓMO FUNCIONA?
+          {t("howItWorks")}
         </Link>
       </header>
 
@@ -117,7 +119,8 @@ export default async function DashboardPage() {
   )
 }
 
-function FirstTimeWelcome() {
+async function FirstTimeWelcome() {
+  const t = await getTranslations("home")
   return (
     <div className="space-y-6">
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-600 via-teal-700 to-blue-800 px-6 sm:px-10 py-10 sm:py-14 text-white shadow-xl shadow-teal-900/10">
@@ -139,14 +142,13 @@ function FirstTimeWelcome() {
         <div className="relative max-w-xl">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium tracking-wide backdrop-blur">
             <Sparkles className="h-3 w-3" />
-            Bienvenido a MDCONGRESS
+            {t("welcomeBadge")}
           </span>
           <h2 className="mt-4 text-2xl sm:text-3xl font-bold leading-tight">
-            Tu primer congreso, organizado en minutos.
+            {t("welcomeTitle")}
           </h2>
           <p className="mt-3 text-teal-50/90 text-base leading-relaxed">
-            Crea un congreso, sube las fotos de las diapositivas, y deja que la IA extraiga el OCR,
-            detecte tópicos y verifique la bibliografía contra CrossRef y PubMed.
+            {t("welcomeDesc")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
@@ -154,13 +156,13 @@ function FirstTimeWelcome() {
               className="inline-flex items-center gap-2 rounded-lg bg-white text-slate-900 px-5 py-2.5 text-sm font-semibold hover:bg-slate-50 transition-all shadow-md hover:shadow-lg"
             >
               <Plus className="h-4 w-4" />
-              Crear mi primer congreso
+              {t("createFirst")}
             </Link>
             <Link
               href="/dashboard/legal/terminos"
               className="inline-flex items-center gap-1 rounded-lg border border-white/30 px-5 py-2.5 text-sm font-medium hover:bg-white/10 transition-all"
             >
-              Cómo funciona
+              {t("howItWorksLink")}
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -170,20 +172,20 @@ function FirstTimeWelcome() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Step
           number="01"
-          title="Crea un congreso"
-          description="Nombre, especialidad y fechas. Toma 30 segundos."
+          title={t("step1Title")}
+          description={t("step1Desc")}
           icon={ClipboardList}
         />
         <Step
           number="02"
-          title="Sube tus fotos"
-          description="Hasta 100 diapositivas. Compresión y orientación automáticas."
+          title={t("step2Title")}
+          description={t("step2Desc")}
           icon={ImageIcon}
         />
         <Step
           number="03"
-          title="Recibe el reporte"
-          description="OCR + tópicos + bibliografía verificada en pocos minutos."
+          title={t("step3Title")}
+          description={t("step3Desc")}
           icon={Sparkles}
         />
       </div>
@@ -191,13 +193,13 @@ function FirstTimeWelcome() {
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <BookCheck className="h-4 w-4 text-teal-600" />
-          Calidad académica desde el primer día
+          {t("qualityTitle")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <Bullet>Verificación tri-fuente: CrossRef + PubMed + OpenAlex</Bullet>
-          <Bullet>Detección automática de retracciones</Bullet>
-          <Bullet>Multi-IA: Claude Sonnet + Gemini Flash + GPT-4o</Bullet>
-          <Bullet>Respeta tu privacidad: sin datos de pacientes</Bullet>
+          <Bullet>{t("quality1")}</Bullet>
+          <Bullet>{t("quality2")}</Bullet>
+          <Bullet>{t("quality3")}</Bullet>
+          <Bullet>{t("quality4")}</Bullet>
         </div>
       </div>
     </div>
@@ -245,13 +247,14 @@ interface StatsRowProps {
   verified: number
 }
 
-function StatsRow({ congresses, photos, reports, verified }: StatsRowProps) {
+async function StatsRow({ congresses, photos, reports, verified }: StatsRowProps) {
+  const t = await getTranslations("home")
   return (
     <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-      <Stat icon={ClipboardList} label="Congresos" value={congresses} accent="text-slate-900" />
-      <Stat icon={ImageIcon} label="Fotos" value={photos} accent="text-slate-900" />
-      <Stat icon={FileText} label="Reportes" value={reports} accent="text-slate-900" />
-      <Stat icon={BookCheck} label="Refs verificadas" value={verified} accent="text-emerald-700" />
+      <Stat icon={ClipboardList} label={t("statCongresses")} value={congresses} accent="text-slate-900" />
+      <Stat icon={ImageIcon} label={t("statPhotos")} value={photos} accent="text-slate-900" />
+      <Stat icon={FileText} label={t("statReports")} value={reports} accent="text-slate-900" />
+      <Stat icon={BookCheck} label={t("statVerified")} value={verified} accent="text-emerald-700" />
     </section>
   )
 }
@@ -287,18 +290,21 @@ interface CongressRow {
   created_at: string
 }
 
-function RecentCongresses({ congresses }: { congresses: CongressRow[] }) {
+async function RecentCongresses({ congresses }: { congresses: CongressRow[] }) {
+  const t = await getTranslations("home")
+  const locale = await getLocale()
+  const dateLocale = locale === "en" ? "en-US" : "es-CO"
   return (
     <section>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
-          Congresos recientes
+          {t("recentTitle")}
         </h3>
         <Link
           href="/dashboard/congresos"
           className="inline-flex items-center gap-1 text-xs text-teal-700 font-medium hover:text-teal-800"
         >
-          Ver todos
+          {t("seeAll")}
           <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
@@ -320,12 +326,12 @@ function RecentCongresses({ congresses }: { congresses: CongressRow[] }) {
                     {c.name}
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5 truncate">
-                    {[c.specialty, c.location].filter(Boolean).join(" · ") || "Sin detalles"}
+                    {[c.specialty, c.location].filter(Boolean).join(" · ") || t("noDetails")}
                   </p>
                 </div>
               </div>
               <span className="text-[11px] text-slate-400 font-mono shrink-0">
-                {new Date(c.created_at).toLocaleDateString("es-CO", {
+                {new Date(c.created_at).toLocaleDateString(dateLocale, {
                   year: "numeric",
                   month: "short",
                   day: "numeric",
@@ -339,16 +345,16 @@ function RecentCongresses({ congresses }: { congresses: CongressRow[] }) {
           className="flex items-center justify-center gap-2 text-sm text-slate-500 hover:text-teal-700 border-2 border-dashed border-slate-200 hover:border-teal-300 rounded-xl py-4 transition-all"
         >
           <Plus className="h-4 w-4" />
-          Nuevo congreso
+          {t("newCongress")}
         </Link>
       </div>
     </section>
   )
 }
 
-function greetingForHour(): string {
+function greetingKeyForHour(): "greetingMorning" | "greetingAfternoon" | "greetingEvening" {
   const h = new Date().getHours()
-  if (h < 12) return "Buenos días"
-  if (h < 19) return "Buenas tardes"
-  return "Buenas noches"
+  if (h < 12) return "greetingMorning"
+  if (h < 19) return "greetingAfternoon"
+  return "greetingEvening"
 }
