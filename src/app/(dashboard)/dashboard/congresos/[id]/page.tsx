@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import PhotoUploadZone from "@/components/congresses/photo-upload-zone"
 import BulkAnalysisButton from "@/components/congresses/bulk-analysis-button"
 import ReanalyzeButton from "@/components/congresses/reanalyze-button"
+import { getTranslations, getLocale } from "next-intl/server"
 import CongressReport from "@/components/congresses/congress-report"
 import JobsStatus from "@/components/congresses/jobs-status"
 import CongressPresence from "@/components/congresses/congress-presence"
@@ -100,7 +101,9 @@ export default async function CongresoDetailPage({ params }: Props) {
     .select("full_name")
     .eq("user_id", user.id)
     .maybeSingle()
-  const displayName = profile?.full_name ?? user.email ?? "Usuario"
+  const t = await getTranslations("congressDetail")
+  const dateLocale = (await getLocale()) === "en" ? "en-US" : "es-CO"
+  const displayName = profile?.full_name ?? user.email ?? t("userFallback")
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -110,7 +113,7 @@ export default async function CongresoDetailPage({ params }: Props) {
           href="/dashboard/congresos"
           className="text-sm text-slate-500 hover:text-slate-800 transition-colors"
         >
-          ← Mis congresos
+          {t("back")}
         </Link>
       </div>
 
@@ -137,7 +140,7 @@ export default async function CongresoDetailPage({ params }: Props) {
           {congress.start_date && (
             <span className="text-[10px] text-slate-400" suppressHydrationWarning>
               📅{" "}
-              {new Date(congress.start_date).toLocaleDateString("es-CO", {
+              {new Date(congress.start_date).toLocaleDateString(dateLocale, {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
@@ -152,7 +155,7 @@ export default async function CongresoDetailPage({ params }: Props) {
         <Card className="shadow-none border-slate-100">
           <CardHeader className="p-2 pb-0">
             <CardTitle className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-              Fotos
+              {t("statPhotos")}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 pt-0">
@@ -162,7 +165,7 @@ export default async function CongresoDetailPage({ params }: Props) {
         <Card className="shadow-none border-slate-100">
           <CardHeader className="p-2 pb-0">
             <CardTitle className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-              Temas
+              {t("statTopics")}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 pt-0">
@@ -172,7 +175,7 @@ export default async function CongresoDetailPage({ params }: Props) {
         <Card className="shadow-none border-slate-100">
           <CardHeader className="p-2 pb-0">
             <CardTitle className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-              Citas
+              {t("statCitations")}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 pt-0">
@@ -185,7 +188,7 @@ export default async function CongresoDetailPage({ params }: Props) {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-slate-800">Galería de fotos</h3>
+            <h3 className="text-sm font-bold text-slate-800">{t("galleryTitle")}</h3>
             <BulkAnalysisButton congressId={id} photoCount={currentCount} />
             <ReanalyzeButton congressId={id} photoCount={currentCount} />
           </div>
@@ -214,29 +217,29 @@ export default async function CongresoDetailPage({ params }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Resumen del congreso</CardTitle>
+            <CardTitle className="text-base">{t("summaryTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-3">
-            <p className="text-sm text-slate-500">Prepara una vista consolidada por temas y hallazgos.</p>
+            <p className="text-sm text-slate-500">{t("summaryDesc")}</p>
             <Link
               href={`/dashboard/congresos/${id}/resumen`}
               className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 hover:bg-slate-50"
             >
-              Ver
+              {t("view")}
             </Link>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Exportar</CardTitle>
+            <CardTitle className="text-base">{t("exportTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-3">
-            <p className="text-sm text-slate-500">Genera entregables cuando el flujo este disponible.</p>
+            <p className="text-sm text-slate-500">{t("exportDesc")}</p>
             <Link
               href={`/dashboard/congresos/${id}/exportar`}
               className="inline-flex h-8 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-800 hover:bg-slate-50"
             >
-              Abrir
+              {t("open")}
             </Link>
           </CardContent>
         </Card>
@@ -254,8 +257,8 @@ export default async function CongresoDetailPage({ params }: Props) {
       {/* Discovery Section (Topics + Gallery) */}
       <div className="pt-6 border-t border-slate-100">
         <div className="mb-6">
-          <h3 className="text-base font-semibold text-slate-900">Hallazgos y Evidencia</h3>
-          <p className="text-xs text-slate-500">Explora el contenido organizado por temas clínicos</p>
+          <h3 className="text-base font-semibold text-slate-900">{t("findingsTitle")}</h3>
+          <p className="text-xs text-slate-500">{t("findingsDesc")}</p>
         </div>
         
         {currentCount > 0 && (

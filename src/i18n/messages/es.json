@@ -85,6 +85,22 @@
     "emptyDesc": "Crea tu primer congreso y empieza a subir tus fotos académicas.",
     "createCongress": "Crear congreso"
   },
+  "congressDetail": {
+    "back": "← Mis congresos",
+    "statPhotos": "Fotos",
+    "statTopics": "Temas",
+    "statCitations": "Citas",
+    "galleryTitle": "Galería de fotos",
+    "summaryTitle": "Resumen del congreso",
+    "summaryDesc": "Prepara una vista consolidada por temas y hallazgos.",
+    "view": "Ver",
+    "exportTitle": "Exportar",
+    "exportDesc": "Genera entregables cuando el flujo esté disponible.",
+    "open": "Abrir",
+    "findingsTitle": "Hallazgos y Evidencia",
+    "findingsDesc": "Explora el contenido organizado por temas clínicos",
+    "userFallback": "Usuario"
+  },
   "ai": {
     "assistantTitle": "Asistente clínico",
     "assistantCta": "Iniciar asistencia de inteligencia artificial",

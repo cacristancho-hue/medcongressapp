@@ -85,6 +85,22 @@
     "emptyDesc": "Create your first congress and start uploading your academic photos.",
     "createCongress": "Create congress"
   },
+  "congressDetail": {
+    "back": "← My congresses",
+    "statPhotos": "Photos",
+    "statTopics": "Topics",
+    "statCitations": "Citations",
+    "galleryTitle": "Photo gallery",
+    "summaryTitle": "Congress summary",
+    "summaryDesc": "Builds a consolidated view by topics and findings.",
+    "view": "View",
+    "exportTitle": "Export",
+    "exportDesc": "Generate deliverables when the flow is available.",
+    "open": "Open",
+    "findingsTitle": "Findings and Evidence",
+    "findingsDesc": "Explore the content organized by clinical topics",
+    "userFallback": "User"
+  },
   "ai": {
     "assistantTitle": "Clinical assistant",
     "assistantCta": "Run AI assistant",
