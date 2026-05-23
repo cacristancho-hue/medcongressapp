@@ -2,10 +2,14 @@ import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import DeleteCongressButton from "./[id]/delete-congress-button"
+import { getTranslations, getLocale } from "next-intl/server"
 
 export default async function CongresosPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const t = await getTranslations("congressList")
+  const locale = await getLocale()
+  const dateLocale = locale === "en" ? "en-US" : "es-CO"
 
   const { data: congresses } = await supabase
     .from("congresses")
@@ -18,16 +22,16 @@ export default async function CongresosPage() {
     <div className="max-w-3xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Mis congresos</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{t("title")}</h2>
           <p className="text-slate-500 text-sm mt-1">
-            {congresses?.length ?? 0} congreso{congresses?.length !== 1 ? "s" : ""}
+            {t("count", { count: congresses?.length ?? 0 })}
           </p>
         </div>
         <Link
           href="/dashboard/congresos/nuevo"
           className="inline-flex items-center justify-center rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
         >
-          + Nuevo congreso
+          {t("newCongress")}
         </Link>
       </div>
 
@@ -35,15 +39,15 @@ export default async function CongresosPage() {
         <Card>
           <CardContent className="py-16 text-center">
             <p className="text-4xl mb-4">📋</p>
-            <p className="font-medium text-slate-900 mb-1">Sin congresos todavía</p>
+            <p className="font-medium text-slate-900 mb-1">{t("emptyTitle")}</p>
             <p className="text-slate-500 text-sm mb-5">
-              Crea tu primer congreso y empieza a subir tus fotos académicas.
+              {t("emptyDesc")}
             </p>
             <Link
               href="/dashboard/congresos/nuevo"
               className="inline-flex items-center justify-center rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 transition-colors"
             >
-              Crear congreso
+              {t("createCongress")}
             </Link>
           </CardContent>
         </Card>
@@ -66,7 +70,7 @@ export default async function CongresosPage() {
                           )}
                           {congress.start_date && (
                             <span className="text-xs text-slate-500">
-                              📅 {new Date(congress.start_date).toLocaleDateString("es-CO", {
+                              📅 {new Date(congress.start_date).toLocaleDateString(dateLocale, {
                                 year: "numeric", month: "short", day: "numeric"
                               })}
                             </span>
@@ -77,7 +81,7 @@ export default async function CongresosPage() {
                         )}
                       </div>
                       <span className="text-xs text-slate-400 whitespace-nowrap">
-                        {new Date(congress.created_at).toLocaleDateString("es-CO", {
+                        {new Date(congress.created_at).toLocaleDateString(dateLocale, {
                           month: "short", day: "numeric"
                         })}
                       </span>

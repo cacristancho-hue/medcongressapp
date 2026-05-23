@@ -77,6 +77,14 @@
     "noDetails": "No details",
     "newCongress": "New congress"
   },
+  "congressList": {
+    "title": "My congresses",
+    "count": "{count, plural, =1 {# congress} other {# congresses}}",
+    "newCongress": "+ New congress",
+    "emptyTitle": "No congresses yet",
+    "emptyDesc": "Create your first congress and start uploading your academic photos.",
+    "createCongress": "Create congress"
+  },
   "ai": {
     "assistantTitle": "Clinical assistant",
     "assistantCta": "Run AI assistant",

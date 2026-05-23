@@ -77,6 +77,14 @@
     "noDetails": "Sin detalles",
     "newCongress": "Nuevo congreso"
   },
+  "congressList": {
+    "title": "Mis congresos",
+    "count": "{count, plural, =1 {# congreso} other {# congresos}}",
+    "newCongress": "+ Nuevo congreso",
+    "emptyTitle": "Sin congresos todavía",
+    "emptyDesc": "Crea tu primer congreso y empieza a subir tus fotos académicas.",
+    "createCongress": "Crear congreso"
+  },
   "ai": {
     "assistantTitle": "Asistente clínico",
     "assistantCta": "Iniciar asistencia de inteligencia artificial",
