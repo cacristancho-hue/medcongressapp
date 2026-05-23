@@ -4,16 +4,18 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { LayoutDashboard, ClipboardList, BookOpen, PlusCircle, Archive } from "lucide-react"
 import { clsx } from "clsx"
+import { useTranslations } from "next-intl"
 
 const TABS = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
-  { href: "/dashboard/congresos", label: "Congresos", icon: ClipboardList },
-  { href: "/dashboard/biblioteca", label: "Biblioteca", icon: BookOpen },
-  { href: "/dashboard/papelera", label: "Papelera", icon: Archive },
-]
+  { href: "/dashboard", key: "home", icon: LayoutDashboard },
+  { href: "/dashboard/congresos", key: "congresses", icon: ClipboardList },
+  { href: "/dashboard/biblioteca", key: "library", icon: BookOpen },
+  { href: "/dashboard/papelera", key: "trash", icon: Archive },
+] as const
 
 export default function MobileNav() {
   const pathname = usePathname()
+  const t = useTranslations("nav")
 
   return (
     <nav
@@ -25,20 +27,20 @@ export default function MobileNav() {
       )}
     >
       {TABS.slice(0, 2).map((tab) => (
-        <NavTab key={tab.href} {...tab} active={pathname === tab.href} />
+        <NavTab key={tab.href} href={tab.href} icon={tab.icon} label={t(tab.key)} active={pathname === tab.href} />
       ))}
 
       {/* Floating CTA */}
       <Link
         href="/dashboard/congresos/nuevo"
-        aria-label="Nuevo congreso"
+        aria-label={t("newCongress")}
         className="bg-gradient-to-br from-teal-500 to-teal-700 p-3 rounded-full text-white shadow-lg shadow-teal-500/30 -mt-8 border-4 border-white active:scale-95 transition-transform"
       >
         <PlusCircle className="w-6 h-6" />
       </Link>
 
       {TABS.slice(2).map((tab) => (
-        <NavTab key={tab.href} {...tab} active={pathname === tab.href} />
+        <NavTab key={tab.href} href={tab.href} icon={tab.icon} label={t(tab.key)} active={pathname === tab.href} />
       ))}
     </nav>
   )

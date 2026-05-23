@@ -5,18 +5,19 @@ import { usePathname, useRouter } from "next/navigation"
 import { clsx } from "clsx"
 import { LayoutDashboard, ClipboardList, LogOut, BookOpen, Settings, Archive, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslations } from "next-intl"
 import Logo from "@/components/ui/md-logo"
 import LocaleSwitcher from "@/components/layout/locale-switcher"
 import type { User } from "@supabase/supabase-js"
 import type { Profile } from "@/types/database"
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
-  { href: "/dashboard/congresos", label: "Mis congresos", icon: ClipboardList },
-  { href: "/dashboard/biblioteca", label: "Biblioteca", icon: BookOpen },
-  { href: "/dashboard/papelera", label: "Papelera", icon: Archive },
-  { href: "/dashboard/ajustes", label: "Ajustes", icon: Settings },
-]
+  { href: "/dashboard", key: "home", icon: LayoutDashboard },
+  { href: "/dashboard/congresos", key: "myCongresses", icon: ClipboardList },
+  { href: "/dashboard/biblioteca", key: "library", icon: BookOpen },
+  { href: "/dashboard/papelera", key: "trash", icon: Archive },
+  { href: "/dashboard/ajustes", key: "settings", icon: Settings },
+] as const
 
 interface SidebarProps {
   user: User
@@ -26,6 +27,7 @@ interface SidebarProps {
 export default function Sidebar({ user, profile }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const t = useTranslations("nav")
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -63,7 +65,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
               )}
             >
               <Icon className={clsx("w-4 h-4", pathname === item.href ? "text-blue-400" : "text-current")} />
-              {item.label}
+              {t(item.key)}
             </Link>
           )
         })}
@@ -73,7 +75,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
         <div className="mb-4">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
             <ShieldCheck className="h-3 w-3 text-blue-500" />
-            Perfil verificado
+            {t("profileVerified")}
           </p>
           <p className="text-sm font-black text-slate-900 truncate tracking-tight">{displayName}</p>
           {profile?.specialty && (
@@ -88,7 +90,7 @@ export default function Sidebar({ user, profile }: SidebarProps) {
           className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-tighter"
         >
           <LogOut className="w-3.5 h-3.5" />
-          Cerrar sesión
+          {t("logout")}
         </button>
       </div>
     </aside>

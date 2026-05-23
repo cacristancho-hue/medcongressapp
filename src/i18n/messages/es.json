@@ -25,6 +25,17 @@
     "settings": "Ajustes",
     "newCongress": "Nuevo congreso"
   },
+  "nav": {
+    "home": "Inicio",
+    "myCongresses": "Mis congresos",
+    "congresses": "Congresos",
+    "library": "Biblioteca",
+    "trash": "Papelera",
+    "settings": "Ajustes",
+    "newCongress": "Nuevo congreso",
+    "profileVerified": "Perfil verificado",
+    "logout": "Cerrar sesión"
+  },
   "congress": {
     "name": "Nombre",
     "specialty": "Especialidad",
