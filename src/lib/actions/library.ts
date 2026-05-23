@@ -131,8 +131,6 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     return { error: "No se pudo cargar la biblioteca." }
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-
   type LibraryQueryRow = {
     id: string
     congress_id: string
@@ -172,6 +170,27 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
     return true
   })
 
+  // The congress-photos bucket is private, so public object URLs return 403.
+  // Batch-sign every thumbnail + full path in one round-trip and map by path.
+  const pathSet = new Set<string>()
+  for (const row of activeRows) {
+    const thumb = row.congress_images?.storage_path_thumbnail
+    const full = row.congress_images?.storage_path
+    if (thumb) pathSet.add(thumb)
+    if (full) pathSet.add(full)
+  }
+  const signedByPath = new Map<string, string>()
+  if (pathSet.size > 0) {
+    const { data: signedList } = await supabase.storage
+      .from("congress-photos")
+      .createSignedUrls(Array.from(pathSet), 3600)
+    for (const s of signedList ?? []) {
+      if (s.path && s.signedUrl) signedByPath.set(s.path, s.signedUrl)
+    }
+  }
+  const signedFor = (path: string | null | undefined) =>
+    path ? signedByPath.get(path) ?? null : null
+
   const libraryRows: LibraryReference[] = []
 
   activeRows.forEach((row) => {
@@ -186,14 +205,10 @@ export async function getLibraryReferences(): Promise<{ data?: LibraryReference[
       congress_id: row.congress_id,
       congress_name: row.congresses?.name || "Material General",
       image_id: row.image_id,
-      image_url: row.congress_images?.storage_path_thumbnail
-        ? `${supabaseUrl}/storage/v1/object/public/congress-photos/${row.congress_images.storage_path_thumbnail}`
-        : null,
-      image_full_url: row.congress_images?.storage_path
-        ? `${supabaseUrl}/storage/v1/object/public/congress-photos/${row.congress_images.storage_path}`
-        : row.congress_images?.storage_path_thumbnail
-          ? `${supabaseUrl}/storage/v1/object/public/congress-photos/${row.congress_images.storage_path_thumbnail}`
-          : null,
+      image_url: signedFor(row.congress_images?.storage_path_thumbnail),
+      image_full_url:
+        signedFor(row.congress_images?.storage_path) ??
+        signedFor(row.congress_images?.storage_path_thumbnail),
       raw_text: row.raw_reference_text ?? "",
       detected_title: row.detected_title,
       detected_authors: row.detected_authors,
