@@ -254,7 +254,7 @@ app/
 **Hallazgos de auditoría PENDIENTES (priorizados):**
 - **P0 USA:** HIPAA/PHI — protección de datos de paciente es solo contractual; para USA faltan BAAs con OpenAI/Anthropic/Google + detección/redacción de PHI. Revisar SaMD (la descripción de imágenes médicas acerca a interpretación clínica; disclaimers ya puestos).
 - **P0 seguridad:** auditar los 10 usos de `createServiceClient` (bypass RLS).
-- **P1:** cobertura de tests delgada (4 archivos); re-análisis batch de fotos viejas (slide_text/image_type/tipo); guardrail de alucinación en reportes; gating de calidad de imagen + multi-slide; unificar logging (47 console.* pese a logger.ts); versión hardcodeada en /api/health.
+- **P1:** ✅ re-análisis batch (`reanalyzeCongress` + botón "Re-analizar todo", commit a4eafcc, desplegado). Pendientes: cobertura de tests delgada (5 archivos); guardrail de alucinación en reportes; gating de calidad de imagen + multi-slide; unificar logging (47 console.* pese a logger.ts); versión hardcodeada en /api/health.
 - **P2:** búsqueda semántica (pgvector); i18n completo de UI + SEO /en; checkout/billing; enlaces compartidos + SSO; accesibilidad (a11y); PWA offline.
 
 ### 2026-05-22 · Claude Opus 4.7 — i18n + calidad de análisis de imágenes
