@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-22 — i18n (ES/EN/PT) + análisis adaptado por tipo de imagen y especialidad (fase35-36) (Claude Opus 4.7)
+- **Última actualización**: 2026-05-24 — outputs de IA bilingües (síntesis médica + tópicos en ES/EN, siguiendo el locale del usuario) (Claude Opus 4.7)
 
 ---
 
@@ -243,6 +243,20 @@ app/
 ---
 
 ## 11. Cambios entre sesiones (changelog)
+
+### 2026-05-24 · Claude Opus 4.7 — Outputs de IA bilingües (síntesis + tópicos ES/EN)
+
+**Contexto:** Camilo preguntó por el estado de i18n. Se aclaró que son DOS capas independientes: (1) UI (textos hardcodeados, ~72 pendientes en resumen/legal/admin/componentes — ES/EN ya cubre login, registro, dashboard, congresos, upload, biblioteca, visor, ajustes, landing) y (2) lo que PRODUCE la IA. Camilo eligió atacar primero los outputs de IA (corazón del producto para USA).
+
+**Implementado (commit 5193706, pusheado a sprint-1/shell-hardening):**
+- **`analyzeImage` y `extractTopicsFromCorpus` ahora reciben `language: "es"|"en"`.** El prompt de visión (`IMAGE_ANALYSIS_SYSTEM_PROMPT`) pasó a ser función con idioma. Regla clave por rigor científico: **`raw_text`, `slide_text` y `references` se mantienen LITERALES en el idioma de la diapositiva (NO se traduce la extracción); solo `medical_summary` y `topics` (name/category/description) — que son INFERENCIA — salen en el idioma del usuario.**
+- **Fuente del idioma:** nuevo helper `getActiveLocale()` en `lib/actions/locale.ts` (lee cookie LOCALE → "es"|"en"). Camino síncrono (`ai-processing.ts`) lo usa directo. Camino async (worker): el idioma se captura al ENCOLAR y viaja en `payload` del job (image_analysis en los 3 sitios de `queue.ts` + topics_extraction); el worker lo lee de `job.payload.language` (default "es").
+- **Reportes ya eran bilingües** (sin cambios): `generateReport` / `enqueueReportGeneration` ya aceptaban `language`.
+- Verificación: tsc limpio, lint 0 errores (22 warnings preexistentes), build verde.
+
+**Pendiente operativo (importante):** el análisis de imagen y los tópicos se PERSISTEN una sola vez (a diferencia de los reportes, que se generan on-demand). Una foto analizada en español queda en español aunque el usuario luego cambie a inglés → para cambiar el idioma de la síntesis hay que **re-analizar** (botón "Re-analizar todo" ya existe). Considerar a futuro: dejar claro esto en UI, o cachear ambos idiomas.
+
+**i18n que sigue pendiente:** (1) UI ES/EN: ~72 textos hardcodeados (prioridad: `resumen/page.tsx` → legales → componentes; admin al final). (2) PT muy atrás (`pt.json` 7 de 20 namespaces; además SUPPORTED_LOCALES solo es `["es","en"]` hoy).
 
 ### 2026-05-22 · Claude Opus 4.7 — Auditoría internacional + P0 (imágenes biblioteca, CI)
 
