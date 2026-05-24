@@ -9,19 +9,8 @@ import { getImageAnalysis } from "@/lib/actions/ai"
 import { verifyCongressReferences, updateReferenceCandidate, verifySingleReference } from "@/lib/actions/references"
 import { updateImageAnalysis } from "@/lib/actions/edits"
 import { cleanSlideText } from "@/lib/clean-slide-text"
+import { useTranslations } from "next-intl"
 import Image from "next/image"
-
-// Human labels + emoji for the AI-classified image type.
-const IMAGE_TYPE_LABELS: Record<string, string> = {
-  texto: "📝 Texto",
-  tabla: "📊 Tabla",
-  grafica: "📈 Gráfica",
-  imagen_medica: "🩻 Imagen médica",
-  algoritmo: "🔀 Algoritmo",
-  poster: "🪧 Póster",
-  foto_clinica: "📷 Foto",
-  otro: "Otro",
-}
 import { clsx } from "clsx"
 import { toast } from "sonner"
 
@@ -76,6 +65,7 @@ interface AnalysisData {
 
 export default function PhotoViewer({ photos, congressId, initialIndex, onClose, onDelete }: PhotoViewerProps) {
   const router = useRouter()
+  const t = useTranslations("viewer")
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [isZoomed, setIsZoomed] = useState(false)
   const [isAnalyzingAction, setIsAnalyzingAction] = useState(false)
@@ -173,8 +163,8 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
     })()
 
     toast.promise(analysisPromise, {
-      loading: "IA analizando imagen y bibliografía...",
-      success: "Análisis completado con éxito",
+      loading: t("analyzing"),
+      success: t("analyzeDone"),
       error: (err) => err.message,
     })
 
@@ -249,7 +239,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
         },
       })
       if (!result.success) throw new Error(result.error)
-      toast.success("Referencia guardada")
+      toast.success(t("refSaved"))
       setAnalysisData((prev) =>
         prev
           ? {
@@ -274,7 +264,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
       )
       router.refresh()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo guardar la referencia")
+      toast.error(error instanceof Error ? error.message : t("refSaveError"))
     } finally {
       setIsSavingReference(false)
     }
@@ -286,7 +276,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
     try {
       const result = await verifySingleReference({ referenceId: ref.id, congressId })
       if (!result.success) throw new Error(result.error)
-      toast.success("Referencia re-verificada")
+      toast.success(t("refReverified"))
       setReferenceDraft((prev) => ({ ...prev, verification_status: result.data.status }))
       setAnalysisData((prev) =>
         prev
@@ -301,7 +291,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
           : prev
       )
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo re-verificar")
+      toast.error(error instanceof Error ? error.message : t("reverifyError"))
     }
   }
 
@@ -315,8 +305,8 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
         return result
       },
       {
-        loading: "Verificando bibliografía en OpenAlex...",
-        success: 'Referencias validadas',
+        loading: t("verifyingOpenalex"),
+        success: t("refsValidated"),
         error: (err) => err.message,
       }
     )
@@ -416,7 +406,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
             ) : (
               <div className="flex flex-col items-center gap-4">
                 <span className="text-6xl">🖼</span>
-                <span className="text-slate-400">Error al cargar la imagen</span>
+                <span className="text-slate-400">{t("imageLoadError")}</span>
               </div>
             )}
           </div>
@@ -445,12 +435,12 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 ) : (
                   <BrainCircuit className="h-4 w-4" />
                 )}
-                {isProcessing ? "Procesando..." : isQueued ? "En cola" : isProcessed ? "Volver a Analizar" : "Analizar con IA"}
+                {isProcessing ? t("btnProcessing") : isQueued ? t("btnQueued") : isProcessed ? t("btnReanalyze") : t("btnAnalyze")}
               </Button>
               
               {isQueued && (
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest text-center">
-                  La IA continúa en segundo plano.
+                  {t("aiBackground")}
                 </p>
               )}
 
@@ -461,7 +451,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                   onClick={() => setShowMetadata(!showMetadata)}
                   className="text-[10px] text-slate-400 hover:text-white uppercase tracking-wider"
                 >
-                  {showMetadata ? "Ocultar Datos" : "Ver Datos"}
+                  {showMetadata ? t("hideData") : t("showData")}
                 </Button>
               )}
             </div>
@@ -474,7 +464,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 className="flex items-center gap-2 px-3"
               >
                 <Trash2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Eliminar</span>
+                <span className="hidden sm:inline">{t("delete")}</span>
               </Button>
             </div>
           </div>
@@ -487,22 +477,22 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
           <div className="p-4 border-b border-slate-800 bg-slate-900/95 sticky top-0 z-10 flex items-center justify-between">
             <h3 className="font-semibold text-slate-100 flex items-center gap-2">
               <BrainCircuit className="h-4 w-4 text-blue-400" />
-              Inteligencia Médica
+              {t("medicalIntelligence")}
             </h3>
             <div className="flex items-center gap-2">
               {isProcessed && !isLoadingAnalysis && (
                 isEditing ? (
                   <>
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="h-7 text-xs text-slate-400">
-                      Cancelar
+                      {t("cancel")}
                     </Button>
                     <Button onClick={handleSaveAnalysis} size="sm" className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700">
-                      <Save className="h-3 w-3 mr-1" /> Guardar
+                      <Save className="h-3 w-3 mr-1" /> {t("save")}
                     </Button>
                   </>
                 ) : (
                   <Button variant="ghost" size="sm" onClick={startEditing} className="h-7 text-xs text-slate-400 hover:text-white">
-                    <Edit3 className="h-3 w-3 mr-1" /> Editar
+                    <Edit3 className="h-3 w-3 mr-1" /> {t("edit")}
                   </Button>
                 )
               )}
@@ -516,7 +506,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
             {isLoadingAnalysis ? (
               <div className="flex flex-col items-center justify-center h-40 text-slate-400 gap-3">
                 <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                <span className="text-sm">Extrayendo conocimiento médico...</span>
+                <span className="text-sm">{t("extracting")}</span>
               </div>
             ) : analysisData ? (
               <>
@@ -524,7 +514,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 {analysisData.specialty && (
                   <section className="bg-blue-500/5 border border-blue-500/20 p-3 rounded-lg">
                     <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                      <Stethoscope className="h-3 w-3" /> Especialidad Detectada
+                      <Stethoscope className="h-3 w-3" /> {t("specialtyDetected")}
                     </h4>
                     <p className="text-sm font-semibold text-slate-100">
                       {analysisData.specialty}
@@ -536,7 +526,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 {analysisData.topics?.length > 0 && (
                   <section>
                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Tags className="h-3.5 w-3.5" /> Conceptos Clave
+                      <Tags className="h-3.5 w-3.5" /> {t("keyConcepts")}
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {analysisData.topics.map((topic, i) => (
@@ -553,7 +543,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                   <section>
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                        <BookOpen className="h-3.5 w-3.5" /> Bibliografía
+                        <BookOpen className="h-3.5 w-3.5" /> {t("bibliography")}
                       </h4>
                       <Button
                         variant="link"
@@ -561,7 +551,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                         onClick={handleVerifyReferences}
                         className="h-auto p-0 text-[10px] text-blue-400"
                       >
-                        Verificar todas
+                        {t("verifyAll")}
                       </Button>
                     </div>
                     <ul className="space-y-3">
@@ -581,9 +571,9 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                               ref.verification_status === "partially_verified" ? "border-amber-500/40 bg-amber-500/10 text-amber-400" :
                               "border-slate-700 bg-slate-800 text-slate-500"
                             )}>
-                              {ref.verification_status === "verified" ? "Verificado" : 
-                               ref.verification_status === "retracted" ? "⚠️ Retractado" :
-                               ref.verification_status === "partially_verified" ? "Parcial" : "Pendiente"}
+                              {ref.verification_status === "verified" ? t("refVerified") :
+                               ref.verification_status === "retracted" ? t("refRetracted") :
+                               ref.verification_status === "partially_verified" ? t("refPartial") : t("refPending")}
                             </span>
                             
                             {/* PDF Gratis */}
@@ -593,9 +583,9 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 transition-colors flex items-center gap-1"
-                                title="Descargar PDF"
+                                title={t("pdfFree")}
                               >
-                                PDF Gratis <ExternalLink className="h-2 w-2" />
+                                {t("pdfFree")} <ExternalLink className="h-2 w-2" />
                               </a>
                             )}
 
@@ -629,7 +619,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                                 rel="noopener noreferrer"
                                 className="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border border-slate-500/30 bg-slate-500/10 text-slate-300 hover:bg-slate-500/20 transition-colors flex items-center gap-1"
                               >
-                                Buscar PubMed <ExternalLink className="h-2 w-2" />
+                                {t("searchPubmed")} <ExternalLink className="h-2 w-2" />
                               </a>
                             )}
                           </div>
@@ -643,7 +633,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 {analysisData.imageType && (
                   <div>
                     <span className="inline-flex items-center text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-800 text-slate-200 border border-slate-700">
-                      {IMAGE_TYPE_LABELS[analysisData.imageType] ?? analysisData.imageType}
+                      {t(`type.${analysisData.imageType}`)}
                     </span>
                   </div>
                 )}
@@ -652,9 +642,9 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 {analysisData.summary && (
                   <section>
                     <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" /> Síntesis de la IA
+                      <Sparkles className="h-4 w-4" /> {t("aiSynthesis")}
                       <span className="text-[9px] font-bold normal-case px-1.5 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30 tracking-normal">
-                        Interpretación · no es texto literal
+                        {t("interpretationBadge")}
                       </span>
                     </h4>
                     <div className="bg-blue-950/30 p-5 rounded-xl border border-blue-900/40">
@@ -672,9 +662,9 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                     <>
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                          <FileText className="h-3.5 w-3.5" /> Texto de la diapositiva
+                          <FileText className="h-3.5 w-3.5" /> {t("slideText")}
                           <span className="text-[9px] font-bold normal-case px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 tracking-normal">
-                            Extraído de la imagen
+                            {t("extractedBadge")}
                           </span>
                         </h4>
                         {!isEditing && analysisData.summary && (
@@ -682,7 +672,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                             onClick={() => setShowRawText(false)}
                             className="text-[10px] text-slate-400 hover:text-slate-200 flex items-center gap-1"
                           >
-                            Ocultar <ChevronUp className="h-3 w-3" />
+                            {t("hide")} <ChevronUp className="h-3 w-3" />
                           </button>
                         )}
                       </div>
@@ -698,7 +688,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                             {analysisData.slideText || cleanSlideText(analysisData.ocr) || analysisData.ocr}
                           </p>
                           <p className="mt-3 text-[10px] text-slate-500 italic">
-                            Texto de la diapositiva, depurado de referencias. Las citas detectadas están en la sección de referencias.
+                            {t("depuredNote")}
                           </p>
                         </div>
                       )}
@@ -709,7 +699,7 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                       className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-slate-800 bg-slate-950/50 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors"
                     >
                       <span className="flex items-center gap-2">
-                        <FileText className="h-3.5 w-3.5" /> Ver texto extraído (OCR literal)
+                        <FileText className="h-3.5 w-3.5" /> {t("viewExtracted")}
                       </span>
                       <ChevronDown className="h-4 w-4" />
                     </button>
@@ -719,13 +709,13 @@ export default function PhotoViewer({ photos, congressId, initialIndex, onClose,
                 {/* Empty State */}
                 {!analysisData.ocr && !analysisData.summary && (!analysisData.topics || analysisData.topics.length === 0) && (!analysisData.references || analysisData.references.length === 0) && (
                   <div className="text-center text-slate-500 py-8 text-sm">
-                    La IA no encontró información médica relevante en esta imagen.
+                    {t("emptyAnalysis")}
                   </div>
                 )}
               </>
             ) : (
               <div className="text-center text-red-400 py-8 text-sm">
-                Error al cargar los datos del análisis.
+                {t("analysisLoadError")}
               </div>
             )}
           </div>
