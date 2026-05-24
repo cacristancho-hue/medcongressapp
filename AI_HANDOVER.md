@@ -14,7 +14,7 @@
 - **Owner humano**: Camilo Cristancho — `cacristanchoo@gmail.com`
 - **Stack canónico**: Next.js 16 + React 19 + TypeScript + Tailwind 4 + Supabase SSR + Vercel + Multi-LLM (OpenAI GPT-4o + Gemini 3.1 + Claude 4.6)
 - **Idioma del producto**: Español (LATAM primero), expandible a EN/PT/FR
-- **Última actualización**: 2026-05-24 — outputs de IA bilingües (síntesis médica + tópicos en ES/EN, siguiendo el locale del usuario) (Claude Opus 4.7)
+- **Última actualización**: 2026-05-24 — outputs de IA bilingües + página resumen ES/EN + asistente clínico bilingüe (Claude Opus 4.7)
 
 ---
 
@@ -243,6 +243,26 @@ app/
 ---
 
 ## 11. Cambios entre sesiones (changelog)
+
+### 2026-05-24 (cont.) · Claude Opus 4.7 — Página resumen ES/EN + asistente clínico bilingüe
+
+Continuación de la misma sesión. Camilo confirmó que solo importa "de ahora en adelante" (no re-traducir fotos viejas) → el comportamiento ya implementado es el correcto. Luego: "avanza".
+
+**Commit `015f83e` — página de resumen del congreso (`resumen/page.tsx`) 100% ES/EN:**
+- Nuevo namespace `resumen` en es/en.json (header, stats, asistente, trazabilidad, reporte, tópicos, bibliografía, estados de job, fechas por `dateLocale`). Plurales con ICU (`topicsCount`, `refsCount`).
+- Patrón server component: `getTranslations("resumen")` + `getLocale()`. Helpers de módulo (`describeJobStatus`, `formatReportState`, `reportJobHelper`, `TraceCard`) reciben un `Translator` (cast `as unknown as Translator` por la unión estrecha de claves de next-intl). `STATUS_META` pasó de `label` fijo a `labelKey`.
+- **Este commit también incluyó trabajo i18n de `discovery-client.tsx` y `photo-grid.tsx` (namespaces discovery/grid) que estaba SIN COMMITEAR en el árbol de una sesión previa** — se bundleó porque comparte los archivos de mensajes es/en.json. (Nota para futuras IAs: si encuentran cambios staged que no hicieron, son work-in-progress del árbol; respétenlos.)
+
+**Commit `3f1fee3` — asistente clínico bilingüe (FIX funcional importante):**
+- **Bug:** `resumen/page.tsx` renderizaba `<AiAssistantButton>` SIN pasar `language` → el botón usaba el default `"es"` → el **reporte generado por el asistente SIEMPRE salía en español** aunque el usuario estuviera en inglés. Ahora se pasa el locale activo. Cierra el objetivo de Camilo ("si elige inglés, el análisis/reporte sale en inglés").
+- `assistant.ts` ya no devuelve strings en español: emite **códigos neutros** (`detailCode` + `errorCode` + `key`); el cliente (`ai-assistant-button.tsx`, ahora con `useTranslations`) los mapea a texto traducido. Nuevo namespace `assistant` en es/en.json.
+
+**Estado i18n tras esta sesión:**
+- ✅ Outputs de IA (síntesis, tópicos, reporte) → bilingües siguiendo el locale.
+- ✅ UI ES/EN cubre: login, registro, dashboard, congresos (lista/detalle/nuevo), upload, biblioteca, visor, ajustes, landing, **resumen**, **discovery/grid**, **asistente**.
+- 🔴 **UI pendiente (~hardcodeado):** páginas legales (`privacidad`, `terminos` — pesan para USA/HIPAA), `exportar/page.tsx`, componentes sueltos (`congress-report`, `jobs-status`, `photo-card`, tour onboarding, disclaimers, footer legal), y admin (`analytics/metrics/webhooks/components` — interno, baja prioridad).
+- 🟢 **PT** sigue atrás (`pt.json` 7/20 namespaces; `SUPPORTED_LOCALES` = `["es","en"]`).
+- ⚠️ Build local necesita `NODE_OPTIONS=--max-old-space-size=8192` (la fase de prerender hace OOM con el heap por defecto en esta máquina; no es problema de código). Deploys siguen manuales (`vercel --prod`).
 
 ### 2026-05-24 · Claude Opus 4.7 — Outputs de IA bilingües (síntesis + tópicos ES/EN)
 
