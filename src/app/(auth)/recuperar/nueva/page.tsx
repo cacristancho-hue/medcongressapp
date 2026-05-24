@@ -10,9 +10,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Logo from "@/components/ui/md-logo"
 import { ShieldCheck } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
+  const t = useTranslations("recover")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -25,11 +27,11 @@ export default function ResetPasswordPage() {
 
     try {
       if (password.length < 8) {
-        setError("La contraseña debe tener al menos 8 caracteres.")
+        setError(t("passwordShort"))
         return
       }
       if (password !== confirmPassword) {
-        setError("Las contraseñas no coinciden.")
+        setError(t("passwordMismatch"))
         return
       }
 
@@ -43,7 +45,7 @@ export default function ResetPasswordPage() {
       router.push("/login?recovery=1")
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo actualizar la contraseña.")
+      setError(err instanceof Error ? err.message : t("updateError"))
     } finally {
       setLoading(false)
     }
@@ -69,9 +71,9 @@ export default function ResetPasswordPage() {
 
         <Card className="border-slate-100 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-50 pb-8 pt-10 px-8 text-center">
-            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">Nueva contraseña</CardTitle>
+            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">{t("newTitle")}</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Escribe una contraseña nueva para recuperar el acceso.
+              {t("newSubtitle")}
             </CardDescription>
           </CardHeader>
 
@@ -84,11 +86,11 @@ export default function ResetPasswordPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nueva contraseña</Label>
+                <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("newPassword")}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={t("newPasswordPlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600 h-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -98,11 +100,11 @@ export default function ResetPasswordPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Confirmar contraseña</Label>
+                <Label htmlFor="confirmPassword" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("confirmPassword")}</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  placeholder="Repite la contraseña"
+                  placeholder={t("confirmPlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600 h-12"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -118,15 +120,15 @@ export default function ResetPasswordPage() {
                 className="w-full h-12 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95"
                 loading={loading}
               >
-                Guardar contraseña
+                {t("savePassword")}
               </Button>
 
               <div className="flex items-center justify-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                Acceso seguro MDCONGRESS
+                {t("secureAccess")}
               </div>
               <Link href="/login" className="text-center text-xs font-bold text-blue-600 hover:underline uppercase tracking-tighter">
-                Volver al inicio de sesión
+                {t("backToLogin")}
               </Link>
             </CardContent>
           </form>

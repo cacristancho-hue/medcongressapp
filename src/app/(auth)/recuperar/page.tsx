@@ -9,8 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Logo from "@/components/ui/md-logo"
 import { ShieldCheck } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 export default function RecoverPasswordPage() {
+  const t = useTranslations("recover")
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -32,10 +34,10 @@ export default function RecoverPasswordPage() {
       if (error) {
         setError(error.message)
       } else {
-        setMessage("Si el correo existe, enviamos un enlace para crear una nueva contrasena.")
+        setMessage(t("sent"))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo enviar el correo de recuperacion.")
+      setError(err instanceof Error ? err.message : t("sendError"))
     } finally {
       setLoading(false)
     }
@@ -61,9 +63,9 @@ export default function RecoverPasswordPage() {
 
         <Card className="border-slate-100 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-50 pb-8 pt-10 px-8 text-center">
-            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">Recuperar acceso</CardTitle>
+            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">{t("title")}</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Te enviaremos un enlace para crear una nueva contrasena.
+              {t("subtitle")}
             </CardDescription>
           </CardHeader>
 
@@ -81,11 +83,11 @@ export default function RecoverPasswordPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correo electronico</Label>
+                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("email")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="medico@ejemplo.com"
+                  placeholder={t("emailPlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600 h-12"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -101,15 +103,15 @@ export default function RecoverPasswordPage() {
                 className="w-full h-12 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95"
                 loading={loading}
               >
-                Enviar enlace
+                {t("sendLink")}
               </Button>
 
               <div className="flex items-center justify-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
                 <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                Acceso seguro MDCONGRESS
+                {t("secureAccess")}
               </div>
               <Link href="/login" className="text-center text-xs font-bold text-blue-600 hover:underline uppercase tracking-tighter">
-                Volver al inicio de sesion
+                {t("backToLogin")}
               </Link>
             </CardContent>
           </form>

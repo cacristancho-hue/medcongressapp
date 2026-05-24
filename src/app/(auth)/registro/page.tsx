@@ -10,31 +10,33 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Logo from "@/components/ui/md-logo"
 import { ShieldCheck } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { MEDICAL_SPECIALTIES_RETHUS } from "@/lib/constants/medical-specialties"
 
 const ROLES = [
-  { value: "student", label: "Estudiante de Medicina" },
-  { value: "resident", label: "Residente" },
-  { value: "fellow", label: "Fellow" },
-  { value: "specialist", label: "Especialista" },
-  { value: "professor", label: "Profesor clinico" },
-]
+  { value: "student", labelKey: "roleStudent" },
+  { value: "resident", labelKey: "roleResident" },
+  { value: "fellow", labelKey: "roleFellow" },
+  { value: "specialist", labelKey: "roleSpecialist" },
+  { value: "professor", labelKey: "roleProfessor" },
+] as const
 
 const GENDERS = [
-  { value: "M", label: "Masculino" },
-  { value: "F", label: "Femenino" },
-  { value: "O", label: "Otro" },
-]
+  { value: "M", labelKey: "genderM" },
+  { value: "F", labelKey: "genderF" },
+  { value: "O", labelKey: "genderO" },
+] as const
 
 const WORKPLACE_TYPES = [
-  { value: "private", label: "Clinica Privada" },
-  { value: "public", label: "Hospital Publico" },
-  { value: "both", label: "Ambos (Publico y Privado)" },
-]
+  { value: "private", labelKey: "workplacePrivate" },
+  { value: "public", labelKey: "workplacePublic" },
+  { value: "both", labelKey: "workplaceBoth" },
+] as const
 
 export default function RegisterPage() {
   const router = useRouter()
+  const t = useTranslations("register")
   const [formData, setFormData] = useState({
     full_name: "",
     email: "",
@@ -113,9 +115,9 @@ export default function RegisterPage() {
 
         <Card className="border-slate-100 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-50 pb-8 pt-10 px-8 text-center">
-            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">Crear cuenta</CardTitle>
+            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">{t("title")}</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Estructurando conocimiento medico.
+              {t("subtitle")}
             </CardDescription>
           </CardHeader>
 
@@ -130,11 +132,11 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="full_name" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nombre completo</Label>
+                  <Label htmlFor="full_name" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("fullName")}</Label>
                   <Input
                     id="full_name"
                     name="full_name"
-                    placeholder="Ej. Dr. Camilo Cristancho"
+                    placeholder={t("fullNamePlaceholder")}
                     className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
                     value={formData.full_name}
                     onChange={handleChange}
@@ -143,12 +145,12 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correo electronico</Label>
+                  <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("email")}</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="medico@ejemplo.com"
+                    placeholder={t("emailPlaceholder")}
                     className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
                     value={formData.email}
                     onChange={handleChange}
@@ -159,12 +161,12 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contrasena segura</Label>
+                  <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("passwordSecure")}</Label>
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    placeholder="Minimo 8 caracteres"
+                    placeholder={t("passwordPlaceholder")}
                     className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
                     value={formData.password}
                     onChange={handleChange}
@@ -174,7 +176,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-slate-400">NIVEL</Label>
+                  <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("level")}</Label>
                   <select
                     id="role"
                     name="role"
@@ -183,23 +185,23 @@ export default function RegisterPage() {
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
                     required
                   >
-                    <option value="">Seleccionar</option>
+                    <option value="">{t("select")}</option>
                     {ROLES.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
+                      <option key={r.value} value={r.value}>{t(r.labelKey)}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="specialty" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Especialidad (Escriba para filtrar)</Label>
+                <Label htmlFor="specialty" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("specialtyFilter")}</Label>
                 <input
                   list="specialties-list"
                   id="specialty"
                   name="specialty"
                   value={formData.specialty}
                   onChange={handleChange}
-                  placeholder="Ej. Medicina Interna"
+                  placeholder={t("specialtyPlaceholder")}
                   className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
                   required
                 />
@@ -212,19 +214,19 @@ export default function RegisterPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Edad (Opcional)</Label>
+                  <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("ageOptional")}</Label>
                   <Input
                     id="age"
                     name="age"
                     type="number"
-                    placeholder="Anos"
+                    placeholder={t("agePlaceholder")}
                     className="rounded-xl border-slate-200 focus:ring-blue-600 h-11"
                     value={formData.age}
                     onChange={handleChange}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sexo (Opcional)</Label>
+                  <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("genderOptional")}</Label>
                   <select
                     id="gender"
                     name="gender"
@@ -232,14 +234,14 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
                   >
-                    <option value="">Seleccionar</option>
+                    <option value="">{t("select")}</option>
                     {GENDERS.map((g) => (
-                      <option key={g.value} value={g.value}>{g.label}</option>
+                      <option key={g.value} value={g.value}>{t(g.labelKey)}</option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="workplace_type" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lugar de Trabajo (Opcional)</Label>
+                  <Label htmlFor="workplace_type" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("workplaceOptional")}</Label>
                   <select
                     id="workplace_type"
                     name="workplace_type"
@@ -247,9 +249,9 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
                   >
-                    <option value="">Seleccionar</option>
+                    <option value="">{t("select")}</option>
                     {WORKPLACE_TYPES.map((w) => (
-                      <option key={w.value} value={w.value}>{w.label}</option>
+                      <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
                     ))}
                   </select>
                 </div>
@@ -262,19 +264,19 @@ export default function RegisterPage() {
                 className="w-full h-12 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95"
                 loading={loading}
               >
-                Registrarme ahora
+                {t("submit")}
               </Button>
 
               <div className="flex flex-col items-center gap-4">
                 <p className="text-xs text-slate-500 font-medium">
-                  {"¿Ya es parte de MDCONGRESS?"}{" "}
+                  {t("alreadyMember")}{" "}
                   <Link href="/login" className="text-blue-600 font-black hover:underline uppercase tracking-tighter">
-                    Iniciar Sesion
+                    {t("signIn")}
                   </Link>
                 </p>
                 <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                  Acceso Seguro MDCONGRESS
+                  {t("secureAccess")}
                 </div>
               </div>
             </CardFooter>
@@ -282,7 +284,7 @@ export default function RegisterPage() {
         </Card>
 
         <p className="mt-8 text-center text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-          Al registrarse, usted acepta nuestros <Link href="/terms" className="underline">Terminos</Link> y <Link href="/privacy" className="underline">Politica de Privacidad</Link>.
+          {t("termsPrefix")}<Link href="/terms" className="underline">{t("termsLink")}</Link>{t("termsMid")}<Link href="/privacy" className="underline">{t("privacyLink")}</Link>.
         </p>
       </div>
     </div>
