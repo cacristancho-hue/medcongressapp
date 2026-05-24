@@ -10,44 +10,31 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Logo from "@/components/ui/md-logo"
-
-function resolveAuthMessage(rawError: string) {
-  const message = rawError.toLowerCase()
-
-  if (message.includes("email not confirmed")) {
-    return "Tu correo aun no ha sido confirmado. Revisa tu bandeja de entrada."
-  }
-
-  if (message.includes("invalid login credentials")) {
-    return "Correo o contrasena incorrectos."
-  }
-
-  if (message.includes("user not found")) {
-    return "No encontramos una cuenta con ese correo."
-  }
-
-  return rawError
-}
+import { useTranslations } from "next-intl"
 
 export default function LoginClient() {
   const router = useRouter()
+  const t = useTranslations("auth")
   const searchParams = useSearchParams()
+
+  function resolveAuthMessage(rawError: string) {
+    const message = rawError.toLowerCase()
+    if (message.includes("email not confirmed")) return t("emailNotConfirmed")
+    if (message.includes("invalid login credentials")) return t("invalidCredentials")
+    if (message.includes("user not found")) return t("userNotFound")
+    return rawError
+  }
+
   const [email, setEmail] = useState(searchParams.get("email") ?? "")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const notice = useMemo(() => {
-    if (searchParams.get("registered") === "1") {
-      return "Cuenta creada. Si no te ingreso automaticamente, confirma tu correo y vuelve a iniciar sesion."
-    }
-
-    if (searchParams.get("recovery") === "1") {
-      return "Tu contrasena fue actualizada. Inicia sesion con la nueva clave."
-    }
-
+    if (searchParams.get("registered") === "1") return t("registeredNotice")
+    if (searchParams.get("recovery") === "1") return t("recoveryNotice")
     return null
-  }, [searchParams])
+  }, [searchParams, t])
 
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -69,7 +56,7 @@ export default function LoginClient() {
       router.push("/dashboard")
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar sesion.")
+      setError(err instanceof Error ? err.message : t("loginError"))
     } finally {
       setLoading(false)
     }
@@ -95,9 +82,9 @@ export default function LoginClient() {
 
         <Card className="border-slate-100 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] rounded-3xl overflow-hidden">
           <CardHeader className="bg-slate-50/50 border-b border-slate-50 pb-8 pt-10 px-8 text-center">
-            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">Iniciar sesion</CardTitle>
+            <CardTitle className="text-2xl font-black text-slate-900 tracking-tight uppercase font-plex-mono">{t("loginTitle")}</CardTitle>
             <CardDescription className="text-slate-500 font-medium mt-2">
-              Accede a tu congreso y continua el trabajo.
+              {t("loginSubtitle")}
             </CardDescription>
           </CardHeader>
 
@@ -117,11 +104,11 @@ export default function LoginClient() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correo electronico</Label>
+                <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("email")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="medico@ejemplo.com"
+                  placeholder={t("emailPlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600 h-12"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -131,11 +118,11 @@ export default function LoginClient() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400">Contrasena</Label>
+                <Label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t("password")}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Tu contrasena"
+                  placeholder={t("passwordPlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600 h-12"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -151,25 +138,25 @@ export default function LoginClient() {
                 className="w-full h-12 rounded-xl bg-blue-600 hover:bg-slate-900 text-white font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95"
                 loading={loading}
               >
-                Entrar
+                {t("signIn")}
               </Button>
 
               <div className="flex flex-col items-center gap-4">
                 <p className="text-xs text-slate-500 font-medium">
-                  {"¿Olvidaste tu contrasena?"}{" "}
+                  {t("forgotPassword")}{" "}
                   <Link href="/recuperar" className="text-blue-600 font-black hover:underline uppercase tracking-tighter">
-                    Recuperar acceso
+                    {t("recoverAccess")}
                   </Link>
                 </p>
                 <p className="text-xs text-slate-500 font-medium">
-                  {"¿Aun no tienes cuenta?"}{" "}
+                  {t("noAccount")}{" "}
                   <Link href="/registro" className="text-blue-600 font-black hover:underline uppercase tracking-tighter">
-                    Crear cuenta
+                    {t("createAccount")}
                   </Link>
                 </p>
                 <div className="flex items-center gap-2 text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                  Acceso seguro MDCONGRESS
+                  {t("secureAccess")}
                 </div>
               </div>
             </CardFooter>
