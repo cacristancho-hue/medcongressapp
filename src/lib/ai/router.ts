@@ -111,7 +111,12 @@ const IMAGE_ANALYSIS_SCHEMA = z.object({
     .describe("Referencias bibliográficas detectadas."),
 })
 
-const IMAGE_ANALYSIS_SYSTEM_PROMPT = `Eres un sistema de Inteligencia Médica de ELITE (v2026). Tu misión es procesar diapositivas académicas con RIGOR CIENTÍFICO ABSOLUTO.
+const IMAGE_ANALYSIS_SYSTEM_PROMPT = (language: "es" | "en") => `Eres un sistema de Inteligencia Médica de ELITE (v2026). Tu misión es procesar diapositivas académicas con RIGOR CIENTÍFICO ABSOLUTO.
+
+IDIOMA (CRÍTICO — distingue extraído de inferido):
+- 'raw_text' y 'slide_text' son EXTRACCIÓN LITERAL: respeta SIEMPRE el idioma original de la diapositiva. NUNCA los traduzcas.
+- 'references' son datos bibliográficos literales: NO los traduzcas.
+- 'medical_summary' y 'topics' (name/category/description) son INFERENCIA tuya: redáctalos COMPLETAMENTE en ${language === "es" ? "Español" : "Inglés"}, sin importar el idioma de la diapositiva.
 
 REGLAS DE ORO (INNEGOCIABLES):
 1. **INTEGRIDAD BIBLIOGRÁFICA UBICUA**: La omisión de una referencia es un fallo de integridad. Las referencias pueden aparecer en CUALQUIER PARTE de la diapositiva (no solo en el pie de página). Debes escanear el cuerpo del texto, cuadros laterales y gráficos en busca de citas.
@@ -231,6 +236,7 @@ interface AnalyzeImageInput {
   zoomRightUrl?: string
   forceProvider?: ProviderId
   specialty?: string | null
+  language?: "es" | "en"
 }
 
 async function retry<T>(
@@ -300,7 +306,7 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<ImageAnaly
         return await generateObject({
           model: modelHandle(provider, model),
           schema: IMAGE_ANALYSIS_SCHEMA,
-          system: IMAGE_ANALYSIS_SYSTEM_PROMPT,
+          system: IMAGE_ANALYSIS_SYSTEM_PROMPT(input.language ?? "es"),
           messages: [
             {
               role: "user",
@@ -373,6 +379,7 @@ export interface TopicExtractionResult {
 export async function extractTopicsFromCorpus(input: {
   documents: Array<{ index: number; text: string }>
   forceProvider?: ProviderId
+  language?: "es" | "en"
 }): Promise<TopicExtractionResult> {
   ensureGoogleEnvAlias()
   // Claude has stronger clinical reasoning for topic taxonomy than Flash;
@@ -386,11 +393,13 @@ export async function extractTopicsFromCorpus(input: {
     .join("\n\n")
     .slice(0, 200_000)
 
+  const language = input.language ?? "es"
   const system = `Eres un experto en clasificación temática de literatura médica.
 Recibirás un corpus de extractos OCR de diapositivas de congreso, cada uno marcado con \`=== IMG_N ===\`.
 Tu tarea: identificar entre 8 y 30 tópicos médicos técnicos relevantes, agruparlos por categoría amplia
 y para cada tópico listar los índices N de las imágenes donde aparece. Usa terminología médica.
-NO inventes tópicos que no estén soportados por el texto.`
+NO inventes tópicos que no estén soportados por el texto.
+IDIOMA: redacta los campos 'name', 'category' y 'description' COMPLETAMENTE en ${language === "es" ? "Español" : "Inglés"}, sin importar el idioma del corpus.`
 
   let lastError: unknown = null
 

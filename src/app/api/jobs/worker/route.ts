@@ -67,6 +67,9 @@ import { SupabaseClient } from "@supabase/supabase-js"
 
 async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
   if (!job.image_id) throw new Error("image_id requerido")
+  // Language captured at enqueue time (no request cookie here). Inferred output
+  // (medical_summary, topics) follows it; literal OCR/slide_text stays original.
+  const language = (job.payload?.language === "en" ? "en" : "es") as "es" | "en"
 
   await writeJobResult(supabase, job.id, {
     stage: "init",
@@ -175,6 +178,7 @@ async function runImageAnalysis(supabase: SupabaseClient, job: AiJobRow) {
       zoomLeftUrl: leftBuffer ? `data:image/jpeg;base64,${leftBuffer.toString('base64')}` : undefined,
       zoomRightUrl: rightBuffer ? `data:image/jpeg;base64,${rightBuffer.toString('base64')}` : undefined,
       specialty: congressSpecialty,
+      language,
     })
     await writeJobResult(supabase, job.id, {
       stage: "analyzed",
@@ -463,6 +467,7 @@ async function runTopicsExtraction(supabase: SupabaseClient, job: AiJobRow) {
 
   const { topics, usage } = await extractTopicsFromCorpus({
     documents: documents.map(({ index, text }) => ({ index, text })),
+    language: (job.payload?.language === "en" ? "en" : "es") as "es" | "en",
   })
 
   await writeJobResult(supabase, job.id, {

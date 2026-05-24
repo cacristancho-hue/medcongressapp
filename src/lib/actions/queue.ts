@@ -5,6 +5,7 @@ import { kickQueuedAiJobs } from "@/lib/worker-kick"
 import { withAction } from "@/lib/with-action"
 import { processImageWithAI } from "@/lib/actions/ai-processing"
 import { getImageFastPathLimit } from "@/lib/plan-limits"
+import { getActiveLocale } from "@/lib/actions/locale"
 
 interface EnqueueImageInput {
   imageId: string
@@ -75,7 +76,7 @@ export const enqueueImageAnalysis = withAction({
     userId: user.id,
     organizationId: congress.organization_id ?? null,
     jobType: "image_analysis",
-    payload: { imageId: input.imageId },
+    payload: { imageId: input.imageId, language: await getActiveLocale() },
     congressId: input.congressId,
     imageId: input.imageId,
     priority: 100,
@@ -207,6 +208,7 @@ export const enqueueCongressAnalysis = withAction({
   }
 
   // 3. Encolar cada una
+  const locale = await getActiveLocale()
   let enqueued = 0
   for (const img of images) {
     const previousAiStatus = img.ai_status ?? "pending"
@@ -220,7 +222,7 @@ export const enqueueCongressAnalysis = withAction({
       userId: user.id,
       organizationId: congress.organization_id ?? null,
       jobType: "image_analysis",
-      payload: { imageId: img.id },
+      payload: { imageId: img.id, language: locale },
       congressId,
       imageId: img.id,
       priority: 100,
@@ -281,6 +283,7 @@ export const reanalyzeCongress = withAction({
     return { enqueued: 0, message: "No hay imágenes para re-analizar." }
   }
 
+  const locale = await getActiveLocale()
   let enqueued = 0
   for (const img of images) {
     await supabase
@@ -293,7 +296,7 @@ export const reanalyzeCongress = withAction({
       userId: user.id,
       organizationId: congress.organization_id ?? null,
       jobType: "image_analysis",
-      payload: { imageId: img.id },
+      payload: { imageId: img.id, language: locale },
       congressId,
       imageId: img.id,
       priority: 90,
@@ -378,7 +381,7 @@ export const enqueueTopicsExtraction = withAction({
     userId: user.id,
     organizationId: congress.organization_id ?? null,
     jobType: "topics_extraction",
-    payload: {},
+    payload: { language: await getActiveLocale() },
     congressId,
     priority: 50,
   })

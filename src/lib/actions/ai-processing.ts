@@ -7,6 +7,7 @@ import { withAction } from "@/lib/with-action"
 import { enqueueReferenceVerificationIfPending } from "@/lib/jobs"
 import { kickQueuedAiJobs } from "@/lib/worker-kick"
 import { renderPreparedDerivative, extractFooterZooms } from "@/lib/server-image"
+import { getActiveLocale } from "@/lib/actions/locale"
 
 interface AIReference {
   detected_title?: string | null
@@ -86,6 +87,7 @@ export const processImageWithAI = withAction({
       zoomLeftUrl: leftBuffer ? `data:image/jpeg;base64,${leftBuffer.toString('base64')}` : undefined,
       zoomRightUrl: rightBuffer ? `data:image/jpeg;base64,${rightBuffer.toString('base64')}` : undefined,
       specialty: congressSpecialty,
+      language: await getActiveLocale(),
     })
 
     // Auditoría Heurística (Safety Net)
@@ -262,6 +264,7 @@ export const extractCongressTopics = withAction({
 
   const { topics, usage } = await extractTopicsFromCorpus({
     documents: documents.map(({ index, text }) => ({ index, text })),
+    language: await getActiveLocale(),
   })
 
   let topicsCreated = 0
