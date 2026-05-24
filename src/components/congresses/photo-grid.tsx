@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Trash2, CheckSquare, Square, X, ListChecks } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 interface Photo {
   id: string
@@ -44,6 +45,7 @@ interface Props {
 export default function PhotoGrid({ congressId, initialImages, sessions = [] }: Props) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const t = useTranslations("grid")
   const highlightId = searchParams.get("highlight")
   const [isAssigning, setIsAssigning] = useState(false)
   
@@ -125,7 +127,7 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
 
   const handleBatchDelete = async () => {
     if (selectedIds.size === 0) return
-    if (!confirm(`¿Eliminar ${selectedIds.size} foto${selectedIds.size === 1 ? "" : "s"}? Esta acción no se puede deshacer.`)) return
+    if (!confirm(t("deleteConfirm", { count: selectedIds.size }))) return
 
     const ids = Array.from(selectedIds)
     const result = await deleteImages(ids, congressId)
@@ -135,7 +137,7 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
       return
     }
 
-    toast.success(`${result.deleted ?? ids.length} foto${(result.deleted ?? ids.length) === 1 ? "" : "s"} eliminada${(result.deleted ?? ids.length) === 1 ? "" : "s"}`)
+    toast.success(t("deleted", { count: result.deleted ?? ids.length }))
     setSelectedIds(new Set())
     setIsSelectionMode(false)
   }
@@ -155,7 +157,7 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
         return
       }
       toast.success(
-        sessionId ? `${result.assigned} foto(s) movida(s) a la sesión` : `${result.assigned} foto(s) sin asignar`
+        sessionId ? t("movedToSession", { count: result.assigned }) : t("unassignedToast", { count: result.assigned })
       )
       setSelectedIds(new Set())
       setIsSelectionMode(false)
@@ -172,7 +174,7 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
       return
     }
     if (value === "__new__") {
-      const title = window.prompt("Nombre de la nueva sesión (ponencia):")?.trim()
+      const title = window.prompt(t("newSessionPrompt"))?.trim()
       if (!title) return
       setIsAssigning(true)
       try {
@@ -193,14 +195,14 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
   async function handleDelete(photoId: string) {
     const photo = images.find(p => p.id === photoId)
     if (!photo) return
-    if (confirm("¿Estás seguro de eliminar esta foto?")) {
+    if (confirm(t("deleteSingleConfirm"))) {
       await deleteImage(photo.id, photo.storage_path, congressId)
       setViewerIndex(null)
     }
   }
 
   if (!images?.length) {
-    return <p className="text-sm text-slate-400 text-center py-6">Aún no hay fotos.</p>
+    return <p className="text-sm text-slate-400 text-center py-6">{t("noPhotos")}</p>
   }
 
   return (
@@ -212,19 +214,19 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
           {isSelectionMode ? (
             <>
               <span className="text-xs font-bold text-blue-600 mr-2">
-                {selectedIds.size} seleccionada{selectedIds.size === 1 ? "" : "s"}
+                {t("selected", { count: selectedIds.size })}
               </span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={toggleSelectAll}
                 className="h-8 text-xs"
-                title="Seleccionar / deseleccionar todas las visibles"
+                title={t("selectAllTitle")}
               >
                 <ListChecks className="h-3 w-3 mr-1" />
                 {filteredImages.every((img) => selectedIds.has(img.id)) && filteredImages.length > 0
-                  ? "Deseleccionar todas"
-                  : "Seleccionar todas"}
+                  ? t("deselectAll")
+                  : t("selectAll")}
               </Button>
               <Button
                 variant="outline"
@@ -232,21 +234,21 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
                 onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
                 className="h-8 text-xs"
               >
-                <X className="h-3 w-3 mr-1" /> Cancelar
+                <X className="h-3 w-3 mr-1" /> {t("cancel")}
               </Button>
               <select
                 value=""
                 disabled={selectedIds.size === 0 || isAssigning}
                 onChange={(e) => { void handleSessionSelect(e.target.value) }}
                 className="h-8 text-xs rounded-md border border-slate-300 bg-white px-2 text-slate-700 disabled:opacity-50"
-                title="Mover las fotos seleccionadas a una sesión"
+                title={t("moveToSessionTitle")}
               >
-                <option value="">Mover a sesión…</option>
+                <option value="">{t("moveToSession")}</option>
                 {sessions.map((s) => (
                   <option key={s.id} value={s.id}>{s.title}</option>
                 ))}
-                <option value="__unassign__">— Quitar de sesión —</option>
-                <option value="__new__">✚ Nueva sesión…</option>
+                <option value="__unassign__">{t("removeFromSession")}</option>
+                <option value="__new__">{t("newSession")}</option>
               </select>
               <Button
                 variant="destructive"
@@ -255,7 +257,7 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
                 disabled={selectedIds.size === 0}
                 className="h-8 text-xs font-bold"
               >
-                <Trash2 className="h-3 w-3 mr-1" /> Eliminar lote
+                <Trash2 className="h-3 w-3 mr-1" /> {t("deleteBatch")}
               </Button>
             </>
           ) : (
@@ -265,7 +267,7 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
               onClick={() => setIsSelectionMode(true)}
               className="h-8 text-xs text-slate-600 border-slate-300"
             >
-              <CheckSquare className="h-3 w-3 mr-1" /> Selección Múltiple
+              <CheckSquare className="h-3 w-3 mr-1" /> {t("multiSelect")}
             </Button>
           )}
         </div>
@@ -273,7 +275,7 @@ export default function PhotoGrid({ congressId, initialImages, sessions = [] }: 
 
       {filteredImages.length === 0 && images.length > 0 ? (
         <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-          <p className="text-sm text-slate-500 italic">No se encontraron fotos.</p>
+          <p className="text-sm text-slate-500 italic">{t("noResults")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">

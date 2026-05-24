@@ -15,12 +15,17 @@ import {
   XCircle,
   Ban,
 } from "lucide-react"
+import { getTranslations, getLocale } from "next-intl/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/server"
 import AiAssistantButton from "@/components/congresses/ai-assistant-button"
 import JobsStatus from "@/components/congresses/jobs-status"
 
 export const dynamic = "force-dynamic"
+
+// Loose translator type so module-level helpers can receive the next-intl
+// `t` function (which carries a narrower key union) without contravariance noise.
+type Translator = (key: string, values?: Record<string, string | number>) => string
 
 interface Props {
   params: Promise<{ id: string }>
@@ -96,34 +101,34 @@ interface ProcessJobRow {
 
 const STATUS_META: Record<
   string,
-  { label: string; icon: typeof CheckCircle2; tone: string; bg: string }
+  { labelKey: string; icon: typeof CheckCircle2; tone: string; bg: string }
 > = {
   verified: {
-    label: "Verificadas",
+    labelKey: "statusVerified",
     icon: CheckCircle2,
     tone: "text-emerald-700",
     bg: "bg-emerald-50 border-emerald-200",
   },
   partially_verified: {
-    label: "Parciales",
+    labelKey: "statusPartiallyVerified",
     icon: AlertTriangle,
     tone: "text-amber-700",
     bg: "bg-amber-50 border-amber-200",
   },
   ambiguous: {
-    label: "Ambiguas",
+    labelKey: "statusAmbiguous",
     icon: CircleHelp,
     tone: "text-blue-700",
     bg: "bg-blue-50 border-blue-200",
   },
   not_verified: {
-    label: "No verificadas",
+    labelKey: "statusNotVerified",
     icon: XCircle,
     tone: "text-slate-600",
     bg: "bg-slate-50 border-slate-200",
   },
   retracted: {
-    label: "Retractadas",
+    labelKey: "statusRetracted",
     icon: Ban,
     tone: "text-red-700",
     bg: "bg-red-50 border-red-200",
@@ -132,6 +137,9 @@ const STATUS_META: Record<
 
 export default async function ResumenPage({ params }: Props) {
   const { id } = await params
+  const t = (await getTranslations("resumen")) as unknown as Translator
+  const locale = await getLocale()
+  const dateLocale = locale === "en" ? "en-US" : "es-CO"
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -218,7 +226,7 @@ export default async function ResumenPage({ params }: Props) {
 
   const topicsByCategory = topics.reduce<Record<string, TopicRow[]>>(
     (acc, topic) => {
-      const key = topic.category ?? "Sin categoría"
+      const key = topic.category ?? t("topicsUncategorized")
       acc[key] = acc[key] ?? []
       acc[key].push(topic)
       return acc
@@ -265,13 +273,13 @@ export default async function ResumenPage({ params }: Props) {
           className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Volver al congreso
+          {t("back")}
         </Link>
       </div>
 
       <header className="mb-6">
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-          Resumen consolidado
+          {t("consolidated")}
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">
           {congress.name}
@@ -281,13 +289,13 @@ export default async function ResumenPage({ params }: Props) {
           {congress.location && <span>📍 {congress.location}</span>}
           {congress.start_date && (
             <span>
-              📅 {new Date(congress.start_date).toLocaleDateString("es-CO", {
+              📅 {new Date(congress.start_date).toLocaleDateString(dateLocale, {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
               })}
               {congress.end_date &&
-                ` – ${new Date(congress.end_date).toLocaleDateString("es-CO", {
+                ` – ${new Date(congress.end_date).toLocaleDateString(dateLocale, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
@@ -306,22 +314,22 @@ export default async function ResumenPage({ params }: Props) {
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
         <StatCard
           icon={Images}
-          label="Fotos analizadas"
+          label={t("statsAnalyzed")}
           value={`${analyzedPhotos} / ${totalPhotos}`}
         />
         <StatCard
           icon={FileText}
-          label="Caracteres OCR"
-          value={ocrCharacters.toLocaleString("es-CO")}
+          label={t("statsOcrChars")}
+          value={ocrCharacters.toLocaleString(dateLocale)}
         />
         <StatCard
           icon={Hash}
-          label="Tópicos detectados"
+          label={t("statsTopics")}
           value={topics.length}
         />
         <StatCard
           icon={BookCheck}
-          label="Referencias verificadas"
+          label={t("statsVerifiedRefs")}
           value={`${verifiedCount} / ${totalReferences}`}
         />
       </section>
@@ -332,11 +340,10 @@ export default async function ResumenPage({ params }: Props) {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <FileText className="h-4 w-4 text-slate-500" />
-              Asistente clínico
+              {t("assistantTitle")}
             </CardTitle>
             <p className="text-xs text-slate-500 mt-1">
-              Procesa tu congreso con IA: extrae tópicos, verifica referencias y
-              genera un reporte académico estructurado en un solo paso.
+              {t("assistantDesc")}
             </p>
           </CardHeader>
           <CardContent className="pt-0">
@@ -348,46 +355,56 @@ export default async function ResumenPage({ params }: Props) {
       <section className="mb-8">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="text-base font-semibold text-slate-900">
-            Trazabilidad del procesamiento
+            {t("traceTitle")}
           </h2>
           <Link
             href={`/dashboard/congresos/${id}#jobs`}
             className="text-xs text-slate-500 hover:text-slate-800 inline-flex items-center gap-1"
           >
             <CircleHelp className="h-3 w-3" />
-            Ver cola completa
+            {t("traceViewQueue")}
           </Link>
         </div>
         {latestRelevantJob ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <TraceCard
-              title="Última foto"
+              title={t("traceLastPhoto")}
               job={latestImageJob}
-              fallbackText="No hay análisis de imagen reciente."
+              fallbackText={t("traceLastPhotoEmpty")}
+              t={t}
+              dateLocale={dateLocale}
             />
             <TraceCard
-              title="Últimos tópicos"
+              title={t("traceLastTopics")}
               job={latestTopicsJob}
-              fallbackText="No hay extracción de tópicos reciente."
+              fallbackText={t("traceLastTopicsEmpty")}
+              t={t}
+              dateLocale={dateLocale}
             />
             <TraceCard
-              title="Último reporte"
+              title={t("traceLastReport")}
               job={latestReportJob}
-              fallbackText="No hay reporte reciente en cola."
+              fallbackText={t("traceLastReportEmpty")}
+              t={t}
+              dateLocale={dateLocale}
             />
             <TraceCard
-              title="Última verificación"
+              title={t("traceLastVerification")}
               job={latestReferenceJob}
-              fallbackText="No hay verificación bibliográfica reciente."
+              fallbackText={t("traceLastVerificationEmpty")}
+              t={t}
+              dateLocale={dateLocale}
             />
             <TraceCard
-              title="Última tarea"
+              title={t("traceLastTask")}
               job={latestRelevantJob}
-              fallbackText="No hay tareas recientes."
+              fallbackText={t("traceLastTaskEmpty")}
+              t={t}
+              dateLocale={dateLocale}
             />
           </div>
         ) : (
-          <EmptyState text="Aún no hay trazabilidad de jobs para este congreso. Cuando generes análisis, verás aquí la etapa, error o resultado del último proceso." />
+          <EmptyState text={t("traceEmpty")} />
         )}
       </section>
 
@@ -395,31 +412,31 @@ export default async function ResumenPage({ params }: Props) {
       <section className="mb-10">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="text-base font-semibold text-slate-900">
-            Reporte académico
+            {t("reportTitle")}
           </h2>
           <Link
             href={`/dashboard/congresos/${id}#reports`}
             className="text-xs text-slate-500 hover:text-slate-800 inline-flex items-center gap-1"
           >
             <Plus className="h-3 w-3" />
-            Generar nuevo
+            {t("reportGenerateNew")}
           </Link>
         </div>
         <div className="mb-3 grid gap-3 sm:grid-cols-3">
           <MiniTrace
-            label="Último reporte"
-            value={formatReportState(latestReportJob)}
-            helper={reportJobHelper(latestReportJob)}
+            label={t("reportLast")}
+            value={formatReportState(latestReportJob, t)}
+            helper={reportJobHelper(latestReportJob, t)}
           />
           <MiniTrace
-            label="Último reporte OK"
-            value={formatReportState(latestFinishedReportJob)}
-            helper={reportJobHelper(latestFinishedReportJob)}
+            label={t("reportLastOk")}
+            value={formatReportState(latestFinishedReportJob, t)}
+            helper={reportJobHelper(latestFinishedReportJob, t)}
           />
           <MiniTrace
-            label="Último reporte fallido"
-            value={formatReportState(latestFailedReportJob)}
-            helper={reportJobHelper(latestFailedReportJob)}
+            label={t("reportLastFailed")}
+            value={formatReportState(latestFailedReportJob, t)}
+            helper={reportJobHelper(latestFailedReportJob, t)}
           />
         </div>
         {latestReport ? (
@@ -427,8 +444,8 @@ export default async function ResumenPage({ params }: Props) {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">{latestReport.title}</CardTitle>
               <p className="text-xs text-slate-500">
-                {new Date(latestReport.created_at).toLocaleString("es-CO")}
-                {reports.length > 1 && ` · ${reports.length} versiones`}
+                {new Date(latestReport.created_at).toLocaleString(dateLocale)}
+                {reports.length > 1 && ` · ${t("reportVersions", { count: reports.length })}`}
               </p>
             </CardHeader>
             <CardContent className="prose prose-sm prose-slate max-w-none pt-0 font-plex-mono">
@@ -438,9 +455,7 @@ export default async function ResumenPage({ params }: Props) {
             </CardContent>
           </Card>
         ) : (
-          <EmptyState
-            text="Aún no hay reportes. Genera uno desde la página del congreso para que la IA consolide todo el OCR en un esquema académico estructurado."
-          />
+          <EmptyState text={t("reportEmpty")} />
         )}
       </section>
 
@@ -448,14 +463,14 @@ export default async function ResumenPage({ params }: Props) {
       <section className="mb-10">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="text-base font-semibold text-slate-900">
-            Tópicos detectados
+            {t("topicsTitle")}
           </h2>
           <span className="text-xs text-slate-500">
-            {topics.length} tópico{topics.length === 1 ? "" : "s"} en {Object.keys(topicsByCategory).length} categoría{Object.keys(topicsByCategory).length === 1 ? "" : "s"}
+            {t("topicsCount", { topics: topics.length, categories: Object.keys(topicsByCategory).length })}
           </span>
         </div>
         {topics.length === 0 ? (
-          <EmptyState text="Aún no hay tópicos. Usa el asistente clínico arriba para extraerlos del OCR existente." />
+          <EmptyState text={t("topicsEmpty")} />
         ) : (
           <div className="space-y-4">
             {Object.entries(topicsByCategory).map(([category, items]) => (
@@ -491,14 +506,14 @@ export default async function ResumenPage({ params }: Props) {
       <section className="mb-6">
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="text-base font-semibold text-slate-900">
-            Bibliografía detectada
+            {t("refsTitle")}
           </h2>
           <span className="text-xs text-slate-500">
-            {totalReferences} candidato{totalReferences === 1 ? "" : "s"}
+            {t("refsCount", { count: totalReferences })}
           </span>
         </div>
         {totalReferences === 0 ? (
-          <EmptyState text="Aún no se detectaron referencias bibliográficas en las fotos analizadas." />
+          <EmptyState text={t("refsEmpty")} />
         ) : (
           <div className="space-y-4">
             {(["verified", "partially_verified", "ambiguous", "retracted", "not_verified"] as const).map(
@@ -507,6 +522,7 @@ export default async function ResumenPage({ params }: Props) {
                 if (list.length === 0) return null
                 const meta = STATUS_META[status]
                 const Icon = meta.icon
+                const metaLabel = t(meta.labelKey)
                 return (
                   <div
                     key={status}
@@ -515,14 +531,14 @@ export default async function ResumenPage({ params }: Props) {
                     <div className="flex items-center gap-2 mb-2">
                       <Icon className={`h-4 w-4 ${meta.tone}`} />
                       <h3 className={`text-xs font-semibold ${meta.tone}`}>
-                        {meta.label} ({list.length})
+                        {metaLabel} ({list.length})
                       </h3>
                     </div>
                     <ul className="space-y-2">
                       {list.slice(0, 12).map((ref) => (
                         <li key={ref.id} className="text-xs text-slate-700">
                           <p className="font-medium">
-                            {ref.detected_title ?? "(sin título detectado)"}
+                            {ref.detected_title ?? t("refsNoTitle")}
                           </p>
                           <p className="text-slate-500 mt-0.5">
                             {[
@@ -547,7 +563,7 @@ export default async function ResumenPage({ params }: Props) {
                     </ul>
                     {list.length > 12 && (
                       <p className="text-[10px] text-slate-400 mt-2">
-                        +{list.length - 12} más
+                        {t("refsMore", { count: list.length - 12 })}
                       </p>
                     )}
                   </div>
@@ -619,10 +635,14 @@ function TraceCard({
   title,
   job,
   fallbackText,
+  t,
+  dateLocale,
 }: {
   title: string
   job: ProcessJobRow | null
   fallbackText: string
+  t: Translator
+  dateLocale: string
 }) {
   const tone = !job
     ? "border-slate-200 bg-slate-50"
@@ -641,7 +661,7 @@ function TraceCard({
           <div>
             <p className="text-[11px] uppercase tracking-wide text-slate-500">{title}</p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
-              {job ? describeJobStatus(job.status) : "Sin datos"}
+              {job ? describeJobStatus(job.status, t) : t("traceNoData")}
             </p>
           </div>
           {job?.result?.stage && (
@@ -653,10 +673,10 @@ function TraceCard({
         <div className="mt-3 space-y-1 text-[11px] text-slate-600">
           {job ? (
             <>
-              <p>{job.error_message ? `Error: ${job.error_message}` : fallbackText}</p>
-              <p>Creado: {new Date(job.created_at).toLocaleString("es-CO")}</p>
-              {job.started_at && <p>Inició: {new Date(job.started_at).toLocaleString("es-CO")}</p>}
-              {job.finished_at && <p>Terminó: {new Date(job.finished_at).toLocaleString("es-CO")}</p>}
+              <p>{job.error_message ? `${t("traceError")}: ${job.error_message}` : fallbackText}</p>
+              <p>{t("traceCreated")}: {new Date(job.created_at).toLocaleString(dateLocale)}</p>
+              {job.started_at && <p>{t("traceStarted")}: {new Date(job.started_at).toLocaleString(dateLocale)}</p>}
+              {job.finished_at && <p>{t("traceFinished")}: {new Date(job.finished_at).toLocaleString(dateLocale)}</p>}
               {(job.result?.imageCount != null ||
                 job.result?.ocrCount != null ||
                 job.result?.referenceCount != null ||
@@ -712,35 +732,35 @@ function TraceCard({
   )
 }
 
-function describeJobStatus(status: string) {
-  if (status === "failed") return "Falló"
-  if (status === "processing") return "Procesando"
-  if (status === "pending") return "En cola"
-  if (status === "cancelled") return "Cancelado"
-  if (status === "succeeded" || status === "completed") return "Listo"
+function describeJobStatus(status: string, t: Translator) {
+  if (status === "failed") return t("jobFailed")
+  if (status === "processing") return t("jobProcessing")
+  if (status === "pending") return t("jobPending")
+  if (status === "cancelled") return t("jobCancelled")
+  if (status === "succeeded" || status === "completed") return t("jobDone")
   return status
 }
 
-function formatReportState(job: ProcessJobRow | null) {
-  if (!job) return "Sin intentos"
-  return describeJobStatus(job.status)
+function formatReportState(job: ProcessJobRow | null, t: Translator) {
+  if (!job) return t("reportNoAttempts")
+  return describeJobStatus(job.status, t)
 }
 
-function reportJobHelper(job: ProcessJobRow | null) {
-  if (!job) return "Todavía no hay jobs de reporte."
+function reportJobHelper(job: ProcessJobRow | null, t: Translator) {
+  if (!job) return t("reportNoJobs")
   const parts: string[] = []
-  if (job.result?.stage) parts.push(`etapa ${job.result.stage}`)
+  if (job.result?.stage) parts.push(t("reportStage", { stage: job.result.stage }))
   if (job.started_at && job.finished_at) {
-    parts.push(`duró ${formatDuration(job.started_at, job.finished_at)}`)
+    parts.push(t("reportLasted", { duration: formatDuration(job.started_at, job.finished_at) }))
   } else if (job.started_at && !job.finished_at) {
-    parts.push("en ejecución")
+    parts.push(t("reportRunning"))
   } else {
-    parts.push("aún no inicia")
+    parts.push(t("reportNotStarted"))
   }
   if (job.error_message) parts.push(job.error_message)
-  if (job.result?.imageCount != null) parts.push(`${job.result.imageCount} fotos`)
-  if (job.result?.referenceCount != null) parts.push(`${job.result.referenceCount} refs`)
-  if (job.result?.ocrCount != null) parts.push(`${job.result.ocrCount} OCR`)
+  if (job.result?.imageCount != null) parts.push(t("reportPhotos", { count: job.result.imageCount }))
+  if (job.result?.referenceCount != null) parts.push(t("reportRefs", { count: job.result.referenceCount }))
+  if (job.result?.ocrCount != null) parts.push(t("reportOcr", { count: job.result.ocrCount }))
   return parts.join(" · ")
 }
 

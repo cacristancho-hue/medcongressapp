@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import TopicNavigator from "./topic-navigator"
 import PhotoGrid from "./photo-grid"
 import { clsx } from "clsx"
@@ -22,17 +23,6 @@ interface DiscoveryImage {
   topic_ids: string[]
   session_id?: string | null
   image_type?: string | null
-}
-
-const IMAGE_TYPE_LABELS: Record<string, string> = {
-  texto: "📝 Texto",
-  tabla: "📊 Tablas",
-  grafica: "📈 Gráficas",
-  imagen_medica: "🩻 Imágenes médicas",
-  algoritmo: "🔀 Algoritmos",
-  poster: "🪧 Pósters",
-  foto_clinica: "📷 Fotos",
-  otro: "Otro",
 }
 
 interface DiscoveryTopic {
@@ -61,6 +51,8 @@ interface Props {
 type SessionFilter = "all" | "unassigned" | string
 
 export default function DiscoveryClient({ congressId, initialImages, topics, sessions }: Props) {
+  const t = useTranslations("discovery")
+  const tv = useTranslations("viewer")
   const [activeTopicId, setActiveTopicId] = useState<string | null>(null)
   const [sessionFilter, setSessionFilter] = useState<SessionFilter>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
@@ -102,11 +94,11 @@ export default function DiscoveryClient({ congressId, initialImages, topics, ses
       {(sessions.length > 0 || unassignedCount > 0) && (
         <div className="space-y-2">
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-            <Layers className="h-3.5 w-3.5" /> Sesiones
+            <Layers className="h-3.5 w-3.5" /> {t("sessions")}
           </h4>
           <div className="flex flex-wrap gap-2">
             <SessionChip
-              label="Todas"
+              label={t("all")}
               active={sessionFilter === "all"}
               onClick={() => setSessionFilter("all")}
             />
@@ -121,7 +113,7 @@ export default function DiscoveryClient({ congressId, initialImages, topics, ses
             ))}
             {unassignedCount > 0 && (
               <SessionChip
-                label={`Sin asignar (${unassignedCount})`}
+                label={`${t("unassigned")} (${unassignedCount})`}
                 active={sessionFilter === "unassigned"}
                 onClick={() => setSessionFilter("unassigned")}
                 muted
@@ -134,13 +126,13 @@ export default function DiscoveryClient({ congressId, initialImages, topics, ses
       {/* Filtro por tipo de imagen (clasificado por IA) */}
       {availableTypes.length > 1 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tipo de contenido</h4>
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t("contentType")}</h4>
           <div className="flex flex-wrap gap-2">
-            <SessionChip label="Todos" active={typeFilter === "all"} onClick={() => setTypeFilter("all")} />
+            <SessionChip label={t("allTypes")} active={typeFilter === "all"} onClick={() => setTypeFilter("all")} />
             {availableTypes.map((ty) => (
               <SessionChip
                 key={ty}
-                label={IMAGE_TYPE_LABELS[ty] ?? ty}
+                label={tv(`type.${ty}`)}
                 active={typeFilter === ty}
                 onClick={() => setTypeFilter(ty)}
               />
@@ -152,11 +144,11 @@ export default function DiscoveryClient({ congressId, initialImages, topics, ses
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-            {activeTopicId ? "Fotos relacionadas con el tema" : "Galería Completa"}
+            {activeTopicId ? t("relatedPhotos") : t("fullGallery")}
           </h4>
           {(activeTopicId || sessionFilter !== "all" || typeFilter !== "all") && (
             <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-100">
-              {filteredImages.length} resultados
+              {filteredImages.length} {t("results")}
             </span>
           )}
         </div>
