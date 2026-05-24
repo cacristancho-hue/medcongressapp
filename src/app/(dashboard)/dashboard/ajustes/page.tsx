@@ -2,10 +2,12 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import LogoutButton from "@/components/layout/logout-button"
 import AccountSettingsPanel from "@/components/dashboard/account-settings-panel"
+import { getTranslations } from "next-intl/server"
 
 export default async function AjustesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const t = await getTranslations("settings")
 
   if (!user) redirect("/login")
 
@@ -24,8 +26,8 @@ export default async function AjustesPage() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Ajustes</h2>
-        <p className="text-sm text-slate-500 mt-1 font-medium">Perfil médico y credenciales de acceso.</p>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{t("pageTitle")}</h2>
+        <p className="text-sm text-slate-500 mt-1 font-medium">{t("pageSubtitle")}</p>
       </div>
 
       <div className="mb-4 flex justify-end">

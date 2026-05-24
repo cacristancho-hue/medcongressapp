@@ -10,27 +10,28 @@ import { createClient } from "@/lib/supabase/client"
 import { updateProfile } from "@/lib/actions/profile"
 import type { AiUsageLimits, Profile } from "@/types/database"
 import { getPlanDefaults } from "@/lib/plan-limits"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 const ROLES = [
-  { value: "student", label: "Estudiante de Medicina" },
-  { value: "resident", label: "Residente" },
-  { value: "fellow", label: "Fellow" },
-  { value: "specialist", label: "Especialista" },
-  { value: "professor", label: "Profesor clínico" },
-]
+  { value: "student", labelKey: "roleStudent" },
+  { value: "resident", labelKey: "roleResident" },
+  { value: "fellow", labelKey: "roleFellow" },
+  { value: "specialist", labelKey: "roleSpecialist" },
+  { value: "professor", labelKey: "roleProfessor" },
+] as const
 
 const GENDERS = [
-  { value: "M", label: "Masculino" },
-  { value: "F", label: "Femenino" },
-  { value: "O", label: "Otro" },
-]
+  { value: "M", labelKey: "genderM" },
+  { value: "F", labelKey: "genderF" },
+  { value: "O", labelKey: "genderO" },
+] as const
 
 const WORKPLACE_TYPES = [
-  { value: "private", label: "Clínica privada" },
-  { value: "public", label: "Hospital público" },
-  { value: "both", label: "Ambos (público y privado)" },
-]
+  { value: "private", labelKey: "workplacePrivate" },
+  { value: "public", labelKey: "workplacePublic" },
+  { value: "both", labelKey: "workplaceBoth" },
+] as const
 
 interface AccountSettingsPanelProps {
   profile: Profile | null
@@ -58,6 +59,7 @@ function formatPlan(plan?: string | null) {
 
 export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }: AccountSettingsPanelProps) {
   const router = useRouter()
+  const t = useTranslations("settings")
   const [profileLoading, setProfileLoading] = useState(false)
   const [emailLoading, setEmailLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
@@ -80,13 +82,13 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
       const formData = new FormData(e.currentTarget)
       const result = await updateProfile(formData)
       if (result?.success) {
-        toast.success(result.message ?? "Perfil actualizado correctamente.")
+        toast.success(result.message ?? t("profileSaved"))
         router.refresh()
       } else {
-        toast.error(result?.error ?? "No se pudo guardar el perfil.")
+        toast.error(result?.error ?? t("profileSaveError"))
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo guardar el perfil.")
+      toast.error(error instanceof Error ? error.message : t("profileSaveError"))
     } finally {
       setProfileLoading(false)
     }
@@ -99,11 +101,11 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
     try {
       const email = nextEmail.trim()
       if (!email) {
-        toast.error("Escribe un correo nuevo.")
+        toast.error(t("emailEmpty"))
         return
       }
       if (email.toLowerCase() === currentEmail.toLowerCase()) {
-        toast.info("Ese correo ya es el actual.")
+        toast.info(t("emailSame"))
         return
       }
 
@@ -114,10 +116,10 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
         return
       }
 
-      toast.success("Enviamos un correo de confirmación al nuevo email.")
+      toast.success(t("emailSent"))
       setNextEmail("")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo actualizar el correo.")
+      toast.error(error instanceof Error ? error.message : t("emailError"))
     } finally {
       setEmailLoading(false)
     }
@@ -129,11 +131,11 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
 
     try {
       if (!newPassword || newPassword.length < 8) {
-        toast.error("La nueva contraseña debe tener al menos 8 caracteres.")
+        toast.error(t("passwordShort"))
         return
       }
       if (newPassword !== confirmPassword) {
-        toast.error("Las contraseñas no coinciden.")
+        toast.error(t("passwordMismatch"))
         return
       }
 
@@ -144,11 +146,11 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
         return
       }
 
-      toast.success("Contraseña actualizada correctamente.")
+      toast.success(t("passwordSaved"))
       setNewPassword("")
       setConfirmPassword("")
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "No se pudo actualizar la contraseña.")
+      toast.error(error instanceof Error ? error.message : t("passwordError"))
     } finally {
       setPasswordLoading(false)
     }
@@ -158,50 +160,50 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
     <div className="space-y-6">
       <Card className="rounded-2xl border-slate-200 bg-slate-950 text-white shadow-sm overflow-hidden">
         <CardHeader className="py-4">
-          <CardTitle className="text-sm font-bold uppercase tracking-wider text-white/80">Plan detectado</CardTitle>
+          <CardTitle className="text-sm font-bold uppercase tracking-wider text-white/80">{t("planDetected")}</CardTitle>
         </CardHeader>
         <CardContent className="pb-5">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold">Plan</p>
-              <p className="mt-1 text-sm font-semibold text-white">{formatPlan(aiLimits?.plan)}</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold">{t("plan")}</p>
+              <p className="mt-1 text-sm font-semibold text-white">{aiLimits?.plan ? formatPlan(aiLimits.plan) : t("noPlan")}</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold">Fotos / mes</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold">{t("photosMonth")}</p>
               <p className="mt-1 text-sm font-semibold text-white">{visibleImageQuota}</p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold">Reportes / mes</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/50 font-bold">{t("reportsMonth")}</p>
               <p className="mt-1 text-sm font-semibold text-white">{visibleReportQuota}</p>
             </div>
           </div>
           <p className="mt-3 text-xs text-white/60">
-            Este plan define el comportamiento de subida y el límite de uso de IA.
+            {t("planNote")}
           </p>
         </CardContent>
       </Card>
 
       <Card className="rounded-2xl border-slate-200 bg-slate-50/70 shadow-sm overflow-hidden">
         <CardHeader className="py-4">
-          <CardTitle className="text-sm font-bold text-slate-900 uppercase tracking-wider">Datos actuales</CardTitle>
+          <CardTitle className="text-sm font-bold text-slate-900 uppercase tracking-wider">{t("currentData")}</CardTitle>
         </CardHeader>
         <CardContent className="pb-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-white border border-slate-200 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Nombre</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{profile?.full_name ?? "Sin nombre registrado"}</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t("name")}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{profile?.full_name ?? t("noName")}</p>
             </div>
             <div className="rounded-xl bg-white border border-slate-200 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Correo</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t("email")}</p>
               <p className="mt-1 text-sm font-semibold text-slate-900 break-all">{currentEmail}</p>
             </div>
             <div className="rounded-xl bg-white border border-slate-200 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Especialidad</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{profile?.specialty ?? "Sin especialidad registrada"}</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t("specialty")}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{profile?.specialty ?? t("noSpecialty")}</p>
             </div>
             <div className="rounded-xl bg-white border border-slate-200 px-4 py-3">
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Nivel</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{profile?.role ?? "Sin nivel registrado"}</p>
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t("level")}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">{profile?.role ?? t("noLevel")}</p>
             </div>
           </div>
         </CardContent>
@@ -209,101 +211,101 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
 
       <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden">
         <CardHeader className="bg-slate-50/50 border-b border-slate-50 py-5">
-          <CardTitle className="text-base font-bold text-slate-900 uppercase tracking-wider">Perfil profesional</CardTitle>
+          <CardTitle className="text-base font-bold text-slate-900 uppercase tracking-wider">{t("profProfile")}</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleProfileSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="full_name" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Nombre completo</Label>
+                <Label htmlFor="full_name" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("fullName")}</Label>
                 <Input
                   id="full_name"
                   name="full_name"
                   defaultValue={profile?.full_name ?? ""}
-                  placeholder="Nombre completo"
+                  placeholder={t("fullName")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Nivel</Label>
+                <Label htmlFor="role" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("level")}</Label>
                 <select
                   id="role"
                   name="role"
                   defaultValue={profile?.role ?? ""}
                   className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
                 >
-                  <option value="">Seleccionar nivel</option>
+                  <option value="">{t("selectLevel")}</option>
                   {ROLES.map((role) => (
-                    <option key={role.value} value={role.value}>{role.label}</option>
+                    <option key={role.value} value={role.value}>{t(role.labelKey)}</option>
                   ))}
                 </select>
                 <p className="px-1 text-[11px] text-slate-500">
-                  Puedes corregir o ajustar tu nivel profesional desde aquí.
+                  {t("roleNote")}
                 </p>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="specialty" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Especialidad</Label>
+              <Label htmlFor="specialty" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("specialty")}</Label>
               <Input
                 id="specialty"
                 name="specialty"
                 defaultValue={profile?.specialty ?? ""}
-                placeholder="Especialidad médica"
+                placeholder={t("specialtyPlaceholder")}
                 className="rounded-xl border-slate-200 focus:ring-blue-600"
               />
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Edad</Label>
+                <Label htmlFor="age" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("age")}</Label>
                 <Input
                   id="age"
                   name="age"
                   type="number"
                   defaultValue={profile?.age ?? ""}
-                  placeholder="Años"
+                  placeholder={t("agePlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Sexo</Label>
+                <Label htmlFor="gender" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("gender")}</Label>
                 <select
                   id="gender"
                   name="gender"
                   defaultValue={profile?.gender ?? ""}
                   className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
                 >
-                  <option value="">Seleccionar</option>
+                  <option value="">{t("select")}</option>
                   {GENDERS.map((g) => (
-                    <option key={g.value} value={g.value}>{g.label}</option>
+                    <option key={g.value} value={g.value}>{t(g.labelKey)}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="workplace_type" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Lugar de trabajo</Label>
+                <Label htmlFor="workplace_type" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("workplace")}</Label>
                 <select
                   id="workplace_type"
                   name="workplace_type"
                   defaultValue={profile?.workplace_type ?? ""}
                   className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-medium text-slate-700"
                 >
-                  <option value="">Seleccionar</option>
+                  <option value="">{t("select")}</option>
                   {WORKPLACE_TYPES.map((w) => (
-                    <option key={w.value} value={w.value}>{w.label}</option>
+                    <option key={w.value} value={w.value}>{t(w.labelKey)}</option>
                   ))}
                 </select>
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="country" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">País</Label>
+              <Label htmlFor="country" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("country")}</Label>
               <Input
                 id="country"
                 name="country"
                 defaultValue={profile?.country ?? ""}
-                placeholder="País de residencia"
+                placeholder={t("countryPlaceholder")}
                 className="rounded-xl border-slate-200 focus:ring-blue-600"
               />
             </div>
@@ -314,7 +316,7 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
                 loading={profileLoading}
                 className="bg-blue-600 hover:bg-slate-900 text-white font-black uppercase tracking-widest rounded-xl px-8 h-11 transition-all shadow-md"
               >
-                Guardar cambios
+                {t("saveChanges")}
               </Button>
             </div>
           </form>
@@ -323,12 +325,12 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
 
       <Card className="rounded-2xl border-slate-200 shadow-sm overflow-hidden">
         <CardHeader className="bg-slate-50/50 border-b border-slate-50 py-5">
-          <CardTitle className="text-base font-bold text-slate-900 uppercase tracking-wider">Cuenta y acceso</CardTitle>
+          <CardTitle className="text-base font-bold text-slate-900 uppercase tracking-wider">{t("accountAccess")}</CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-8">
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="current_email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Correo actual</Label>
+              <Label htmlFor="current_email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("currentEmail")}</Label>
               <Input
                 id="current_email"
                 value={currentEmail}
@@ -337,18 +339,18 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="next_email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Nuevo correo</Label>
+              <Label htmlFor="next_email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("newEmail")}</Label>
               <Input
                 id="next_email"
                 type="email"
                 value={nextEmail}
                 onChange={(e) => setNextEmail(e.target.value)}
-                placeholder="nuevo@correo.com"
+                placeholder={t("newEmailPlaceholder")}
                 className="rounded-xl border-slate-200 focus:ring-blue-600"
               />
             </div>
             <p className="text-xs text-slate-500">
-              Si cambias tu correo, Supabase enviará un enlace de confirmación al nuevo email.
+              {t("emailChangeNote")}
             </p>
             <div className="flex justify-end">
               <Button
@@ -357,7 +359,7 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
                 variant="outline"
                 className="rounded-xl border-slate-200 font-bold"
               >
-                Actualizar correo
+                {t("updateEmail")}
               </Button>
             </div>
           </form>
@@ -365,25 +367,25 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
           <div className="border-t border-slate-100 pt-8">
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="new_password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Nueva contraseña</Label>
+                <Label htmlFor="new_password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("newPassword")}</Label>
                 <Input
                   id="new_password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={t("passwordPlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600"
                   autoComplete="new-password"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="confirm_password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Confirmar contraseña</Label>
+                <Label htmlFor="confirm_password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">{t("confirmPassword")}</Label>
                 <Input
                   id="confirm_password"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repite la nueva contraseña"
+                  placeholder={t("confirmPlaceholder")}
                   className="rounded-xl border-slate-200 focus:ring-blue-600"
                   autoComplete="new-password"
                 />
@@ -394,7 +396,7 @@ export default function AccountSettingsPanel({ profile, currentEmail, aiLimits }
                   loading={passwordLoading}
                   className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold"
                 >
-                  Cambiar contraseña
+                  {t("changePassword")}
                 </Button>
               </div>
             </form>
