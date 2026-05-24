@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Sparkles, Loader2, CheckCircle2, XCircle, Minus, Clock } from "lucide-react"
 import { runMedicalAssistant, type AssistantStep } from "@/lib/actions/assistant"
@@ -11,36 +12,51 @@ interface Props {
   language?: "es" | "en"
 }
 
+const STEP_LABEL_KEY: Record<AssistantStep["key"], string> = {
+  topics: "stepTopics",
+  references: "stepReferences",
+  report: "stepReport",
+}
+
+const DETAIL_KEY: Record<string, string> = {
+  instantDone: "detailInstantDone",
+  instantFailRetry: "detailInstantFailRetry",
+  alreadyRunning: "detailAlreadyRunning",
+  queued: "detailQueued",
+  alreadyDone: "detailAlreadyDone",
+  noOcr: "detailNoOcr",
+  enqueueError: "detailEnqueueError",
+  noPending: "detailNoPending",
+  alreadyExists: "detailAlreadyExists",
+}
+
 export default function AiAssistantButton({ congressId, language = "es" }: Props) {
+  const t = useTranslations("assistant")
   const [isPending, startTransition] = useTransition()
   const [steps, setSteps] = useState<AssistantStep[] | null>(null)
   const router = useRouter()
 
   function handleClick() {
-    const ok = confirm(
-      "El asistente clínico procesará tu congreso con IA: extraerá tópicos, verificará referencias bibliográficas y generará un reporte académico. Esto puede tardar unos minutos. ¿Continuar?"
-    )
+    const ok = confirm(t("confirm"))
     if (!ok) return
 
     startTransition(async () => {
       const result = await runMedicalAssistant(congressId, language)
-      if (result.error) {
-        toast.error(result.error)
+      if (result.errorCode) {
+        toast.error(t(result.errorCode))
         return
       }
       setSteps(result.steps)
       const queued = result.steps.filter((s) => s.status === "queued").length
       const skipped = result.steps.filter((s) => s.status === "skipped").length
       const failed = result.steps.filter((s) => s.status === "error").length
-      
+
       if (failed > 0) {
-        toast.warning(
-          `Asistente terminó con avisos: ${queued} en cola, ${skipped} omitidas, ${failed} con error.`
-        )
+        toast.warning(t("toastWarning", { queued, skipped, failed }))
       } else if (queued > 0) {
-        toast.success(`Asistente activado: ${queued} tareas en cola. El progreso aparecerá en el dashboard.`)
+        toast.success(t("toastQueued", { queued }))
       } else {
-        toast.info(`Asistente: Todas las fases ya estaban completadas.`)
+        toast.info(t("toastDone"))
       }
       router.refresh()
     })
@@ -56,19 +72,19 @@ export default function AiAssistantButton({ congressId, language = "es" }: Props
         {isPending ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Activando asistente…
+            {t("starting")}
           </>
         ) : (
           <>
             <Sparkles className="h-4 w-4" />
-            Iniciar asistencia de inteligencia artificial
+            {t("start")}
           </>
         )}
       </button>
 
       {isPending && (
         <p className="text-xs text-slate-500">
-          Encolando tareas de procesamiento en segundo plano...
+          {t("enqueuing")}
         </p>
       )}
 
@@ -98,9 +114,9 @@ export default function AiAssistantButton({ congressId, language = "es" }: Props
               >
                 <Icon className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${tone}`} />
                 <span>
-                  <span className="font-medium">{step.label}</span>
-                  {step.detail && (
-                    <span className="text-slate-500"> · {step.detail}</span>
+                  <span className="font-medium">{t(STEP_LABEL_KEY[step.key])}</span>
+                  {step.detailCode && (
+                    <span className="text-slate-500"> · {t(DETAIL_KEY[step.detailCode])}</span>
                   )}
                 </span>
               </li>

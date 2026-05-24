@@ -518,5 +518,27 @@
     "reportPhotos": "{count} photos",
     "reportRefs": "{count} refs",
     "reportOcr": "{count} OCR"
+  },
+  "assistant": {
+    "confirm": "The clinical assistant will process your congress with AI: it will extract topics, verify bibliographic references and generate an academic report. This may take a few minutes. Continue?",
+    "starting": "Activating assistant…",
+    "start": "Start artificial intelligence assistance",
+    "enqueuing": "Queuing background processing tasks...",
+    "unauthorized": "Not authorized",
+    "toastWarning": "Assistant finished with warnings: {queued} queued, {skipped} skipped, {failed} failed.",
+    "toastQueued": "Assistant activated: {queued} tasks queued. Progress will appear in the dashboard.",
+    "toastDone": "Assistant: all phases were already completed.",
+    "stepTopics": "Clinical topics",
+    "stepReferences": "Bibliographic verification",
+    "stepReport": "Academic report",
+    "detailInstantDone": "Processed instantly",
+    "detailInstantFailRetry": "Immediate failure, retrying via queue",
+    "detailAlreadyRunning": "Processing already in progress",
+    "detailQueued": "Sent to queue",
+    "detailAlreadyDone": "already processed",
+    "detailNoOcr": "no OCR data",
+    "detailEnqueueError": "Error queuing",
+    "detailNoPending": "no pending items",
+    "detailAlreadyExists": "already exists"
   }
 }

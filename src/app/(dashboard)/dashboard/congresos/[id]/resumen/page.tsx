@@ -347,7 +347,7 @@ export default async function ResumenPage({ params }: Props) {
             </p>
           </CardHeader>
           <CardContent className="pt-0">
-            <AiAssistantButton congressId={id} />
+            <AiAssistantButton congressId={id} language={locale === "en" ? "en" : "es"} />
           </CardContent>
         </Card>
       </section>

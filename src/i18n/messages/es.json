@@ -518,5 +518,27 @@
     "reportPhotos": "{count} fotos",
     "reportRefs": "{count} refs",
     "reportOcr": "{count} OCR"
+  },
+  "assistant": {
+    "confirm": "El asistente clínico procesará tu congreso con IA: extraerá tópicos, verificará referencias bibliográficas y generará un reporte académico. Esto puede tardar unos minutos. ¿Continuar?",
+    "starting": "Activando asistente…",
+    "start": "Iniciar asistencia de inteligencia artificial",
+    "enqueuing": "Encolando tareas de procesamiento en segundo plano...",
+    "unauthorized": "No autorizado",
+    "toastWarning": "Asistente terminó con avisos: {queued} en cola, {skipped} omitidas, {failed} con error.",
+    "toastQueued": "Asistente activado: {queued} tareas en cola. El progreso aparecerá en el dashboard.",
+    "toastDone": "Asistente: Todas las fases ya estaban completadas.",
+    "stepTopics": "Tópicos clínicos",
+    "stepReferences": "Verificación bibliográfica",
+    "stepReport": "Reporte académico",
+    "detailInstantDone": "Procesado al instante",
+    "detailInstantFailRetry": "Fallo inmediato, reintentando vía cola",
+    "detailAlreadyRunning": "Procesamiento ya en curso",
+    "detailQueued": "Enviado a cola",
+    "detailAlreadyDone": "ya procesados",
+    "detailNoOcr": "sin datos OCR",
+    "detailEnqueueError": "Error al encolar",
+    "detailNoPending": "sin pendientes",
+    "detailAlreadyExists": "ya existe"
   }
 }
