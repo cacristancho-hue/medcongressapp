@@ -2,9 +2,11 @@ import ReferenceLibrary from "@/components/congresses/reference-library"
 import { getLibraryReferences } from "@/lib/actions/library"
 import { BookOpen } from "lucide-react"
 import { EmptyState } from "@/components/ui/empty-state"
+import { getTranslations } from "next-intl/server"
 
 export default async function BibliotecaPage() {
   const { data: references, error } = await getLibraryReferences()
+  const t = await getTranslations("library")
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -14,12 +16,11 @@ export default async function BibliotecaPage() {
             <BookOpen className="h-6 w-6 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Biblioteca de referencias
+            {t("pageTitle")}
           </h2>
         </div>
         <p className="text-slate-500 text-sm max-w-2xl">
-          Toda la evidencia científica consolidada de tus congresos, verificada contra
-          CrossRef, PubMed y OpenAlex.
+          {t("pageSubtitle")}
         </p>
       </div>
 
@@ -31,10 +32,10 @@ export default async function BibliotecaPage() {
         <EmptyState
           illustration="library"
           size="lg"
-          title="Tu biblioteca está vacía"
-          description="Cuando proceses fotos de un congreso con IA, las referencias bibliográficas detectadas aparecerán aquí, verificadas contra CrossRef, PubMed y OpenAlex."
-          action={{ label: "Crear un congreso", href: "/dashboard/congresos/nuevo", primary: true }}
-          secondaryAction={{ label: "Ver mis congresos", href: "/dashboard/congresos" }}
+          title={t("emptyTitle")}
+          description={t("emptyDesc")}
+          action={{ label: t("emptyCreate"), href: "/dashboard/congresos/nuevo", primary: true }}
+          secondaryAction={{ label: t("emptySecondary"), href: "/dashboard/congresos" }}
         />
       ) : (
         <ReferenceLibrary initialReferences={references} />

@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import { useTranslations } from "next-intl"
 import { LibraryReference } from "@/lib/actions/library"
 import { softDeleteReference, updateReferenceCandidate, verifySingleReference } from "@/lib/actions/references"
 import { createClient } from "@/lib/supabase/client"
@@ -71,6 +72,7 @@ function parseTags(input: string): string[] {
 
 export default function ReferenceLibrary({ initialReferences }: Props) {
   const router = useRouter()
+  const t = useTranslations("library")
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCongress, setFilterCongress] = useState<string>("all")
   const [filterSpecialty, setFilterSpecialty] = useState<string>("all")
@@ -218,7 +220,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
       })
 
       if (res.success) {
-        toast.success("Referencia actualizada")
+        toast.success(t("refUpdated"))
         setSelectedReference((prev) =>
           prev
             ? {
@@ -240,7 +242,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
       }
     } catch (error) {
       console.error(error)
-      toast.error("No se pudo guardar la referencia")
+      toast.error(t("refSaveError"))
     } finally {
       setIsSavingDetail(false)
     }
@@ -258,7 +260,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
       updates: { is_favorite: next },
     })
     if (res.success) {
-      toast.success(next ? "Añadida a favoritos" : "Quitada de favoritos")
+      toast.success(next ? t("addedFavorite") : t("removedFavorite"))
       router.refresh()
     } else {
       toast.error(res.error)
@@ -275,10 +277,10 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
       congressId: selectedReference.congress_id,
     })
     if (!result.success) {
-      toast.error(result.error || "No se pudo verificar la referencia")
+      toast.error(result.error || t("verifyRefError"))
       return
     }
-    toast.success("Se volvio a verificar la referencia")
+    toast.success(t("reVerified"))
     setSelectedReference((prev) =>
       prev ? { ...prev, verification_status: result.data.status } : prev
     )
@@ -294,7 +296,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
       updates: { verification_status: "verified" },
     })
     if (res.success) {
-      toast.success("Referencia confirmada")
+      toast.success(t("refConfirmed"))
       setSelectedReference((prev) => (prev ? { ...prev, verification_status: "verified" } : prev))
       setDraft((prev) => (prev ? { ...prev, verification_status: "verified" } : prev))
       router.refresh()
@@ -303,14 +305,14 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
 
   const deleteSelected = async () => {
     if (!selectedReference) return
-    const ok = confirm("¿Eliminar esta referencia de la biblioteca?")
+    const ok = confirm(t("deleteConfirm"))
     if (!ok) return
     const res = await softDeleteReference({
       id: selectedReference.id,
       congressId: selectedReference.congress_id,
     })
     if (res.success) {
-      toast.success("Referencia eliminada")
+      toast.success(t("refDeleted"))
       closeReferenceDetail()
       router.refresh()
     }
@@ -324,7 +326,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por titulo, autor, journal o notas..."
+              placeholder={t("searchPlaceholder")}
               className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -342,7 +344,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                     : "text-slate-500 hover:text-slate-700"
                 )}
               >
-                Vista General
+                {t("viewGeneral")}
               </button>
               <button
                 onClick={() => setViewMode("congress")}
@@ -353,7 +355,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                     : "text-slate-500 hover:text-slate-700"
                 )}
               >
-                Por Congreso
+                {t("viewByCongress")}
               </button>
             </div>
 
@@ -364,7 +366,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                 value={filterCongress}
                 onChange={(e) => setFilterCongress(e.target.value)}
               >
-                <option value="all">Todos los congresos</option>
+                <option value="all">{t("allCongresses")}</option>
                 {congresses.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -378,7 +380,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
               value={filterSpecialty}
               onChange={(e) => setFilterSpecialty(e.target.value)}
             >
-              <option value="all">Todas las especialidades</option>
+              <option value="all">{t("allSpecialties")}</option>
               {specialties.map((s) => (
                 <option key={s!} value={s!}>
                   {s}
@@ -391,12 +393,12 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
-              <option value="all">Cualquier estado</option>
-              <option value="verified">Verificada ({counts.verified})</option>
-              <option value="partially_verified">Parcial ({counts.partially_verified})</option>
-              <option value="ambiguous">Ambigua ({counts.ambiguous})</option>
-              <option value="not_verified">No verificada ({counts.not_verified})</option>
-              <option value="retracted">Retractada ({counts.retracted})</option>
+              <option value="all">{t("anyStatus")}</option>
+              <option value="verified">{t("statusVerified")} ({counts.verified})</option>
+              <option value="partially_verified">{t("statusPartial")} ({counts.partially_verified})</option>
+              <option value="ambiguous">{t("statusAmbiguous")} ({counts.ambiguous})</option>
+              <option value="not_verified">{t("statusNotVerified")} ({counts.not_verified})</option>
+              <option value="retracted">{t("statusRetracted")} ({counts.retracted})</option>
             </select>
 
             <select
@@ -404,7 +406,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
               value={filterYear}
               onChange={(e) => setFilterYear(e.target.value)}
             >
-              <option value="all">Cualquier ano</option>
+              <option value="all">{t("anyYear")}</option>
               {years.map((y) => (
                 <option key={y} value={y}>
                   {y}
@@ -417,9 +419,9 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                 className="text-xs border-slate-200 rounded-lg bg-slate-50 py-1.5 pl-2 pr-8"
                 value={filterTag}
                 onChange={(e) => setFilterTag(e.target.value)}
-                title="Filtrar por etiqueta clínica"
+                title={t("filterByTag")}
               >
-                <option value="all">Todas las etiquetas</option>
+                <option value="all">{t("allTags")}</option>
                 {allTags.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
@@ -435,16 +437,16 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                   ? "bg-amber-50 text-amber-700 border-amber-200"
                   : "bg-slate-50 text-slate-500 border-slate-200 hover:border-amber-200"
               )}
-              title="Mostrar solo favoritos"
+              title={t("onlyFavoritesTitle")}
             >
-              ★ Favoritos{favoritesCount > 0 ? ` (${favoritesCount})` : ""}
+              ★ {t("favorites")}{favoritesCount > 0 ? ` (${favoritesCount})` : ""}
             </button>
           </div>
         </div>
 
         <div className="flex items-baseline justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
           <span>
-            {filtered.length} de {initialReferences.length} referencias
+            {t("results", { shown: filtered.length, total: initialReferences.length })}
           </span>
           {(filterCongress !== "all" ||
             filterSpecialty !== "all" ||
@@ -465,7 +467,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
               }}
               className="text-blue-600 hover:underline"
             >
-              Limpiar filtros
+              {t("clearFilters")}
             </button>
           )}
         </div>
@@ -475,7 +477,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
         {filtered.length === 0 ? (
           <div className="py-12 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
             <p className="text-sm text-slate-500 italic">
-              No se encontraron referencias con los filtros actuales.
+              {t("emptyFiltered")}
             </p>
           </div>
         ) : viewMode === "grid" ? (
@@ -494,7 +496,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                     {congressName}
                   </h3>
                   <span className="text-xs font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
-                    {refs.length} {refs.length === 1 ? "referencia" : "referencias"}
+                    {t("refCount", { count: refs.length })}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -518,10 +520,10 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/80">
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-[0.28em] text-teal-600 font-semibold">
-                  Detalle de referencia
+                  {t("detailLabel")}
                 </p>
                 <h3 className="text-lg font-bold text-slate-900 truncate">
-                  {selectedReference.official_title || selectedReference.detected_title || "Referencia sin titulo"}
+                  {selectedReference.official_title || selectedReference.detected_title || t("noTitle")}
                 </h3>
                 <p className="text-xs text-slate-500 truncate">{selectedReference.congress_name}</p>
               </div>
@@ -550,14 +552,14 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                     <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-900 shadow-2xl">
                       <img
                         src={selectedReference.image_full_url}
-                        alt="Foto asociada a la referencia"
+                        alt={t("imageAlt")}
                         className="w-full max-h-[64vh] object-contain bg-black"
                       />
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-dashed border-white/10 bg-slate-900/80 p-8 text-center text-slate-300">
                       <FileText className="mx-auto mb-3 h-8 w-8 text-slate-500" />
-                      <p className="text-sm font-medium">No hay foto asociada disponible</p>
+                      <p className="text-sm font-medium">{t("noImage")}</p>
                     </div>
                   )}
 
@@ -580,7 +582,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                       </Link>
                     </div>
                     <div className="mt-3 max-h-44 overflow-y-auto rounded-xl border border-white/10 bg-black/25 p-3 text-[11px] leading-relaxed text-slate-200 whitespace-pre-wrap">
-                      {selectedReference.raw_text || "Sin texto OCR disponible"}
+                      {selectedReference.raw_text || t("noOcr")}
                     </div>
                   </div>
                 </div>
@@ -589,7 +591,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
               <div className="bg-white overflow-y-auto">
                 <div className="p-5 sm:p-6 space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Titulo oficial">
+                    <Field label={t("fieldOfficialTitle")}>
                       <input
                         value={draft.official_title}
                         onChange={(e) =>
@@ -598,7 +600,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
                       />
                     </Field>
-                    <Field label="Autores oficiales">
+                    <Field label={t("fieldOfficialAuthors")}>
                       <input
                         value={draft.official_authors}
                         onChange={(e) =>
@@ -616,7 +618,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
                       />
                     </Field>
-                    <Field label="Journal">
+                    <Field label={t("fieldJournal")}>
                       <input
                         value={draft.official_journal}
                         onChange={(e) =>
@@ -634,7 +636,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
                       />
                     </Field>
-                    <Field label="PMID">
+                    <Field label={t("fieldPmid")}>
                       <input
                         value={draft.detected_pmid}
                         onChange={(e) =>
@@ -646,7 +648,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field label="Tipo de publicacion">
+                    <Field label={t("fieldPubType")}>
                       <input
                         value={draft.publication_type}
                         onChange={(e) =>
@@ -655,7 +657,7 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
                       />
                     </Field>
-                    <Field label="Estado de verificacion">
+                    <Field label={t("fieldStatus")}>
                       <select
                         value={draft.verification_status}
                         onChange={(e) =>
@@ -663,16 +665,16 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                         }
                         className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15 bg-white"
                       >
-                        <option value="not_verified">No verificada</option>
-                        <option value="ambiguous">Ambigua</option>
-                        <option value="partially_verified">Parcial</option>
-                        <option value="verified">Verificada</option>
-                        <option value="retracted">Retractada</option>
+                        <option value="not_verified">{t("statusNotVerified")}</option>
+                        <option value="ambiguous">{t("statusAmbiguous")}</option>
+                        <option value="partially_verified">{t("statusPartial")}</option>
+                        <option value="verified">{t("statusVerified")}</option>
+                        <option value="retracted">{t("statusRetracted")}</option>
                       </select>
                     </Field>
                   </div>
 
-                  <Field label="Notas de verificacion">
+                  <Field label={t("fieldNotes")}>
                     <textarea
                       value={draft.verification_notes}
                       onChange={(e) =>
@@ -680,18 +682,18 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                       }
                       rows={5}
                       className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15 resize-y"
-                      placeholder="Observaciones, correcciones o aclaraciones del revisor"
+                      placeholder={t("notesPlaceholder")}
                     />
                   </Field>
 
-                  <Field label="Etiquetas clínicas (separadas por coma)">
+                  <Field label={t("fieldTags")}>
                     <input
                       value={draft.clinical_tags}
                       onChange={(e) =>
                         setDraft((prev) => (prev ? { ...prev, clinical_tags: e.target.value } : prev))
                       }
                       className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15"
-                      placeholder="ej: hipertensión, guía 2024, para estudiar"
+                      placeholder={t("tagsPlaceholder")}
                     />
                   </Field>
 
@@ -705,9 +707,9 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                             ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
                             : "bg-white text-slate-600 border-slate-200 hover:border-amber-300"
                         )}
-                        title={selectedReference.is_favorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+                        title={selectedReference.is_favorite ? t("removeFavorite") : t("addFavorite")}
                       >
-                        {selectedReference.is_favorite ? "★ Favorito" : "☆ Favorito"}
+                        {selectedReference.is_favorite ? `★ ${t("favorite")}` : `☆ ${t("favorite")}`}
                       </button>
                       <button
                         onClick={saveReferenceDetail}
@@ -715,14 +717,14 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                         className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 disabled:opacity-60"
                       >
                         <Save className="h-4 w-4" />
-                        {isSavingDetail ? "Guardando..." : "Guardar cambios"}
+                        {isSavingDetail ? t("saving") : t("saveChanges")}
                       </button>
                       <button
                         onClick={confirmSelected}
                         className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
                       >
                         <CheckCircle2 className="h-4 w-4" />
-                        Confirmar como correcta
+                        {t("confirmCorrect")}
                       </button>
                       {(selectedReference.verification_status === "not_verified" ||
                         selectedReference.verification_status === "ambiguous") && (
@@ -731,12 +733,12 @@ export default function ReferenceLibrary({ initialReferences }: Props) {
                           className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-700 hover:bg-teal-100"
                         >
                           <RefreshCw className="h-4 w-4" />
-                          Re-verificar
+                          {t("reverify")}
                         </button>
                       )}
                     </div>
                     <p className="text-xs text-slate-500">
-                      La evidencia queda visible junto con la referencia para corregirla sin salir de la biblioteca.
+                      {t("detailHelp")}
                     </p>
                   </div>
                 </div>
@@ -765,6 +767,7 @@ function ReferenceCard({
   reference: LibraryReference
   onOpenDetail: (reference: LibraryReference) => void
 }) {
+  const t = useTranslations("library")
   const title = reference.official_title || reference.detected_title || reference.raw_text
   const pubLink = reference.detected_doi
     ? `https://doi.org/${reference.detected_doi}`
@@ -778,10 +781,10 @@ function ReferenceCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5 flex-wrap">
             {reference.is_favorite && (
-              <span className="text-[10px] text-amber-500" title="Favorito">★</span>
+              <span className="text-[10px] text-amber-500" title={t("favorite")}>★</span>
             )}
             <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter">
-              {reference.specialty || "General"}
+              {reference.specialty || t("specialtyGeneral")}
             </span>
             {reference.publication_type && (
               <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium uppercase">
@@ -804,11 +807,11 @@ function ReferenceCard({
                   : "text-slate-900"
               )}
             >
-              {title.length > 100 ? `${title.substring(0, 100)}...` : title || "Sin titulo detectado"}
+              {title.length > 100 ? `${title.substring(0, 100)}...` : title || t("noTitleDetected")}
             </h4>
           </button>
           <p className="text-xs text-slate-500 mt-1 truncate">
-            {reference.official_authors || reference.detected_authors || "Autores no detectados"}{" "}
+            {reference.official_authors || reference.detected_authors || t("noAuthors")}{" "}
             {reference.official_year || reference.detected_year
               ? `· ${reference.official_year || reference.detected_year}`
               : ""}
@@ -828,7 +831,7 @@ function ReferenceCard({
           <button
             onClick={() => onOpenDetail(reference)}
             className="p-1.5 text-slate-500 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-all border border-slate-100 flex items-center gap-1 text-[10px] font-bold"
-            title="Ver o editar referencia"
+            title={t("viewEdit")}
           >
             <Pencil className="h-3 w-3" />
             DETALLE
@@ -840,14 +843,14 @@ function ReferenceCard({
                 toast.promise(
                   verifySingleReference({ referenceId: reference.id, congressId: reference.congress_id }),
                   {
-                    loading: "Buscando en bases de datos cientificas...",
-                    success: "Verificacion completada",
-                    error: "No se pudo verificar en este momento",
+                    loading: t("searchingDbs"),
+                    success: t("verifyDone"),
+                    error: t("verifyErrorNow"),
                   }
                 )
               }}
               className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-all border border-teal-100 flex items-center gap-1 text-[10px] font-bold"
-              title="Re-verificar ahora"
+              title={t("reverifyNow")}
             >
               <RefreshCw className="h-3 w-3" />
               RE-VERIFICAR
@@ -855,15 +858,15 @@ function ReferenceCard({
           )}
           <button
             onClick={async () => {
-              const ok = confirm("¿Eliminar esta referencia de la biblioteca?")
+              const ok = confirm(t("deleteConfirm"))
               if (!ok) return
               const res = await softDeleteReference({ id: reference.id, congressId: reference.congress_id })
               if (res.success) {
-                toast.success("Referencia eliminada")
+                toast.success(t("refDeleted"))
               }
             }}
             className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-            title="Eliminar referencia"
+            title={t("deleteTitle")}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -875,7 +878,7 @@ function ReferenceCard({
         <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-slate-100 bg-slate-50 group/image">
           <img
             src={reference.image_url}
-            alt="Diapositiva original"
+            alt={t("slideAlt")}
             className="h-full w-full object-cover transition-transform duration-500 group-hover/image:scale-110"
           />
           <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover/image:opacity-100 transition-opacity flex items-center justify-center">
@@ -926,7 +929,7 @@ function ReferenceCard({
                     congressId: reference.congress_id,
                     updates: { verification_status: nextStatus },
                   })
-                  if (res.success) toast.success(`Estado actualizado a ${nextStatus}`)
+                  if (res.success) toast.success(t("statusUpdatedTo", { status: nextStatus === "verified" ? t("statusVerified") : t("statusAmbiguous") }))
                 }}
                 className={clsx(
                   "text-[9px] px-1.5 py-0.5 rounded uppercase font-bold border w-fit transition-all flex items-center gap-1 hover:brightness-95",
@@ -944,19 +947,19 @@ function ReferenceCard({
                 {reference.verification_status === "verified" ? (
                   <>
                     <CheckCircle2 className="h-2.5 w-2.5" />
-                    Evidencia Validada
+                    {t("validatedEvidence")}
                   </>
                 ) : reference.verification_status === "retracted" ? (
                   <>
                     <AlertCircle className="h-2.5 w-2.5" />
-                    Retractado
+                    {t("retractedShort")}
                   </>
                 ) : reference.verification_status === "ambiguous" ? (
-                  "Confirmacion Pendiente"
+                  t("confirmPending")
                 ) : reference.verification_status === "partially_verified" ? (
-                  "Validacion Parcial"
+                  t("partialValidation")
                 ) : (
-                  "No Verificada"
+                  t("notVerifiedLabel")
                 )}
               </button>
 
@@ -964,7 +967,7 @@ function ReferenceCard({
                 (!reference.detected_title || !reference.detected_doi) && (
                   <span className="text-[9px] text-amber-600 font-medium flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
                     <span className="h-1 w-1 bg-amber-500 rounded-full" />
-                    Deteccion incompleta
+                    {t("incompleteDetection")}
                   </span>
                 )}
             </div>
@@ -977,11 +980,11 @@ function ReferenceCard({
                     congressId: reference.congress_id,
                     updates: { verification_status: "verified" },
                   })
-                  if (res.success) toast.success("Referencia confirmada")
+                  if (res.success) toast.success(t("refConfirmed"))
                 }}
                 className="text-[9px] text-amber-700 font-bold underline hover:text-amber-800"
               >
-                Confirmar como correcta
+                {t("confirmCorrect")}
               </button>
             )}
 
@@ -997,7 +1000,7 @@ function ReferenceCard({
               {reference.citation_count !== null && (
                 <span
                   className="text-[9px] text-blue-600 font-bold bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100"
-                  title="Citas encontradas en OpenAlex/CrossRef"
+                  title={t("citationsTitle")}
                 >
                   {reference.citation_count.toLocaleString()} citas
                 </span>
@@ -1056,7 +1059,7 @@ function ReferenceCard({
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 hover:text-teal-600 hover:border-teal-200 transition-all shadow-sm"
-              title="Buscar en PubMed"
+              title={t("searchPubmed")}
             >
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
