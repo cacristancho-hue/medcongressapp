@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { createClient } from "@/lib/supabase/client"
 import { Upload, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react"
 import { clsx } from "clsx"
@@ -82,6 +83,7 @@ async function runWithConcurrency<T>(
 
 export default function PhotoUploadZone({ congressId, userId, currentCount, aiEnabled = false, fastPathLimit = 15 }: Props) {
   const router = useRouter()
+  const t = useTranslations("upload")
   const inputRef = useRef<HTMLInputElement>(null)
   const [items, setItems] = useState<UploadItem[]>([])
   const [isUploading, setIsUploading] = useState(false)
@@ -116,7 +118,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
           updateItem(item.id, {
             status: "potential_duplicate",
             existingImageId: existing.id,
-            error: `Ya existe como "${existing.original_filename}"`
+            error: t("duplicateExists", { name: existing.original_filename })
           })
           return
         }
@@ -216,7 +218,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
 
       updateItem(item.id, { status: "done" })
     },
-    [userId, congressId, updateItem, aiEnabled]
+    [userId, congressId, updateItem, aiEnabled, t]
   )
 
   const handleFiles = useCallback(
@@ -238,9 +240,7 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
       const processImmediately = aiEnabled && valid.length <= fastPathLimit
 
       if (aiEnabled && valid.length > fastPathLimit) {
-        toast.info(
-          `Carga grande detectada (${valid.length} fotos). Se encolaran para procesamiento en segundo plano.`
-        )
+        toast.info(t("largeUpload", { count: valid.length }))
       }
 
       try {
@@ -262,10 +262,10 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         router.refresh()
       }
     },
-    [aiEnabled, fastPathLimit, currentCount, isUploading, remaining, uploadOne, updateItem, router]
+    [aiEnabled, fastPathLimit, currentCount, isUploading, remaining, uploadOne, updateItem, router, t]
   )
 
-  if (remaining === 0) return <div className="p-4 text-center text-slate-500 border rounded-lg">Limite alcanzado</div>
+  if (remaining === 0) return <div className="p-4 text-center text-slate-500 border rounded-lg">{t("limitReached")}</div>
   if (!hasAcceptedDisclaimer) return <UploadDisclaimer onAccept={() => setHasAcceptedDisclaimer(true)} />
 
   return (
@@ -280,8 +280,8 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
         )}
       >
         <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
-        <p className="text-sm font-medium text-slate-700">Subir fotos del congreso</p>
-        <p className="text-xs text-slate-400 mt-1">{remaining} espacios disponibles</p>
+        <p className="text-sm font-medium text-slate-700">{t("title")}</p>
+        <p className="text-xs text-slate-400 mt-1">{t("slotsAvailable", { count: remaining })}</p>
       </div>
 
       <input ref={inputRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => e.target.files && handleFiles(e.target.files)} />
@@ -318,15 +318,15 @@ export default function PhotoUploadZone({ congressId, userId, currentCount, aiEn
                     className="h-7 text-[10px] bg-white text-amber-700 border-amber-200 hover:bg-amber-100"
                     onClick={() => uploadOne(item, true)}
                   >
-                    Subir de todos modos
+                    {t("uploadAnyway")}
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     className="h-7 text-[10px] text-slate-500"
-                    onClick={() => updateItem(item.id, { status: "error", error: "Omitida por el usuario" })}
+                    onClick={() => updateItem(item.id, { status: "error", error: t("skippedByUser") })}
                   >
-                    Omitir
+                    {t("skip")}
                   </Button>
                 </div>
               )}

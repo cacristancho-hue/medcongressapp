@@ -77,6 +77,16 @@
     "noDetails": "No details",
     "newCongress": "New congress"
   },
+  "upload": {
+    "limitReached": "Limit reached",
+    "title": "Upload congress photos",
+    "slotsAvailable": "{count} slots available",
+    "duplicateExists": "Already exists as \"{name}\"",
+    "largeUpload": "Large upload detected ({count} photos). They will be queued for background processing.",
+    "uploadAnyway": "Upload anyway",
+    "skip": "Skip",
+    "skippedByUser": "Skipped by user"
+  },
   "congressForm": {
     "pageTitle": "New congress",
     "pageSubtitle": "Register a congress to start uploading and organizing your photos.",

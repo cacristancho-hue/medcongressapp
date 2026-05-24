@@ -77,6 +77,16 @@
     "noDetails": "Sin detalles",
     "newCongress": "Nuevo congreso"
   },
+  "upload": {
+    "limitReached": "Límite alcanzado",
+    "title": "Subir fotos del congreso",
+    "slotsAvailable": "{count} espacios disponibles",
+    "duplicateExists": "Ya existe como \"{name}\"",
+    "largeUpload": "Carga grande detectada ({count} fotos). Se encolarán para procesamiento en segundo plano.",
+    "uploadAnyway": "Subir de todos modos",
+    "skip": "Omitir",
+    "skippedByUser": "Omitida por el usuario"
+  },
   "congressForm": {
     "pageTitle": "Nuevo congreso",
     "pageSubtitle": "Registra un congreso para empezar a subir y organizar tus fotos.",
