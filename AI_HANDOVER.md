@@ -244,6 +244,28 @@ app/
 
 ## 11. Cambios entre sesiones (changelog)
 
+### 2026-05-24 (cont. 4) · Claude Opus 4.7 — Módulo de cobro Pro (Lemon Squeezy)
+
+**Decisión de Camilo:** construir el módulo de cobro; proveedor elegido **Lemon Squeezy** (merchant of record, maneja impuestos globales). Commit `2c0b1b8`.
+
+**Construido:**
+- Migración `fase37_billing.sql`: plan `'pro'` añadido al check de `ai_usage_limits` + columnas LS (`ls_customer_id`, `ls_subscription_id`, `ls_variant_id`, `subscription_status`, `subscription_renews_at`, `subscription_ends_at`). Aditiva/idempotente. **PENDIENTE correr en Supabase.**
+- `lib/billing/lemonsqueezy.ts`: checkout hosted (REST, sin SDK), verificación HMAC del webhook, `isProStatus`.
+- `lib/actions/billing.ts`: `startProCheckout()`.
+- `api/webhooks/lemonsqueezy/route.ts`: verifica firma → mapea `custom_data.user_id` → actualiza plan/cuotas con service client. Cuotas: pro=200 img/20 reportes/$15; free=15/2/$1.50 (en `plan-limits.ts`).
+- UI: tarjeta de plan + botón "Mejorar a Pro" en Ajustes (i18n namespace `billing`).
+
+**PENDIENTE de configuración externa (Camilo, sin esto el botón da error controlado):**
+1. Crear cuenta en lemonsqueezy.com + Store + producto "Pro" (suscripción, precio a definir) → obtener Variant ID.
+2. Crear API key.
+3. Configurar webhook en LS: URL `https://<app>/api/webhooks/lemonsqueezy`, eventos `subscription_*`, copiar signing secret.
+4. Setear env vars en Vercel (y .env.local): `LEMONSQUEEZY_API_KEY`, `LEMONSQUEEZY_STORE_ID`, `LEMONSQUEEZY_VARIANT_ID_PRO`, `LEMONSQUEEZY_WEBHOOK_SECRET`. Opcional `NEXT_PUBLIC_APP_URL`.
+5. Correr migración fase37 en Supabase.
+6. Redeploy.
+
+**Nota:** el código lee env en runtime; si faltan, `startProCheckout` devuelve "Facturación no configurada" (no rompe build ni la app). NO desplegado a prod aún (esperando config para no mostrar botón roto).
+
+
 ### 2026-05-24 (cont. 3) · Claude Opus 4.7 — P0 RESUELTO: fotos no aparecían (migraciones fase35/36 NO estaban en prod)
 
 **Síntoma (Camilo):** en TODOS los congresos dejaron de aparecer las fotos (zona vacía, no íconos rotos).
