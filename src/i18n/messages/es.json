@@ -540,5 +540,18 @@
     "detailEnqueueError": "Error al encolar",
     "detailNoPending": "sin pendientes",
     "detailAlreadyExists": "ya existe"
+  },
+  "footer": {
+    "techStack": "Sustento Tecnológico Multi-IA",
+    "evidenceSources": "Fuentes de Evidencia",
+    "disclaimerTitle": "Aviso de Responsabilidad Académica",
+    "disclaimerBody": "MDCONGRESS es una herramienta de soporte académico para especialistas médicos. La síntesis de información no constituye diagnóstico ni recomendación clínica. Es responsabilidad exclusiva del profesional validar toda la bibliografía antes de su aplicación.",
+    "terms": "Términos de Servicio",
+    "privacy": "Privacidad y Seguridad",
+    "contact": "Contáctenos",
+    "systemOnline": "Sistema en línea",
+    "copyright": "© 2026 MDCONGRESS. Tecnología de Élite para la comunidad médica.",
+    "createdBy": "Creado por:",
+    "createdByRole": ", Fellow Alergología, Cali 2026."
   }
 }

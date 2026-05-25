@@ -540,5 +540,18 @@
     "detailEnqueueError": "Error queuing",
     "detailNoPending": "no pending items",
     "detailAlreadyExists": "already exists"
+  },
+  "footer": {
+    "techStack": "Multi-AI Technology Stack",
+    "evidenceSources": "Evidence Sources",
+    "disclaimerTitle": "Academic Disclaimer",
+    "disclaimerBody": "MDCONGRESS is an academic support tool for medical specialists. The synthesis of information does not constitute a diagnosis or clinical recommendation. It is the professional's exclusive responsibility to validate all bibliography before applying it.",
+    "terms": "Terms of Service",
+    "privacy": "Privacy & Security",
+    "contact": "Contact us",
+    "systemOnline": "System Online",
+    "copyright": "© 2026 MDCONGRESS. Elite technology for the medical community.",
+    "createdBy": "Created by:",
+    "createdByRole": ", Allergology Fellow, Cali 2026."
   }
 }

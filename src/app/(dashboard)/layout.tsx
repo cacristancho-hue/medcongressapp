@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { getTranslations } from "next-intl/server"
 import { createClient } from "@/lib/supabase/server"
 import Sidebar from "@/components/layout/sidebar"
 import MobileNav from "@/components/layout/mobile-nav"
@@ -13,6 +14,8 @@ export default async function DashboardLayout({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login")
+
+  const t = await getTranslations("footer")
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -37,14 +40,14 @@ export default async function DashboardLayout({
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-bold uppercase tracking-wider">
               <Link href="/dashboard/legal/terminos" className="text-blue-600 hover:underline">
-                Términos de Servicio
+                {t("terms")}
               </Link>
               <Link href="/dashboard/legal/privacidad" className="text-blue-600 hover:underline">
-                Privacidad y Seguridad
+                {t("privacy")}
               </Link>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 text-[11px] uppercase tracking-[0.16em] text-slate-400">
-              <span className="font-semibold text-slate-500">Contáctenos</span>
+              <span className="font-semibold text-slate-500">{t("contact")}</span>
               <a
                 href="mailto:cacristanchoo@gmail.com"
                 className="font-semibold text-slate-600 hover:text-blue-600 transition-colors"
@@ -60,7 +63,7 @@ export default async function DashboardLayout({
               </a>
             </div>
             <p className="pt-1 text-[10px] uppercase tracking-[0.18em] text-slate-400">
-              Creado por: <span className="font-semibold text-slate-600">Camilo Cristancho</span>, Fellow Alergología, Cali 2026.
+              {t("createdBy")} <span className="font-semibold text-slate-600">Camilo Cristancho</span>{t("createdByRole")}
             </p>
           </div>
         </div>
