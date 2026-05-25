@@ -443,6 +443,7 @@
   "landing": {
     "login": "Iniciar sesión",
     "register": "Registrarse",
+    "plans": "Planes",
     "heroTitlePre": "Estructuramos sus ",
     "heroTitleHighlight": "fotos de congresos",
     "heroTitlePost": " en conocimiento médico.",
@@ -564,6 +565,31 @@
     "processing": "Redirigiendo al pago…",
     "manageNote": "Gestiona o cancela tu suscripción desde el portal de Lemon Squeezy (enlace en tu correo de compra).",
     "upgradedToast": "¡Pago recibido! Tu plan Pro se activará en unos segundos.",
-    "genericError": "No se pudo iniciar el pago. Intenta de nuevo."
+    "genericError": "No se pudo iniciar el pago. Intenta de nuevo.",
+    "seePlans": "Ver planes"
+  },
+  "pricing": {
+    "title": "Planes",
+    "subtitle": "Empieza gratis. Mejora cuando lo necesites.",
+    "back": "Volver",
+    "monthly": "/mes",
+    "free": "Free",
+    "freePrice": "US$0",
+    "freeFor": "Para residentes y para probar",
+    "freeF1": "15 imágenes al mes",
+    "freeF2": "2 reportes académicos al mes",
+    "freeF3": "Biblioteca y verificación bibliográfica",
+    "freeF4": "Tópicos y export",
+    "pro": "Pro",
+    "proPrice": "US$12",
+    "proFor": "Para el médico que asiste a congresos seguido",
+    "proF1": "200 imágenes al mes",
+    "proF2": "20 reportes académicos al mes",
+    "proF3": "Tope de costo de IA más alto",
+    "proF4": "Todo lo de Free + prioridad",
+    "current": "Tu plan actual",
+    "startFree": "Empezar gratis",
+    "mostPopular": "Más popular",
+    "taxNote": "Impuestos calculados en el checkout. Cancela cuando quieras."
   }
 }

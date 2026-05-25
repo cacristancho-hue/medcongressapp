@@ -19,6 +19,12 @@ export default async function LandingPage() {
           </div>
           <div className="flex items-center gap-4 sm:gap-6">
             <Link
+              href="/planes"
+              className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
+            >
+              {t("plans")}
+            </Link>
+            <Link
               href="/login"
               className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
             >

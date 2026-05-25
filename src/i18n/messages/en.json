@@ -443,6 +443,7 @@
   "landing": {
     "login": "Sign in",
     "register": "Sign up",
+    "plans": "Plans",
     "heroTitlePre": "We turn your ",
     "heroTitleHighlight": "congress photos",
     "heroTitlePost": " into medical knowledge.",
@@ -564,6 +565,31 @@
     "processing": "Redirecting to checkout…",
     "manageNote": "Manage or cancel your subscription from the Lemon Squeezy portal (link in your purchase email).",
     "upgradedToast": "Payment received! Your Pro plan will activate in a few seconds.",
-    "genericError": "Couldn't start checkout. Please try again."
+    "genericError": "Couldn't start checkout. Please try again.",
+    "seePlans": "See plans"
+  },
+  "pricing": {
+    "title": "Plans",
+    "subtitle": "Start free. Upgrade when you need to.",
+    "back": "Back",
+    "monthly": "/mo",
+    "free": "Free",
+    "freePrice": "US$0",
+    "freeFor": "For residents and for trying it out",
+    "freeF1": "15 images per month",
+    "freeF2": "2 academic reports per month",
+    "freeF3": "Library and bibliographic verification",
+    "freeF4": "Topics and export",
+    "pro": "Pro",
+    "proPrice": "US$12",
+    "proFor": "For the physician who attends congresses often",
+    "proF1": "200 images per month",
+    "proF2": "20 academic reports per month",
+    "proF3": "Higher AI cost cap",
+    "proF4": "Everything in Free + priority",
+    "current": "Your current plan",
+    "startFree": "Start free",
+    "mostPopular": "Most popular",
+    "taxNote": "Taxes calculated at checkout. Cancel anytime."
   }
 }

@@ -49,7 +49,14 @@ export default async function AjustesPage() {
               {isPro ? tb("proPitch") : tb("freePitch")}
             </p>
           </div>
-          {!isPro && <UpgradeButton />}
+          {!isPro && (
+            <div className="flex flex-col items-end gap-1.5">
+              <UpgradeButton />
+              <a href="/planes" className="text-xs text-slate-500 hover:text-teal-700 underline underline-offset-2">
+                {tb("seePlans")}
+              </a>
+            </div>
+          )}
         </div>
         {isPro && (
           <p className="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">
