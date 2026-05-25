@@ -63,8 +63,8 @@ export default function LegalFooter() {
             </p>
 
             <div className="flex flex-wrap gap-6 pt-2 md:justify-end">
-              <a href="/dashboard/legal/terminos" className="text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider">{t("terms")}</a>
-              <a href="/dashboard/legal/privacidad" className="text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider">{t("privacy")}</a>
+              <a href="/legal/terminos" className="text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider">{t("terms")}</a>
+              <a href="/legal/privacidad" className="text-[10px] font-bold text-blue-600 hover:underline uppercase tracking-wider">{t("privacy")}</a>
             </div>
 
             <div className="flex flex-col md:items-end gap-2 text-[10px] text-slate-400 font-medium pt-2">

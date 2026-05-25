@@ -39,10 +39,10 @@ export default async function DashboardLayout({
         <div className="mx-auto max-w-5xl border-t border-slate-200/70 pt-4">
           <div className="flex flex-col items-center gap-3 text-center">
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[10px] font-bold uppercase tracking-wider">
-              <Link href="/dashboard/legal/terminos" className="text-blue-600 hover:underline">
+              <Link href="/legal/terminos" className="text-blue-600 hover:underline">
                 {t("terms")}
               </Link>
-              <Link href="/dashboard/legal/privacidad" className="text-blue-600 hover:underline">
+              <Link href="/legal/privacidad" className="text-blue-600 hover:underline">
                 {t("privacy")}
               </Link>
             </div>

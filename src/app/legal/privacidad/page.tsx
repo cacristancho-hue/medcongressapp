@@ -265,7 +265,7 @@ function PrivacyEs() {
       <footer className="not-prose mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500 space-y-2">
         <p>
           Ver también:{" "}
-          <Link href="/dashboard/legal/terminos" className="underline underline-offset-2 text-slate-700">
+          <Link href="/legal/terminos" className="underline underline-offset-2 text-slate-700">
             Términos de uso
           </Link>
           .
@@ -531,7 +531,7 @@ function PrivacyEn() {
       <footer className="not-prose mt-12 pt-6 border-t border-slate-200 text-xs text-slate-500 space-y-2">
         <p>
           See also:{" "}
-          <Link href="/dashboard/legal/terminos" className="underline underline-offset-2 text-slate-700">
+          <Link href="/legal/terminos" className="underline underline-offset-2 text-slate-700">
             Terms of use
           </Link>
           .

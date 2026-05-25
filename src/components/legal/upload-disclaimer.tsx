@@ -64,14 +64,14 @@ export default function UploadDisclaimer({ onAccept }: Props) {
           <p className="text-xs text-slate-600 mt-1">
             Lee los puntos completos en{" "}
             <Link
-              href="/dashboard/legal/terminos"
+              href="/legal/terminos"
               className="underline underline-offset-2 hover:text-slate-900"
             >
               Términos de uso
             </Link>{" "}
             y{" "}
             <Link
-              href="/dashboard/legal/privacidad"
+              href="/legal/privacidad"
               className="underline underline-offset-2 hover:text-slate-900"
             >
               Política de privacidad

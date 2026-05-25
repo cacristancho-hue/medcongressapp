@@ -159,7 +159,7 @@ async function FirstTimeWelcome() {
               {t("createFirst")}
             </Link>
             <Link
-              href="/dashboard/legal/terminos"
+              href="/legal/terminos"
               className="inline-flex items-center gap-1 rounded-lg border border-white/30 px-5 py-2.5 text-sm font-medium hover:bg-white/10 transition-all"
             >
               {t("howItWorksLink")}
