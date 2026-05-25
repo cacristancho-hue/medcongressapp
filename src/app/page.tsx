@@ -9,18 +9,18 @@ export default async function LandingPage() {
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header Premium */}
-      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-6 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2 group cursor-pointer">
-            <Logo className="h-10 w-10" />
-            <span className="font-black text-black text-[11px] tracking-[0.4em] uppercase font-plex-mono group-hover:text-blue-600 transition-colors mt-0.5">
+      <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100 px-4 sm:px-6 py-3">
+        <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 group cursor-pointer shrink-0">
+            <Logo className="h-9 w-9 sm:h-10 sm:w-10" />
+            <span className="hidden sm:inline font-black text-black text-[11px] tracking-[0.4em] uppercase font-plex-mono group-hover:text-blue-600 transition-colors mt-0.5">
               CONGRESS
             </span>
           </div>
-          <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
             <Link
               href="/planes"
-              className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
+              className="hidden sm:inline-flex text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
             >
               {t("plans")}
             </Link>
@@ -32,7 +32,7 @@ export default async function LandingPage() {
             </Link>
             <Link
               href="/registro"
-              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
+              className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 sm:px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95"
             >
               {t("register")}
             </Link>

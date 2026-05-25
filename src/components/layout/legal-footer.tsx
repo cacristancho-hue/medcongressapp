@@ -3,7 +3,7 @@
 import { ShieldCheck, Info, BookOpen } from "lucide-react"
 import { useTranslations } from "next-intl"
 import Logo from "@/components/ui/md-logo"
-import { OpenAIIcon, GeminiIcon, ClaudeIcon, CrossRefIcon, PubMedIcon, OpenAlexIcon } from "@/components/ui/ai-icons"
+import { GeminiIcon, ClaudeIcon, CrossRefIcon, PubMedIcon, OpenAlexIcon } from "@/components/ui/ai-icons"
 
 export default function LegalFooter() {
   const t = useTranslations("footer")
@@ -25,7 +25,6 @@ export default function LegalFooter() {
                 </p>
                 <div className="flex flex-wrap gap-8 items-center">
                   <div className="flex items-center gap-2 group cursor-default">
-                    <OpenAIIcon />
                     <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">OpenAI</span>
                   </div>
                   <div className="flex items-center gap-2 group cursor-default">
@@ -86,6 +85,10 @@ export default function LegalFooter() {
               <p>{t("copyright")}</p>
             </div>
           </div>
+        </div>
+
+        <div className="mt-10 border-t border-slate-100 pt-6 text-center text-[10px] uppercase tracking-[0.18em] text-slate-400">
+          {t("createdBy")} <span className="font-semibold text-slate-600">Camilo Cristancho</span>{t("createdByRole")}
         </div>
       </div>
     </footer>
