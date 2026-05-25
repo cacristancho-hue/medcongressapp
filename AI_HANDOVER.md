@@ -253,7 +253,14 @@ Camilo pidió avanzar en 4 frentes a la vez mientras se configura Lemon Squeezy 
 - **i18n (commits varios):** traducidos footers (landing + dashboard), `upload-disclaimer` (consentimiento completo), `photo-card`, `trash-item-actions`. Nuevos namespaces `footer`, `billing`, `pricing`, `disclaimer`, `ui`. **PENDIENTE i18n (long tail, baja prioridad):** `congress-report`, `exportar/page.tsx`, `tutorial`, `dashboard-tour`, `delete-congress-button`, `jobs-status` (mayormente tokens técnicos), y admin (interno).
 - **Tests (commit tests):** suite 3→5 archivos, 25 tests verdes. Nuevos: `plan-limits.test.ts` (cuotas free/pro/b2b) y `billing/lemonsqueezy.test.ts` (isProStatus, parseWebhookEvent, verifyWebhookSignature HMAC).
 
-**Estado deploy:** NO desplegado aún (el botón "Mejorar a Pro" mostraría "Facturación no configurada" hasta que se setee LS). Esperando decisión de Camilo: desplegar igual (legales/PWA/i18n/planes son ganancia pura) o esperar a configurar Lemon Squeezy.
+**Reporte de errores + "Próximamente" (commit feedback):**
+- Botón flotante "Reportar un problema" en todo el dashboard → guarda en `feedback_reports` (migración **fase38, PENDIENTE correr en Supabase**) y notifica si `FEEDBACK_WEBHOOK_URL` (Discord/Slack) está seteado. Para capturar errores en esta fase de uso.
+- Botón Pro muestra "Pro · Próximamente" mientras `NEXT_PUBLIC_BILLING_ENABLED != "true"` (evita el error de pago sin configurar). Activar billing = setear esa env a "true" tras configurar LS.
+
+**DESPLEGADO a producción 2026-05-25** (`vercel --prod`, READY, health ok). Pendientes de config para que todo funcione 100%:
+1. Correr migración **fase37** (billing) y **fase38** (feedback) en Supabase SQL Editor.
+2. Para que el reporte de errores notifique: setear `FEEDBACK_WEBHOOK_URL` (webhook Discord/Slack).
+3. Para activar pagos: configurar Lemon Squeezy (ver cont. 4) + `NEXT_PUBLIC_BILLING_ENABLED=true`.
 
 
 ### 2026-05-24 (cont. 4) · Claude Opus 4.7 — Módulo de cobro Pro (Lemon Squeezy)
