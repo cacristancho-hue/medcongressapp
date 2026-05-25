@@ -244,6 +244,24 @@ app/
 
 ## 11. Cambios entre sesiones (changelog)
 
+### 2026-05-24 (cont. 3) · Claude Opus 4.7 — P0 RESUELTO: fotos no aparecían (migraciones fase35/36 NO estaban en prod)
+
+**Síntoma (Camilo):** en TODOS los congresos dejaron de aparecer las fotos (zona vacía, no íconos rotos).
+
+**Causa raíz (verificada con query directa a Supabase prod usando service key):** la página `congresos/[id]/page.tsx` hace `select(... ocr_results(raw_text, cleaned_text, image_type) ...)`. La columna **`ocr_results.image_type` NO existía en prod** (y `slide_text` tampoco) → PostgREST rechazaba la query entera → `images=null` → `if (!images?.length) return null` → se borraba toda la galería en todos los congresos. **Las migraciones fase35 (`slide_text`) y fase36 (`image_type`) NUNCA se aplicaron en prod, pese a que el changelog 2026-05-22 afirmaba que sí.** ⚠️ No confiar en "migración aplicada" sin verificar contra la base.
+
+**Por qué se rompió "de repente" (el código que pide image_type existe desde el 22-may, commit 46546c7):** no fue un cambio de código (mi deploy no tocó esa página). Lo más probable: PostgREST toleraba la columna fantasma con su caché de esquema, y una recarga del caché (cualquier DDL o update de plataforma) hizo que empezara a rechazar la query. Bomba de tiempo latente.
+
+**Fix:** Camilo corrió en el SQL Editor de Supabase (2026-05-24) las dos migraciones aditivas/idempotentes:
+```sql
+alter table public.ocr_results add column if not exists slide_text text;
+alter table public.ocr_results add column if not exists image_type text;
+```
+Verificado: la query de la página ya devuelve filas (5/5, sin error). 67 imágenes en la base. No hizo falta redeploy. **Pendiente opcional:** "Re-analizar todo" para poblar image_type/slide_text en fotos viejas (se muestran bien igual con esas columnas en null).
+
+**Lección para futuras IAs:** antes de declarar una migración "aplicada en Supabase", verificarla (p.ej. `select <col> from <tabla> limit 1`). El estado real de prod puede divergir del changelog.
+
+
 ### 2026-05-24 (cont.) · Claude Opus 4.7 — Página resumen ES/EN + asistente clínico bilingüe
 
 Continuación de la misma sesión. Camilo confirmó que solo importa "de ahora en adelante" (no re-traducir fotos viejas) → el comportamiento ya implementado es el correcto. Luego: "avanza".
