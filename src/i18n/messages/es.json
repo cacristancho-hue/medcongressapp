@@ -553,5 +553,17 @@
     "copyright": "© 2026 MDCONGRESS. Tecnología de Élite para la comunidad médica.",
     "createdBy": "Creado por:",
     "createdByRole": ", Fellow Alergología, Cali 2026."
+  },
+  "billing": {
+    "title": "Plan y facturación",
+    "currentFree": "Estás en el plan Free",
+    "currentPro": "Plan Pro activo ✓",
+    "freePitch": "15 imágenes y 2 reportes al mes.",
+    "proPitch": "200 imágenes y 20 reportes al mes, con tope de costo más alto.",
+    "upgrade": "Mejorar a Pro",
+    "processing": "Redirigiendo al pago…",
+    "manageNote": "Gestiona o cancela tu suscripción desde el portal de Lemon Squeezy (enlace en tu correo de compra).",
+    "upgradedToast": "¡Pago recibido! Tu plan Pro se activará en unos segundos.",
+    "genericError": "No se pudo iniciar el pago. Intenta de nuevo."
   }
 }

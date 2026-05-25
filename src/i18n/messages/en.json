@@ -553,5 +553,17 @@
     "copyright": "© 2026 MDCONGRESS. Elite technology for the medical community.",
     "createdBy": "Created by:",
     "createdByRole": ", Allergology Fellow, Cali 2026."
+  },
+  "billing": {
+    "title": "Plan & billing",
+    "currentFree": "You're on the Free plan",
+    "currentPro": "Pro plan active ✓",
+    "freePitch": "15 images and 2 reports per month.",
+    "proPitch": "200 images and 20 reports per month, with a higher cost cap.",
+    "upgrade": "Upgrade to Pro",
+    "processing": "Redirecting to checkout…",
+    "manageNote": "Manage or cancel your subscription from the Lemon Squeezy portal (link in your purchase email).",
+    "upgradedToast": "Payment received! Your Pro plan will activate in a few seconds.",
+    "genericError": "Couldn't start checkout. Please try again."
   }
 }

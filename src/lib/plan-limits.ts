@@ -8,13 +8,17 @@ export interface PlanLimits {
 
 export function getPlanDefaults(plan?: OrganizationPlan | string | null): PlanLimits {
   const normalizedPlan = plan ?? "free"
-  const isFree = normalizedPlan === "free"
 
-  return {
-    imageQuota: isFree ? 15 : 100,
-    reportQuota: isFree ? 2 : 5,
-    monthlyCostCapUsd: isFree ? 1.5 : 10,
+  // Pro: suscripción individual de pago (Lemon Squeezy).
+  if (normalizedPlan === "pro") {
+    return { imageQuota: 200, reportQuota: 20, monthlyCostCapUsd: 15 }
   }
+  // Free: embudo / residentes.
+  if (normalizedPlan === "free") {
+    return { imageQuota: 15, reportQuota: 2, monthlyCostCapUsd: 1.5 }
+  }
+  // B2B / admin (congress, academic, admin).
+  return { imageQuota: 100, reportQuota: 5, monthlyCostCapUsd: 10 }
 }
 
 export function getImageFastPathLimit(
