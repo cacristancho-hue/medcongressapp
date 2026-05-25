@@ -244,6 +244,18 @@ app/
 
 ## 11. Cambios entre sesiones (changelog)
 
+### 2026-05-25 · Claude Opus 4.7 — Prep tiendas + planes + i18n + tests (4 frentes)
+
+Camilo pidió avanzar en 4 frentes a la vez mientras se configura Lemon Squeezy (que lo hará él o un socio ingeniero). Hecho:
+
+- **Legales públicas + PWA (commit f298cb2):** páginas legales movidas de `/dashboard/legal/*` (protegido) a `/legal/*` (públicas, layout raíz). Bug arreglado: el footer del landing enlazaba a páginas que un visitante sin login no podía ver. Iconos PWA PNG 192/512 + maskable generados desde `favicon.svg` con sharp y añadidos al manifest (antes solo SVG → ahora instalable Android/Chrome y cumple requisito de tiendas).
+- **Página de planes (commit pricing):** `/planes` pública (Free vs Pro) con CTA contextual (logueado free→UpgradeButton; pro→"plan actual"; sin login→/registro). Link "Planes" en header landing + "Ver planes" en Ajustes. Precio Pro en i18n (`pricing.proPrice = US$12`) para alinear con LS.
+- **i18n (commits varios):** traducidos footers (landing + dashboard), `upload-disclaimer` (consentimiento completo), `photo-card`, `trash-item-actions`. Nuevos namespaces `footer`, `billing`, `pricing`, `disclaimer`, `ui`. **PENDIENTE i18n (long tail, baja prioridad):** `congress-report`, `exportar/page.tsx`, `tutorial`, `dashboard-tour`, `delete-congress-button`, `jobs-status` (mayormente tokens técnicos), y admin (interno).
+- **Tests (commit tests):** suite 3→5 archivos, 25 tests verdes. Nuevos: `plan-limits.test.ts` (cuotas free/pro/b2b) y `billing/lemonsqueezy.test.ts` (isProStatus, parseWebhookEvent, verifyWebhookSignature HMAC).
+
+**Estado deploy:** NO desplegado aún (el botón "Mejorar a Pro" mostraría "Facturación no configurada" hasta que se setee LS). Esperando decisión de Camilo: desplegar igual (legales/PWA/i18n/planes son ganancia pura) o esperar a configurar Lemon Squeezy.
+
+
 ### 2026-05-24 (cont. 4) · Claude Opus 4.7 — Módulo de cobro Pro (Lemon Squeezy)
 
 **Decisión de Camilo:** construir el módulo de cobro; proveedor elegido **Lemon Squeezy** (merchant of record, maneja impuestos globales). Commit `2c0b1b8`.
