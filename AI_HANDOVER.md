@@ -264,7 +264,9 @@ Continuación de la misma sesión. Camilo confirmó que solo importa "de ahora e
 
 **Estado i18n tras esta sesión:**
 - ✅ Outputs de IA (síntesis, tópicos, reporte) → bilingües siguiendo el locale.
-- ✅ UI ES/EN cubre: login, registro, dashboard, congresos (lista/detalle/nuevo), upload, biblioteca, visor, ajustes, landing, **resumen**, **discovery/grid**, **asistente**, **páginas legales (términos + privacidad)**.
+- ✅ UI ES/EN cubre: login, registro, dashboard, congresos (lista/detalle/nuevo), upload, biblioteca, visor, ajustes, landing, **resumen**, **discovery/grid**, **asistente**, **páginas legales (términos + privacidad)**, **footers (landing `legal-footer.tsx` + dashboard `layout.tsx`)**.
+- 🎨 Selector de idioma = toggle segmentado ES|EN (`locale-switcher.tsx`), fijado como último elemento del header del landing para que no se desplace al cambiar idioma (texto auth ES más largo que EN); `useOptimistic` para feedback instantáneo. Bug arreglado: el footer del landing enlazaba a `/terms` y `/privacy` (inexistentes, 404) → ahora `/dashboard/legal/*`.
+- ℹ️ Confirmado con Camilo (2026-05-24): la navegación del sidebar es correcta (layout persistente, solo cambia el contenido; no abre pestañas nuevas). No era bug.
 - 🔴 **UI pendiente (~hardcodeado):** `exportar/page.tsx`, componentes sueltos (`congress-report`, `jobs-status`, `photo-card`, tour onboarding `dashboard-tour`, `upload-disclaimer`, `legal-footer`, `trash-item-actions`, `delete-congress-button`), página `tutorial`, `papelera`, y admin (`analytics/metrics/webhooks/components` — interno, baja prioridad).
 - 🟢 **PT** sigue atrás (`pt.json` 7/20 namespaces; `SUPPORTED_LOCALES` = `["es","en"]`).
 - ⚠️ Build local necesita `NODE_OPTIONS=--max-old-space-size=8192` (la fase de prerender hace OOM con el heap por defecto en esta máquina; no es problema de código). Deploys siguen manuales (`vercel --prod`).
