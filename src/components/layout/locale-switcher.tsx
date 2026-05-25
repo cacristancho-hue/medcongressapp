@@ -2,21 +2,25 @@
 
 import { useLocale } from "next-intl"
 import { useRouter } from "next/navigation"
-import { useTransition } from "react"
+import { useOptimistic, useTransition } from "react"
 import { setLocale } from "@/lib/actions/locale"
 import { SUPPORTED_LOCALES, LOCALE_LABELS } from "@/i18n/config"
 
 // Cookie-based language switcher rendered as a segmented pill toggle (ES|EN).
 // Sets the LOCALE cookie via a server action and refreshes so server components
 // re-render with the new dictionary. Consistent look across every browser/OS.
+// useOptimistic moves the highlight instantly on click (the cookie + full
+// re-render lands a moment later), so the selection never feels laggy.
 export default function LocaleSwitcher({ className }: { className?: string }) {
   const locale = useLocale()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
+  const [optimisticLocale, setOptimisticLocale] = useOptimistic(locale)
 
   function switchTo(next: string) {
     if (next === locale || pending) return
     startTransition(async () => {
+      setOptimisticLocale(next)
       await setLocale(next)
       router.refresh()
     })
@@ -29,7 +33,7 @@ export default function LocaleSwitcher({ className }: { className?: string }) {
       className={`inline-flex items-center rounded-md border border-slate-200 bg-white p-0.5 ${className ?? ""}`}
     >
       {SUPPORTED_LOCALES.map((l) => {
-        const active = l === locale
+        const active = l === optimisticLocale
         return (
           <button
             key={l}
@@ -38,7 +42,7 @@ export default function LocaleSwitcher({ className }: { className?: string }) {
             disabled={pending}
             aria-pressed={active}
             title={LOCALE_LABELS[l]}
-            className={`rounded px-2.5 py-1 text-xs font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
+            className={`rounded px-2.5 py-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
               active
                 ? "bg-teal-600 text-white shadow-sm"
                 : "bg-transparent text-slate-500 hover:text-slate-800"

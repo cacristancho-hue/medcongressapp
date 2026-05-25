@@ -18,7 +18,6 @@ export default async function LandingPage() {
             </span>
           </div>
           <div className="flex items-center gap-4 sm:gap-6">
-            <LocaleSwitcher />
             <Link
               href="/login"
               className="text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
@@ -31,6 +30,7 @@ export default async function LandingPage() {
             >
               {t("register")}
             </Link>
+            <LocaleSwitcher />
           </div>
         </div>
       </header>
