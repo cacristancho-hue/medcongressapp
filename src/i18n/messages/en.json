@@ -566,7 +566,9 @@
     "manageNote": "Manage or cancel your subscription from the Lemon Squeezy portal (link in your purchase email).",
     "upgradedToast": "Payment received! Your Pro plan will activate in a few seconds.",
     "genericError": "Couldn't start checkout. Please try again.",
-    "seePlans": "See plans"
+    "seePlans": "See plans",
+    "comingSoon": "Pro · Coming soon",
+    "comingSoonNote": "Checkout is under construction. You'll be able to upgrade to Pro soon!"
   },
   "pricing": {
     "title": "Plans",
@@ -625,5 +627,17 @@
     "restore": "Restore",
     "deleteForever": "Delete permanently",
     "deletedForever": "Permanently deleted"
+  },
+  "feedback": {
+    "button": "Report a problem",
+    "title": "What happened?",
+    "subtitle": "Tell us the bug or suggestion. We'll review and fix it.",
+    "placeholder": "Describe the problem or your suggestion…",
+    "emailPlaceholder": "Your email (optional, so we can reply)",
+    "send": "Send report",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "thanks": "Thanks! We got your report.",
+    "error": "Couldn't send. Please try again."
   }
 }

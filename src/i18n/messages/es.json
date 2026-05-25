@@ -566,7 +566,9 @@
     "manageNote": "Gestiona o cancela tu suscripción desde el portal de Lemon Squeezy (enlace en tu correo de compra).",
     "upgradedToast": "¡Pago recibido! Tu plan Pro se activará en unos segundos.",
     "genericError": "No se pudo iniciar el pago. Intenta de nuevo.",
-    "seePlans": "Ver planes"
+    "seePlans": "Ver planes",
+    "comingSoon": "Pro · Próximamente",
+    "comingSoonNote": "El pago está en construcción. ¡Pronto podrás mejorar a Pro!"
   },
   "pricing": {
     "title": "Planes",
@@ -625,5 +627,17 @@
     "restore": "Restaurar",
     "deleteForever": "Eliminar definitivamente",
     "deletedForever": "Eliminado definitivamente"
+  },
+  "feedback": {
+    "button": "Reportar un problema",
+    "title": "¿Qué pasó?",
+    "subtitle": "Cuéntanos el error o sugerencia. Lo revisamos y lo arreglamos.",
+    "placeholder": "Describe el problema o tu sugerencia…",
+    "emailPlaceholder": "Tu correo (opcional, para responderte)",
+    "send": "Enviar reporte",
+    "sending": "Enviando…",
+    "cancel": "Cancelar",
+    "thanks": "¡Gracias! Recibimos tu reporte.",
+    "error": "No se pudo enviar. Intenta de nuevo."
   }
 }

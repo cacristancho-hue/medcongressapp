@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import Sidebar from "@/components/layout/sidebar"
 import MobileNav from "@/components/layout/mobile-nav"
 import MobileHeader from "@/components/layout/mobile-header"
+import FeedbackButton from "@/components/feedback/feedback-button"
 
 export default async function DashboardLayout({
   children,
@@ -72,6 +73,8 @@ export default async function DashboardLayout({
       <div className="print:hidden">
         <MobileNav />
       </div>
+
+      <FeedbackButton />
     </div>
   )
 }
