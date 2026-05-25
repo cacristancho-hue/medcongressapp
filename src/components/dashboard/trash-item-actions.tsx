@@ -1,6 +1,7 @@
 "use client"
 
 import { useTransition } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { RotateCcw, Trash2 } from "lucide-react"
 import { restoreItem, purgeItem } from "@/lib/actions/trash"
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function TrashItemActions({ table, id }: Props) {
+  const t = useTranslations("ui")
   const [pending, startTransition] = useTransition()
 
   function handleRestore() {
@@ -21,19 +23,19 @@ export default function TrashItemActions({ table, id }: Props) {
         toast.error(result.error)
         return
       }
-      toast.success("Restaurado")
+      toast.success(t("restored"))
     })
   }
 
   function handlePurge() {
-    if (!confirm("Eliminar definitivamente. Esta acción no se puede deshacer.")) return
+    if (!confirm(t("deleteForeverConfirm"))) return
     startTransition(async () => {
       const result = await purgeItem({ table, id })
       if (!result.success) {
         toast.error(result.error)
         return
       }
-      toast.success("Eliminado definitivamente")
+      toast.success(t("deletedForever"))
     })
   }
 
@@ -42,7 +44,7 @@ export default function TrashItemActions({ table, id }: Props) {
       <button
         onClick={handleRestore}
         disabled={pending}
-        title="Restaurar"
+        title={t("restore")}
         className="rounded p-1.5 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-50"
       >
         <RotateCcw className="h-3.5 w-3.5" />
@@ -50,7 +52,7 @@ export default function TrashItemActions({ table, id }: Props) {
       <button
         onClick={handlePurge}
         disabled={pending}
-        title="Eliminar definitivamente"
+        title={t("deleteForever")}
         className="rounded p-1.5 text-red-600 hover:bg-red-50 disabled:opacity-50"
       >
         <Trash2 className="h-3.5 w-3.5" />

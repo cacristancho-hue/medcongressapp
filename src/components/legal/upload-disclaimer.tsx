@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { ShieldAlert, FileText, Sparkles, BookOpenCheck, Server } from "lucide-react"
 
 const ACCEPT_KEY = "MDCONGRESS.disclaimer.accepted.v1"
@@ -10,35 +11,10 @@ interface Props {
   onAccept: () => void
 }
 
-const POINTS = [
-  {
-    icon: BookOpenCheck,
-    title: "Uso académico personal",
-    text: "Esta herramienta organiza material de congresos para tu estudio personal. No es un dispositivo médico ni reemplaza el criterio clínico.",
-  },
-  {
-    icon: ShieldAlert,
-    title: "Sin datos identificables de pacientes",
-    text: "No subas imágenes con nombres, identificación, números de historia, fotografías clínicas con identidad u otra información que permita identificar a un paciente.",
-  },
-  {
-    icon: Sparkles,
-    title: "Las síntesis con IA son aproximadas",
-    text: "Los resúmenes generados por IA son aproximaciones académicas. Verifica siempre la información antes de usarla en práctica clínica, docencia o publicación.",
-  },
-  {
-    icon: BookOpenCheck,
-    title: "Verificación bibliográfica probabilística",
-    text: "Las referencias se marcan como verificada, parcial, ambigua o no verificada. Confirma manualmente cualquier cita antes de publicarla.",
-  },
-  {
-    icon: Server,
-    title: "Procesamiento por terceros",
-    text: "Tus imágenes y textos pueden pasar por servicios de IA externos (por ejemplo OpenAI, Anthropic, Google) y por Supabase. Al continuar autorizas este procesamiento.",
-  },
-]
+const POINT_ICONS = [BookOpenCheck, ShieldAlert, Sparkles, BookOpenCheck, Server]
 
 export default function UploadDisclaimer({ onAccept }: Props) {
+  const t = useTranslations("disclaimer")
   const [checked, setChecked] = useState(false)
 
   useEffect(() => {
@@ -59,22 +35,22 @@ export default function UploadDisclaimer({ onAccept }: Props) {
         <FileText className="h-5 w-5 text-amber-700 mt-0.5 shrink-0" />
         <div>
           <h3 className="text-sm font-semibold text-slate-900">
-            Antes de subir fotos, confirma lo siguiente
+            {t("heading")}
           </h3>
           <p className="text-xs text-slate-600 mt-1">
-            Lee los puntos completos en{" "}
+            {t("readFullPre")}{" "}
             <Link
               href="/legal/terminos"
               className="underline underline-offset-2 hover:text-slate-900"
             >
-              Términos de uso
+              {t("termsLink")}
             </Link>{" "}
-            y{" "}
+            {t("and")}{" "}
             <Link
               href="/legal/privacidad"
               className="underline underline-offset-2 hover:text-slate-900"
             >
-              Política de privacidad
+              {t("privacyLink")}
             </Link>
             .
           </p>
@@ -82,12 +58,12 @@ export default function UploadDisclaimer({ onAccept }: Props) {
       </div>
 
       <ul className="space-y-2.5">
-        {POINTS.map(({ icon: Icon, title, text }) => (
-          <li key={title} className="flex items-start gap-2.5">
+        {POINT_ICONS.map((Icon, i) => (
+          <li key={i} className="flex items-start gap-2.5">
             <Icon className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
             <div>
-              <p className="text-xs font-semibold text-slate-800">{title}</p>
-              <p className="text-xs text-slate-600 leading-relaxed">{text}</p>
+              <p className="text-xs font-semibold text-slate-800">{t(`p${i + 1}t`)}</p>
+              <p className="text-xs text-slate-600 leading-relaxed">{t(`p${i + 1}`)}</p>
             </div>
           </li>
         ))}
@@ -101,9 +77,9 @@ export default function UploadDisclaimer({ onAccept }: Props) {
           className="mt-0.5 h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-700"
         />
         <span className="text-xs text-slate-700 leading-relaxed">
-          He leído y acepto los términos. Confirmo que las imágenes que voy a subir{" "}
-          <strong className="font-semibold">no contienen datos identificables de pacientes</strong>{" "}
-          y que el uso es académico personal.
+          {t("checkboxPre")}{" "}
+          <strong className="font-semibold">{t("checkboxStrong")}</strong>{" "}
+          {t("checkboxPost")}
         </span>
       </label>
 
@@ -112,12 +88,11 @@ export default function UploadDisclaimer({ onAccept }: Props) {
         disabled={!checked}
         className="w-full rounded-md bg-slate-900 text-white text-sm font-medium px-4 py-2.5 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
-        Acepto y quiero subir fotos
+        {t("accept")}
       </button>
 
       <p className="text-[10px] text-slate-500 text-center">
-        Esta confirmación se guarda en este navegador. Puedes revocarla en cualquier momento desde
-        Ajustes.
+        {t("saved")}
       </p>
     </div>
   )

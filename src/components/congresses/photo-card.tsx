@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useTranslations } from "next-intl"
 import { Trash2, Loader2, Clock3 } from "lucide-react"
 import Image from "next/image"
 import { clsx } from "clsx"
@@ -28,6 +29,7 @@ function formatBytes(bytes: number | null): string {
 }
 
 export default function PhotoCard({ photo, deleteAction }: Props) {
+  const t = useTranslations("ui")
   const [confirming, setConfirming] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -120,26 +122,26 @@ export default function PhotoCard({ photo, deleteAction }: Props) {
             onClick={handleDeleteClick}
             disabled={isPending}
             className="bg-black/60 hover:bg-red-600 text-white rounded p-1 transition-colors"
-            title="Eliminar foto"
+            title={t("deletePhoto")}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         ) : (
           <div className="flex items-center gap-1 bg-black/70 rounded px-1.5 py-1">
-            <span className="text-white text-xs">¿Eliminar?</span>
+            <span className="text-white text-xs">{t("deleteQuestion")}</span>
             <button
               onClick={handleConfirm}
               disabled={isPending}
               className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs px-1.5 py-0.5 rounded transition-colors"
             >
-              {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Sí"}
+              {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : t("yes")}
             </button>
             <button
               onClick={handleCancel}
               disabled={isPending}
               className="bg-white/20 hover:bg-white/30 text-white text-xs px-1.5 py-0.5 rounded transition-colors"
             >
-              No
+              {t("no")}
             </button>
           </div>
         )}

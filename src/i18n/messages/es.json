@@ -591,5 +591,39 @@
     "startFree": "Empezar gratis",
     "mostPopular": "Más popular",
     "taxNote": "Impuestos calculados en el checkout. Cancela cuando quieras."
+  },
+  "disclaimer": {
+    "heading": "Antes de subir fotos, confirma lo siguiente",
+    "readFullPre": "Lee los puntos completos en",
+    "termsLink": "Términos de uso",
+    "privacyLink": "Política de privacidad",
+    "and": "y",
+    "p1t": "Uso académico personal",
+    "p1": "Esta herramienta organiza material de congresos para tu estudio personal. No es un dispositivo médico ni reemplaza el criterio clínico.",
+    "p2t": "Sin datos identificables de pacientes",
+    "p2": "No subas imágenes con nombres, identificación, números de historia, fotografías clínicas con identidad u otra información que permita identificar a un paciente.",
+    "p3t": "Las síntesis con IA son aproximadas",
+    "p3": "Los resúmenes generados por IA son aproximaciones académicas. Verifica siempre la información antes de usarla en práctica clínica, docencia o publicación.",
+    "p4t": "Verificación bibliográfica probabilística",
+    "p4": "Las referencias se marcan como verificada, parcial, ambigua o no verificada. Confirma manualmente cualquier cita antes de publicarla.",
+    "p5t": "Procesamiento por terceros",
+    "p5": "Tus imágenes y textos pueden pasar por servicios de IA externos (por ejemplo OpenAI, Anthropic, Google) y por Supabase. Al continuar autorizas este procesamiento.",
+    "checkboxPre": "He leído y acepto los términos. Confirmo que las imágenes que voy a subir",
+    "checkboxStrong": "no contienen datos identificables de pacientes",
+    "checkboxPost": "y que el uso es académico personal.",
+    "accept": "Acepto y quiero subir fotos",
+    "saved": "Esta confirmación se guarda en este navegador. Puedes revocarla en cualquier momento desde Ajustes."
+  },
+  "ui": {
+    "deleteQuestion": "¿Eliminar?",
+    "yes": "Sí",
+    "deleteForeverConfirm": "Eliminar definitivamente. Esta acción no se puede deshacer.",
+    "unexpectedError": "Ocurrió un error inesperado",
+    "no": "No",
+    "deletePhoto": "Eliminar foto",
+    "restored": "Restaurado",
+    "restore": "Restaurar",
+    "deleteForever": "Eliminar definitivamente",
+    "deletedForever": "Eliminado definitivamente"
   }
 }

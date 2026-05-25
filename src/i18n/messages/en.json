@@ -591,5 +591,39 @@
     "startFree": "Start free",
     "mostPopular": "Most popular",
     "taxNote": "Taxes calculated at checkout. Cancel anytime."
+  },
+  "disclaimer": {
+    "heading": "Before uploading photos, please confirm the following",
+    "readFullPre": "Read the full points in",
+    "termsLink": "Terms of use",
+    "privacyLink": "Privacy policy",
+    "and": "and",
+    "p1t": "Personal academic use",
+    "p1": "This tool organizes congress material for your personal study. It is not a medical device and does not replace clinical judgment.",
+    "p2t": "No identifiable patient data",
+    "p2": "Do not upload images with names, IDs, medical record numbers, identifiable clinical photographs or any other information that could identify a patient.",
+    "p3t": "AI summaries are approximate",
+    "p3": "AI-generated summaries are academic approximations. Always verify the information before using it in clinical practice, teaching or publication.",
+    "p4t": "Probabilistic bibliographic verification",
+    "p4": "References are marked as verified, partial, ambiguous or unverified. Manually confirm any citation before publishing it.",
+    "p5t": "Third-party processing",
+    "p5": "Your images and text may pass through external AI services (e.g. OpenAI, Anthropic, Google) and Supabase. By continuing you authorize this processing.",
+    "checkboxPre": "I have read and accept the terms. I confirm that the images I am going to upload",
+    "checkboxStrong": "do not contain identifiable patient data",
+    "checkboxPost": "and that the use is personal and academic.",
+    "accept": "I accept and want to upload photos",
+    "saved": "This confirmation is saved in this browser. You can revoke it anytime from Settings."
+  },
+  "ui": {
+    "deleteQuestion": "Delete?",
+    "yes": "Yes",
+    "deleteForeverConfirm": "Delete permanently. This action cannot be undone.",
+    "unexpectedError": "An unexpected error occurred",
+    "no": "No",
+    "deletePhoto": "Delete photo",
+    "restored": "Restored",
+    "restore": "Restore",
+    "deleteForever": "Delete permanently",
+    "deletedForever": "Permanently deleted"
   }
 }
