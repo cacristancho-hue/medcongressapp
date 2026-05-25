@@ -3,39 +3,51 @@
 import { useLocale } from "next-intl"
 import { useRouter } from "next/navigation"
 import { useTransition } from "react"
-import { Globe } from "lucide-react"
 import { setLocale } from "@/lib/actions/locale"
 import { SUPPORTED_LOCALES, LOCALE_LABELS } from "@/i18n/config"
 
-// Cookie-based language switcher. Sets the LOCALE cookie via a server action and
-// refreshes so server components re-render with the new dictionary.
+// Cookie-based language switcher rendered as a segmented pill toggle (ES|EN).
+// Sets the LOCALE cookie via a server action and refreshes so server components
+// re-render with the new dictionary. Consistent look across every browser/OS.
 export default function LocaleSwitcher({ className }: { className?: string }) {
   const locale = useLocale()
   const router = useRouter()
   const [pending, startTransition] = useTransition()
 
+  function switchTo(next: string) {
+    if (next === locale || pending) return
+    startTransition(async () => {
+      await setLocale(next)
+      router.refresh()
+    })
+  }
+
   return (
-    <label className={`inline-flex items-center gap-1.5 text-xs text-slate-500 ${className ?? ""}`}>
-      <Globe className="h-3.5 w-3.5" />
-      <select
-        value={locale}
-        disabled={pending}
-        onChange={(e) => {
-          const next = e.target.value
-          startTransition(async () => {
-            await setLocale(next)
-            router.refresh()
-          })
-        }}
-        className="bg-transparent text-xs font-medium text-slate-600 outline-none cursor-pointer disabled:opacity-50"
-        aria-label="Idioma / Language"
-      >
-        {SUPPORTED_LOCALES.map((l) => (
-          <option key={l} value={l}>
-            {LOCALE_LABELS[l]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div
+      role="group"
+      aria-label="Idioma / Language"
+      className={`inline-flex items-center rounded-md border border-slate-200 bg-white p-0.5 ${className ?? ""}`}
+    >
+      {SUPPORTED_LOCALES.map((l) => {
+        const active = l === locale
+        return (
+          <button
+            key={l}
+            type="button"
+            onClick={() => switchTo(l)}
+            disabled={pending}
+            aria-pressed={active}
+            title={LOCALE_LABELS[l]}
+            className={`rounded px-2.5 py-1 text-xs font-semibold uppercase tracking-wide transition-colors disabled:opacity-50 ${
+              active
+                ? "bg-teal-600 text-white shadow-sm"
+                : "bg-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            {l}
+          </button>
+        )
+      })}
+    </div>
   )
 }
