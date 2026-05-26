@@ -1,31 +1,42 @@
 # MDCONGRESS — Propuesta para Congresos y Sociedades Científicas
 
-> **La memoria académica de su congreso: automática, verificada y exportable.**
+> **Convierte las fotos de las diapositivas de un congreso en conocimiento académico
+> organizado, verificado y exportable — para cada médico y para todo el evento.**
 
 ---
 
-## El problema
+## ¿Qué es MDCONGRESS?
 
-Cada congreso médico genera miles de diapositivas con evidencia valiosa que, al terminar el
-evento, **se pierde**: queda en fotos olvidadas en el celular de cada asistente. El conocimiento
-no se consolida, no se verifica y no se reutiliza.
+Es un **compañero académico** para el médico. Durante un congreso, el profesional toma fotos de
+las diapositivas (como ya lo hace hoy) y MDCONGRESS las **transforma automáticamente** en:
 
-## La solución
+- 📄 **El texto de cada diapositiva**, extraído fielmente (OCR).
+- 🧠 **Una síntesis clínica** de cada ponencia, generada por IA (no solo el texto: la interpretación).
+- 🔖 **La bibliografía detectada y verificada** de cada charla (cada cita confirmada contra las bases mundiales).
+- 📚 **Una biblioteca personal** organizada por congreso, sesión y tema, buscable.
+- 📝 **Reportes académicos exportables**, listos para estudiar, enseñar o publicar — en **español e inglés**.
 
-MDCONGRESS convierte las fotos de las diapositivas de su congreso en **conocimiento académico
-estructurado y verificado**, en 3 pasos:
+> En una frase: **fotos olvidadas en el celular → conocimiento académico estructurado y confiable.**
 
-1. **Captura** — los asistentes (o un equipo asignado) fotografían las diapositivas con el celular.
+## El problema que resuelve
+
+Cada congreso genera miles de diapositivas con evidencia valiosa que, al terminar, **se pierde**:
+queda en fotos sin orden en el celular de cada asistente. No se consolida, no se verifica, no se reutiliza.
+
+## Cómo funciona (3 pasos)
+
+1. **Captura** — el médico fotografía las diapositivas con el celular.
 2. **Síntesis con IA** — el sistema extrae el texto, resume cada ponencia y detecta los temas clave.
-3. **Verificación bibliográfica** — cada referencia se confirma contra las bases mundiales
-   (CrossRef, PubMed, OpenAlex), con **detección de artículos retractados**.
+3. **Verificación bibliográfica** — cada referencia se confirma contra CrossRef, PubMed y OpenAlex,
+   con **detección de artículos retractados**.
 
-## Qué recibe el congreso
+## Qué gana el congreso / la sociedad
+
+Además de la herramienta para cada miembro, a nivel institucional ustedes obtienen:
 
 - 📚 **Memorias académicas automáticas** del evento, organizadas por sesión/ponencia.
 - 🔖 **Bibliografía consolidada y verificada** de todas las charlas.
-- 📝 **Reportes académicos** listos para compartir con los asistentes — en **español e inglés**.
-- 🌎 Una herramienta de marca que sus miembros **siguen usando** después del evento.
+- 🌎 Una herramienta de marca que sus miembros **siguen usando** después del evento (no solo durante).
 
 ## Por qué es confiable (no es "otro ChatGPT")
 

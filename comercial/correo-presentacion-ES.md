@@ -10,11 +10,14 @@
 Estimado/a Dr./Dra. [nombre]:
 
 Soy Camilo Cristancho, médico y Fellow de Alergología. Construí **MDCONGRESS**, una herramienta
-que convierte las fotos de las diapositivas de un congreso en **memorias académicas verificadas**:
-resúmenes por ponencia y bibliografía confirmada contra PubMed/CrossRef, en español e inglés.
+que toma las **fotos de las diapositivas** que cada médico hace en un congreso y las **convierte
+automáticamente** en conocimiento útil: el texto de cada diapositiva, una **síntesis clínica** de
+la ponencia y su **bibliografía verificada** contra PubMed/CrossRef — todo organizado en una
+biblioteca personal y exportable, en español e inglés.
 
-Para [nombre de la sociedad/congreso] esto significa entregar a sus asistentes un **libro de
-memorias del evento** que hoy no existe, y una herramienta de marca que seguirán usando después.
+Para [nombre de la sociedad/congreso] esto significa darle a cada asistente una herramienta que
+realmente usa, y además entregarles las **memorias académicas verificadas del evento** —algo que
+hoy no existe— y una marca que sus miembros siguen usando después del congreso.
 
 Me encantaría **hacerles un piloto sin costo en su próximo congreso**: capturamos el evento y les
 entregamos las memorias verificadas, sin compromiso.
