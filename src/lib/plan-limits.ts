@@ -9,9 +9,11 @@ export interface PlanLimits {
 export function getPlanDefaults(plan?: OrganizationPlan | string | null): PlanLimits {
   const normalizedPlan = plan ?? "free"
 
-  // Pro: suscripción individual de pago (Lemon Squeezy).
+  // Pro: suscripción individual de pago (Lemon Squeezy), US$9.99/mes.
+  // 100 imágenes + 10 reportes. Costo IA típico ~$1.5/mes → margen sano.
+  // El tope ($5) es un guardarraíl ante abuso, no el costo esperado.
   if (normalizedPlan === "pro") {
-    return { imageQuota: 200, reportQuota: 20, monthlyCostCapUsd: 15 }
+    return { imageQuota: 100, reportQuota: 10, monthlyCostCapUsd: 5 }
   }
   // Free: embudo / residentes.
   if (normalizedPlan === "free") {

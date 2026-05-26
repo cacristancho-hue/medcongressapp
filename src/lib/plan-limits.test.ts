@@ -10,11 +10,11 @@ describe("getPlanDefaults", () => {
     })
   })
 
-  it("pro: 200 imágenes / 20 reportes / $15", () => {
+  it("pro: 100 imágenes / 10 reportes / $5", () => {
     expect(getPlanDefaults("pro")).toEqual({
-      imageQuota: 200,
-      reportQuota: 20,
-      monthlyCostCapUsd: 15,
+      imageQuota: 100,
+      reportQuota: 10,
+      monthlyCostCapUsd: 5,
     })
   })
 
